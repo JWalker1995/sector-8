@@ -1,0 +1,68 @@
+@import "util.scss";
+
+$cell_size: 75px;
+$sectoid_size: 70px;
+$center_size: 40px;
+
+@mixin rotate($ang)
+{
+    -webkit-transform: rotate($ang);
+    -moz-transform: rotate($ang);
+    -ms-transform: rotate($ang);
+    -o-transform: rotate($ang);
+    transform: rotate($ang);
+}
+
+.board
+{
+    position: absolute;
+}
+
+.cell
+{
+    position: absolute;
+    width: $cell_size;
+    height: $cell_size;
+    background-color: silver;
+}
+
+.sectoid
+{
+    position: absolute;
+    width: $sectoid_size;
+    height: $sectoid_size;
+    border-radius: 50%;
+    border-color: black;
+}
+
+.sector
+{
+    position: absolute;
+    width: $sectoid_size;
+    height: $sectoid_size;
+    border-radius: 50%;
+    background: linear-gradient(-45deg, orange 50%, transparent 50%) 100% 0;
+    background-repeat: no-repeat;
+    background-size: 50% 50%;
+}
+
+@for $i from 0 to 8
+{
+    .sector_#{$i}
+    {
+        @include rotate($i * 45deg - 67.5deg);
+        top : -2px * cos($i * 45deg);
+        left:  2px * sin($i * 45deg);
+    }
+}
+
+.center
+{
+    position: absolute;
+    width: $center_size;
+    height: $center_size;
+    top: ($sectoid_size - $center_size) / 2;
+    left: ($sectoid_size - $center_size) / 2;
+    border-radius: 50%;
+    background-color: red;
+}
