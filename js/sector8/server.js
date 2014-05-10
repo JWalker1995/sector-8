@@ -1,7 +1,24 @@
+require('/home/joel/source/closure-library/closure/goog/bootstrap/nodejs');
+
+var primus = require('primus');
+var mysql = require('mysql');
+var bcrypt = require('bcrypt');
+var email = require('nodemailer');
+
+var sector8_opts = {
+    'host': 'localhost',
+    'path': '/sector8'
+};
+
+var bcrypt_ops = {
+    'hash_rounds': 12
+};
+
 var mysql_opts = {
     'host': 'localhost',
+    'port': 3306,
     'user': 'root',
-    'password': 'G6.67e-11Cm'
+    'password': ''
 };
 
 var primus_opts = {
@@ -12,23 +29,19 @@ var primus_opts = {
     'iknowhttpsisbetter': true
 };
 
-require('/home/joel/source/closure-library/closure/goog/bootstrap/nodejs');
 
-var primus = require('primus');
-var http = require('http');
-var mysql = require('mysql');
-
-var connection = mysql.createConnection(mysql_opts);
-connection.connect(function(err)
+var handle_mysql_error = function(err)
 {
-    if (err)
-    {
-        console.error('Error connecting to mysql: ' + err.stack);
-    }
-});
+};
+var connection = mysql.createConnection(mysql_opts);
+connection.connect(handle_mysql_error);
+//connection.end();
 
+var user_table = 'test.users';
 
+var num_users = 0;
 var users = {};
+
 var User = function()
 {
     if (!this instanceof User)
@@ -39,98 +52,403 @@ var User = function()
     var props = {
         'user_id': 0,
         'username': '',
-        'password': '',
+        'password_hash': '',
         'email': '',
-        'in_game': 0,
+        'registration_code': '',
+        'game_id': 0,
         'first_login': Date,
         'last_login': Date
     };
 
     util.make_getters_setters(this, props);
 
-    this.populate_from_login = function(callback)
-    {
-        if (connection.state === 'connected')
-        {
-            var login = [this.get_username(), this.get_password()];
-            connection.query('SELECT * FROM sector8.users WHERE username=? AND password=? LIMIT 1', login, function(err, result)
-            {
-                if (!err)
-                {
-                    console.log(result);
-                }
 
-                callback(err.stack);
+    this.populate_from = function(prop, value, callback)
+    {
+        var query = 'SELECT * FROM ' + user_table + ' WHERE ' + prop + '=? LIMIT 1';
+        populate(query, [value], callback);
+    }
+    /*
+    this.populate_from_user_id = function(user_id, callback)
+    {
+        this.set_user_id(user_id);
+        var query = 'SELECT * FROM ' + user_table + ' WHERE user_id=? LIMIT 1';
+        populate(query, [user_id], callback);
+    };
+
+    this.populate_from_username = function(username, callback)
+    {
+        this.set_username(username);
+        var query = 'SELECT * FROM ' + user_table + ' WHERE username=? LIMIT 1';
+        populate(query, [username], callback);
+    };
+
+    this.populate_from_email = function(email, callback)
+    {
+        this.set_email(email);
+        var query = 'SELECT * FROM ' + user_table + ' WHERE email=? LIMIT 1';
+        populate(query, [email], callback);
+    };
+
+    this.populate_from_game_id = function(game_id, i, callback)
+    {
+        this.set_game_id(game_id);
+        var query = 'SELECT * FROM ' + user_table + ' WHERE game_id=? LIMIT ?,1';
+        populate(query, [game_id, i], callback);
+    };
+    */
+
+    var populate = function(query, tokens, callback)
+    {
+        if (connection.state === 'authenticated')
+        {
+            connection.query(query, tokens, function(err, result)
+            {
+                handle_mysql_error(err);
+                var success = !err && result && result[0];
+                if (success)
+                {
+                    this.set_user_id(result[0].user_id);
+                    this.set_username(result[0].username);
+                    this.set_password_hash(result[0].password_hash);
+                    this.set_email(result[0].email);
+                    this.set_registration_code(result[0].registration_code);
+                    this.set_game_id(result[0].game_id);
+                    this.set_first_login(result[0].first_login);
+                    this.set_last_login(result[0].last_login);
+                }
+                callback();
             });
         }
         else
         {
-            callback('Cannot connect to database');
+            callback();
         }
     };
 
-    this.save_user = function(callback)
+    this.save = function(callback)
     {
+        var query;
+        if (this.get_user_id())
+        {
+            query = 'UPDATE ' + user_table + ' SET username=?, password_hash=?, email=?, registration_code=?, game_id=?, first_login=?, last_login=? WHERE user_id=?';
+        }
+        else
+        {
+            query = 'INSERT INTO ' + user_table + ' SET username=?, password_hash=?, email=?, registration_code=?, game_id=?, first_login=?, last_login=?, user_id=?';
+        }
+
+        if (connection.state === 'authenticated')
+        {
+            var tokens = [this.get_username(), this.get_password_hash(), this.get_email(), this.get_registration_code(), this.get_game_id(), this.get_first_login(), this.get_last_login(), this.get_user_id()];
+            connection.query(query, tokens, function(err, result)
+            {
+                handle_mysql_error(err);
+                if (result && result.insertId) {this.set_user_id(result.insertId);}
+                callback();
+            });
+        }
+        else
+        {
+            callback();
+        }
     };
 
-    this.is_registered = function() {return !!this.get_user_id();};
-
-    delete this.set_user_id;
-    delete this.set_first_login;
-    delete this.set_last_login;
-};
-
-User.from_login = function(username, password, callback)
-{
-    if (username in users)
+    this.set_password = function(password)
     {
-        return users[username];
+        var salt = bcrypt.genSaltSync(bcrypt_opts.hash_rounds);
+        var hash = bcrypt.hashSync(password, salt);
+        this.set_password_hash(hash);
+    };
+    this.check_login = function(username, password)
+    {
+        return username === this.get_username() && bcrypt.compareSync(password, this.get_password_hash());
+    };
+
+    var orig_set_email = this.set_email;
+    this.set_email = function(email)
+    {
+        var email_regex = /^((([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*)|((\x22)((((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(([\x01-\x08\x0b\x0c\x0e-\x1f\x7f]|\x21|[\x23-\x5b]|[\x5d-\x7e]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(\\([\x01-\x09\x0b\x0c\x0d-\x7f]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))))*(((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(\x22)))@((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?$/i;
+        var valid = email_regex.test(email);
+        if (valid) {orig_set_email(email);}
+        return valid;
+    };
+
+    this.generate_registration_code = function(email)
+    {
+        var code = '';
+        code += crypto.randomBytes(16).toString('base64');
+        code += ' ';
+        code += Buffer(email).toString('base64');
+        return code;
+    };
+    this.set_registered = function(registration_code)
+    {
+        if (registration_code === this.get_registration_code())
+        {
+            var email = registration_code.split(' ')[1];
+            this.set_email(email);
+            this.set_registration_code('');
+        }
+    }
+
+    this.get_registered = function()
+    {
+        return !!this.get_email();
+    };
+};
+User.load_user = function(username, callback)
+{
+    // Load user by username
+    var user = users[username];
+    if (typeof user === 'undefined')
+    {
+        user = users[username] = new User();
+        user.populate_from('username', username, callback);
     }
     else
     {
-        var user = new User();
-        user.set_username(username);
-        user.set_password(password);
-        user.populate_from_login(callback);
-        users[username] = user;
-        return user;
+        callback();
     }
+    return user;
+};
+
+var Map = function()
+{
+    if (!this instanceof Map)
+    {
+        throw new Error('A Map must be created with the new keyword');
+    }
+
+    var props = {
+        'map_id': 0,
+        'name': '',
+        'size_x': 0,
+        'size_y': 0,
+        'num_players': 0,
+        'cells': Uint16Array,
+        'creator_id': 0,
+        'creation_date': Date
+    };
+
+    // Each cell: territory/unclaimed/void, permanent, sectors/king
+
+    util.make_getters_setters(this, props);
+
+    this.get_notation = function()
+    {
+        var str = '';
+    };
+};
+
+var Match = function()
+{
+    if (!this instanceof Match)
+    {
+        throw new Error('A Match must be created with the new keyword');
+    }
+
+    var props = {
+        'game_id': 0,
+        'players': Array,
+        'map_id': 0,
+        'moves': Uint32Array,
+        'start_date': Date,
+        'end_date': Date
+    };
+
+    util.make_getters_setters(this, props);
+
+    this.get_notation = function()
+    {
+        var str = '';
+    };
 };
 
 
-var connection = function(spark)
+/*
+
+701
+6 2
+543
+
+// Move the N, NE, E, S, and SW sectors of the piece on b5 south in 2 turns
++2:b5.01245:4
+
+// Cancel the orders of all sectors of the piece on b5 on this turn
+:b5:
+
+Turns: 11
+Cell X: 25
+Cell Y: 25
+Sectors: 256
+Dir: 9
+
+*/
+
+
+var Session = function(spark)
 {
     var user;
-    spark.on('data', function(data)
+
+    var queries = {};
+    spark.on('data', function(obj)
     {
-        switch (data.query)
+        var query = obj.query;
+        delete obj.query;
+        var func = queries[query];
+        if (typeof func === 'function')
         {
-        case 'login':
-            user = User.from_login(data.username, data.password, function(err)
-            {
-                if (err)
-                {
-                    spark.write({
-                        'query': 'error',
-                        'msg': err
-                    });
-                }
-                if (data.reply)
-                {
-                    spark.write({
-                        'query': data.reply,
-                        'user': {
-                            'username': user.get_username(),
-                            'email': user.get_email(),
-                            'in_game': user.get_in_game(),
-                            'first_login': user.get_first_login(),
-                            'last_login': user.get_last_login()
-                        }
-                    });
-                }
-            });
-            break;
+            func(obj);
+        }
+        else
+        {
+            spark.write({'query': 'error', 'error': 'Invalid query "' + query + '"'});
         }
     });
+
+
+    queries.login = function(obj)
+    {
+        var tmp_user = User.load_user(obj.username, function()
+        {
+            var msg;
+            if (obj.password)
+            {
+                if (tmp_user.check_login(obj.username, obj.password))
+                {
+                    if (obj.register)
+                    {
+                        tmp_user.set_registered(obj.register);
+                        if (tmp_user.get_registered())
+                        {
+                            tmp_user.save();
+                        }
+                    }
+
+                    if (obj.get_registered())
+                    {
+                        user = tmp_user;
+                        user.set_last_login(new Date());
+                        user.save();
+
+                        msg = 'user logged in';
+                    }
+                    else
+                    {
+                        msg = 'email not validated';
+                    }
+                }
+                else
+                {
+                    msg = 'login incorrect';
+                }
+            }
+            else
+            {
+                if (tmp_user.get_username())
+                {
+                    msg = 'username unavailable';
+                }
+                else
+                {
+                    if (obj.finish)
+                    {
+                        user = tmp_user;
+                        user.set_username(obj.username);
+                        user.set_first_login(new Date());
+                        user.set_last_login(new Date());
+                        user.save();
+
+                        msg = 'guest logged in';
+                    }
+                    else
+                    {
+                        msg = 'username available';
+                    }
+                }
+            }
+
+            var user_json;
+            if (user instanceof User)
+            {
+                user_json = {
+                    'username': user.get_username(),
+                    'email': user.get_email(),
+                    'registered': user.get_registered(),
+                    'game_id': user.get_game_id(),
+                    'first_login': user.get_first_login(),
+                    'last_login': user.get_last_login()
+                };
+            }
+            else
+            {
+                user_json = false;
+            }
+
+            spark.write({'query': 'login_reply', 'msg': msg, 'user': user_json});
+        });
+    };
+
+    queries.register = function(obj)
+    {
+        if (user instanceof User && !user.get_registered() && obj.email)
+        {
+            var code = user.generate_registration_code(obj.email);
+            user.set_registration_code(code);
+            user.save();
+            var confirm_link = 'http://' + sector8_opts.host + sector8_opts.path + '?register=' + code;
+
+            var html = '';
+            html += '<html>';
+                html += '<body>';
+                    html += '<h3>Welcome to Sector-8</h3>';
+                    html += '<a href="' + confirm_link + '">Click here to confirm your registration</a>';
+                html += '</body>';
+            html += '</html>';
+
+            var text = '';
+            text += 'Welcome to Sector-8\n';
+            text += 'Go to this link to confirm your registration: ' + confirm_link + '\n';
+
+            email_transport.sendMail({
+                'from': 'Sector-8 <no-reply@' + sector8_opts.host + '>',
+                'to': user.get_username() + ' <' + obj.email + '>',
+                'subject': 'Sector-8 Registration Confirmation',
+                'html': html,
+                'text': text
+            }, function(err, resp)
+            {
+                var msg = err ? err.message : 'email_sent';
+                spark.write({'query': 'register_reply', 'msg': msg});
+            });
+        }
+    };
+
+    queries.logout = function(obj)
+    {
+        var msg;
+        if (user instanceof User)
+        {
+            user.set_last_login(new Date());
+            user.save();
+            user = undefined;
+
+            msg = 'logged out';
+        }
+        else
+        {
+            msg = 'not logged in';
+        }
+
+        spark.write({'query': 'logout_reply', 'msg': msg});
+    };
+
+    queries.enter_match = function(obj)
+    {
+        if (user instanceof User)
+        {
+        }
+    };
 };
-var server = primus.createServer(connection, primus_opts);
+var server = primus.createServer(Session, primus_opts);
