@@ -1,4 +1,4 @@
-goog.require('sector8.util.make_getters_setters');
+goog.require('util.make_getters_setters');
 
 goog.provide('sector8.map');
 
@@ -21,5 +21,5 @@ sector8.map = function()
         'symmetry_rot_180': false
     };
 
-    sector8.util.make_getters_setters(this, props);
+    util.make_getters_setters(this, props);
 };

@@ -12,20 +12,41 @@
     <script src="js/sector8/deps.js"></script>
     -->
 
-    <script src="http://localhost:7854/primus/primus.js"></script>
     <script src="js/bundle.js"></script>
 </head>
 <body>
-    <h2>Sector 8</h2>
+    <div class="left_menu">
+        <h2>Sector 8</h2>
+
+        <div class="stats">
+        </div>
+
+        <div class="recent_games">
+        </div>
+    </div>
+
+    <div class="center">
+        <div class="lobby">
+            <div class="lobby_games"></div>
+            <div class="lobby_users"></div>
+        </div>
+
+        <div class="games_feed">
+        </div>
+    </div>
+
 
     <script type="text/javascript">
+    goog.require('sector8');
     goog.require('sector8.game');
     goog.require('goog.dom');
     </script>
-    <!-- script tags will be inserted here -->
+    <!-- goog.require will insert script tags here -->
+
     <script type="text/javascript">
     var s8 = new sector8();
-    goog.dom.append(document.body, s8.render());
+    var game = new sector8.game(s8);
+    goog.dom.append(document.body, game.render());
     </script>
 </body>
 </html>

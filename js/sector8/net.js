@@ -1,9 +1,13 @@
-goog.require('goog.net.WebSocket');
+goog.require('primus');
 
 goog.provide('sector8.net');
 
 sector8.net = function()
 {
+    var primus = new Primus('http://localhost', {});
+
+
+
     var socket;
     var to_send = [];
     var listeners = {};

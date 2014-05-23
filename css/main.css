@@ -1,20 +1,36 @@
+/*
+body
+{
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+*/
+.left_menu {
+  border: 1px solid silver;
+  width: 300px;
+  height: 100%;
+  padding: 8px; }
+
 .board {
   position: absolute; }
 
-.cell {
+.board .cell {
   position: absolute;
   width: 75px;
   height: 75px;
   background-color: silver; }
 
-.sectoid {
+.board .sectoid {
   position: absolute;
   width: 70px;
   height: 70px;
   border-radius: 50%;
   border-color: black; }
 
-.sector {
+.board .sector {
   position: absolute;
   width: 70px;
   height: 70px;
@@ -23,7 +39,7 @@
   background-repeat: no-repeat;
   background-size: 50% 50%; }
 
-.sector_0 {
+.board .sector_0 {
   -webkit-transform: rotate(-67.5deg);
   -moz-transform: rotate(-67.5deg);
   -ms-transform: rotate(-67.5deg);
@@ -32,7 +48,7 @@
   top: -2px;
   left: 0px; }
 
-.sector_1 {
+.board .sector_1 {
   -webkit-transform: rotate(-22.5deg);
   -moz-transform: rotate(-22.5deg);
   -ms-transform: rotate(-22.5deg);
@@ -41,7 +57,7 @@
   top: -1.41421px;
   left: 1.41421px; }
 
-.sector_2 {
+.board .sector_2 {
   -webkit-transform: rotate(22.5deg);
   -moz-transform: rotate(22.5deg);
   -ms-transform: rotate(22.5deg);
@@ -50,7 +66,7 @@
   top: 0.0px;
   left: 2.0px; }
 
-.sector_3 {
+.board .sector_3 {
   -webkit-transform: rotate(67.5deg);
   -moz-transform: rotate(67.5deg);
   -ms-transform: rotate(67.5deg);
@@ -59,7 +75,7 @@
   top: 1.41421px;
   left: 1.41421px; }
 
-.sector_4 {
+.board .sector_4 {
   -webkit-transform: rotate(112.5deg);
   -moz-transform: rotate(112.5deg);
   -ms-transform: rotate(112.5deg);
@@ -68,7 +84,7 @@
   top: 2.0px;
   left: 0.0px; }
 
-.sector_5 {
+.board .sector_5 {
   -webkit-transform: rotate(157.5deg);
   -moz-transform: rotate(157.5deg);
   -ms-transform: rotate(157.5deg);
@@ -77,7 +93,7 @@
   top: 1.41421px;
   left: -1.41421px; }
 
-.sector_6 {
+.board .sector_6 {
   -webkit-transform: rotate(202.5deg);
   -moz-transform: rotate(202.5deg);
   -ms-transform: rotate(202.5deg);
@@ -86,7 +102,7 @@
   top: 0.0px;
   left: -2.0px; }
 
-.sector_7 {
+.board .sector_7 {
   -webkit-transform: rotate(247.5deg);
   -moz-transform: rotate(247.5deg);
   -ms-transform: rotate(247.5deg);
@@ -95,7 +111,7 @@
   top: -1.41421px;
   left: -1.41421px; }
 
-.center {
+.board .center {
   position: absolute;
   width: 40px;
   height: 40px;

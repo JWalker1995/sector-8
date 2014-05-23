@@ -1,6 +1,6 @@
-goog.provide('sector8.util.make_getters_setters');
+goog.provide('util.make_getters_setters');
 
-sector8.util.make_getters_setters = function(obj, props)
+util.make_getters_setters = function(obj, props)
 {
     for (var prop in props)
     {

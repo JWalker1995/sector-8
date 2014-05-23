@@ -1,5 +1,26 @@
 @import "util.scss";
 
+
+/*
+body
+{
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+*/
+
+.left_menu
+{
+    border: 1px solid silver;
+    width: 300px;
+    height: 100%;
+    padding: 8px;
+}
+
+
 $cell_size: 75px;
 $sectoid_size: 70px;
 $center_size: 40px;
@@ -18,7 +39,7 @@ $center_size: 40px;
     position: absolute;
 }
 
-.cell
+.board .cell
 {
     position: absolute;
     width: $cell_size;
@@ -26,7 +47,7 @@ $center_size: 40px;
     background-color: silver;
 }
 
-.sectoid
+.board .sectoid
 {
     position: absolute;
     width: $sectoid_size;
@@ -35,7 +56,7 @@ $center_size: 40px;
     border-color: black;
 }
 
-.sector
+.board .sector
 {
     position: absolute;
     width: $sectoid_size;
@@ -48,7 +69,7 @@ $center_size: 40px;
 
 @for $i from 0 to 8
 {
-    .sector_#{$i}
+    .board .sector_#{$i}
     {
         @include rotate($i * 45deg - 67.5deg);
         top : -2px * cos($i * 45deg);
@@ -56,7 +77,7 @@ $center_size: 40px;
     }
 }
 
-.center
+.board .center
 {
     position: absolute;
     width: $center_size;

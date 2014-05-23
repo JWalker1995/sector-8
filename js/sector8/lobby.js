@@ -8,7 +8,7 @@ sector8.lobby = function()
     var el;
     var render = function()
     {
-        el = goog.dom.createDom('div', {'class': 'lobby'), 'Loading...'});
+        el = goog.dom.createDom('div', {'class': 'lobby'}, 'Loading...');
         return el;
     };
 
