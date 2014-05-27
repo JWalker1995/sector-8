@@ -15,6 +15,7 @@
     <script src="js/bundle.js"></script>
 </head>
 <body>
+    <!--
     <div class="left_menu">
         <h2>Sector 8</h2>
 
@@ -34,18 +35,18 @@
         <div class="games_feed">
         </div>
     </div>
-
+    -->
 
     <script type="text/javascript">
-    goog.require('sector8');
+    goog.require('sector8.core');
     goog.require('sector8.game');
     goog.require('goog.dom');
     </script>
     <!-- goog.require will insert script tags here -->
 
     <script type="text/javascript">
-    var s8 = new sector8();
-    var game = new sector8.game(s8);
+    var core = new sector8.core();
+    var game = new sector8.game(core);
     goog.dom.append(document.body, game.render());
     </script>
 </body>

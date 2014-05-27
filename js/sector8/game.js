@@ -2,16 +2,18 @@ goog.require('sector8.login');
 
 goog.provide('sector8.game');
 
-sector8.game = function(s8)
+sector8.game = function(core)
 {
     var el;
 
-    var login = new sector8.login();
+    var login = new sector8.login(core);
 
     var render = function()
     {
         el = goog.dom.createDom('div', {'class': 'game'});
         goog.dom.append(el, login.render());
+
+        return el;
 
         /*
         Right column:

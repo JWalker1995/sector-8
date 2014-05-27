@@ -8,7 +8,8 @@ var email = require('nodemailer');
 
 var sector8_opts = {
     'host': 'localhost',
-    'path': '/sector8'
+    'path': '/sector8',
+    'debug': 4 // 0:none, 1:errors, 2:warnings, 3:notices, 4:messages
 };
 
 var bcrypt_ops = {
@@ -30,6 +31,8 @@ var primus_opts = {
     'iknowhttpsisbetter': true
 };
 
+
+var handle_error = function(level, 
 
 var handle_mysql_error = function(err)
 {

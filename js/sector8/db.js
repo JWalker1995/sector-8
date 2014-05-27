@@ -1,5 +1,5 @@
 goog.require('goog.asserts');
-goog.require('sector8');
+goog.require('sector8.core');
 
 goog.provide('sector8.db');
 
@@ -9,6 +9,5 @@ sector8.db = function()
 
     this.load_class = function(inst, table, col, value, callback)
     {
-
     };
 };

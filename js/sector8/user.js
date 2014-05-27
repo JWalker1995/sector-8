@@ -1,4 +1,4 @@
-goog.require('sector8');
+goog.require('sector8.core');
 goog.require('util.make_getters_setters');
 
 goog.provide('sector8.user');

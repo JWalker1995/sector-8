@@ -1,4 +1,4 @@
-goog.require('sector8');
+goog.require('sector8.core');
 
 goog.provide('sector8.classloader');
 

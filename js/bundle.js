@@ -1689,6 +1689,11 @@ goog.scope = function(fn) {
 };
 
 
+goog.provide('sector8.core');
+
+sector8.core = function()
+{
+};
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15579,7 +15584,7 @@ goog.require('goog.async.Throttle');
 
 goog.provide('sector8.login');
 
-sector8.login = function(s8)
+sector8.login = function(core)
 {
     var el;
 
@@ -15592,7 +15597,7 @@ sector8.login = function(s8)
                 html += '<input id="username_input" class="username_input" type="text" />';
                 html += '<span class="username_msg"></span>';
             html += '</div>';
-
+        
             html += '<div class="password">';
                 html += '<label for="password_input">Password:</label><br />';
                 html += '<input id="password_input" class="password_input" type="password" />';
@@ -15604,6 +15609,13 @@ sector8.login = function(s8)
         html += '</div>';
 
         el = goog.dom.htmlToDocumentFragment(html);
+
+        var username_input = goog.dom.getElementByClass('username_input', el);
+        username_input.oninput = username_input.onkeyup = username_input.onchange = username_changed;
+
+        goog.dom.getElementByClass('password', el).setAttribute('display', 'none');
+
+        return el;
     };
 
     this.render = goog.functions.cacheReturnValue(render);
@@ -15612,7 +15624,7 @@ sector8.login = function(s8)
     {
         button.setAttribute('disabled', 'disabled');
 
-        s8.net.request({
+        core.net.request({
             'query': 'login',
             'username': username.value,
             'password': password.value
@@ -15651,7 +15663,7 @@ sector8.login = function(s8)
             }
         });
     };
-    var update_throttle = new goog.async.Throttle(update, throttle_ms);
+    var update_throttle = new goog.async.Throttle(update, 1000);
 
     var login_successful = function()
     {
@@ -15676,26 +15688,23 @@ sector8.login = function(s8)
             username_invalid();
         }
     };
-
-    var username_input = goog.dom.getElementByClass('username_input', el);
-    username_input.oninput = username_input.onkeyup = username_input.onchange = username_changed;
-
-    goog.dom.getElementByClass('password', el).setAttribute('display', 'none');
 };
 goog.require('sector8.login');
 
 goog.provide('sector8.game');
 
-sector8.game = function(s8)
+sector8.game = function(core)
 {
     var el;
 
-    var login = new sector8.login();
+    var login = new sector8.login(core);
 
     var render = function()
     {
         el = goog.dom.createDom('div', {'class': 'game'});
         goog.dom.append(el, login.render());
+
+        return el;
 
         /*
         Right column:
@@ -15715,9 +15724,4 @@ sector8.game = function(s8)
     };
 
     this.render = goog.functions.cacheReturnValue(render);
-};
-goog.provide('sector8');
-
-sector8 = function()
-{
 };

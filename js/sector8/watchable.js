@@ -1,5 +1,5 @@
 goog.require('goog.asserts');
-goog.require('sector8');
+goog.require('sector8.core');
 
 goog.provide('sector8.watchable');
 

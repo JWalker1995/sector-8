@@ -3,7 +3,7 @@ goog.require('goog.async.Throttle');
 
 goog.provide('sector8.login');
 
-sector8.login = function(s8)
+sector8.login = function(core)
 {
     var el;
 
@@ -16,7 +16,7 @@ sector8.login = function(s8)
                 html += '<input id="username_input" class="username_input" type="text" />';
                 html += '<span class="username_msg"></span>';
             html += '</div>';
-
+        
             html += '<div class="password">';
                 html += '<label for="password_input">Password:</label><br />';
                 html += '<input id="password_input" class="password_input" type="password" />';
@@ -28,6 +28,13 @@ sector8.login = function(s8)
         html += '</div>';
 
         el = goog.dom.htmlToDocumentFragment(html);
+
+        var username_input = goog.dom.getElementByClass('username_input', el);
+        username_input.oninput = username_input.onkeyup = username_input.onchange = username_changed;
+
+        goog.dom.getElementByClass('password', el).setAttribute('display', 'none');
+
+        return el;
     };
 
     this.render = goog.functions.cacheReturnValue(render);
@@ -36,7 +43,7 @@ sector8.login = function(s8)
     {
         button.setAttribute('disabled', 'disabled');
 
-        s8.net.request({
+        core.net.request({
             'query': 'login',
             'username': username.value,
             'password': password.value
@@ -75,7 +82,7 @@ sector8.login = function(s8)
             }
         });
     };
-    var update_throttle = new goog.async.Throttle(update, throttle_ms);
+    var update_throttle = new goog.async.Throttle(update, 1000);
 
     var login_successful = function()
     {
@@ -100,9 +107,4 @@ sector8.login = function(s8)
             username_invalid();
         }
     };
-
-    var username_input = goog.dom.getElementByClass('username_input', el);
-    username_input.oninput = username_input.onkeyup = username_input.onchange = username_changed;
-
-    goog.dom.getElementByClass('password', el).setAttribute('display', 'none');
 };
