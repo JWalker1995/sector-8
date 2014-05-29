@@ -50,10 +50,9 @@ sector8.login = function(core)
     {
         els.button.setAttribute('disabled', 'disabled');
 
-        core.net.request({
-            'query': 'login',
-            'username': username.value,
-            'password': password.value
+        core.net.request('login', {
+            'username': els.username.value,
+            'password': els.password.value
         }, function(reply)
         {
             switch (reply.msg)

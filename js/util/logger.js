@@ -1,6 +1,6 @@
-goog.requires('goog.assert');
+goog.require('goog.asserts');
 
-goog.provides('util.logger');
+goog.provide('util.logger');
 
 util.logger = function()
 {
@@ -38,7 +38,7 @@ util.logger = function()
     
     this.add_handler = function(name, funcs, level)
     {
-        goog.assert(handler_funcs.length === handler_levels.length);
+        goog.asserts.assert(handler_funcs.length === handler_levels.length);
         
         if (funcs.length === levels.length)
         {

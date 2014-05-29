@@ -1,99 +1,58 @@
+goog.require('goog.asserts');
 goog.require('primus');
 
 goog.provide('sector8.net');
 
 sector8.net = function()
 {
-    var primus = new Primus('http://localhost', {});
-
-
-
-    var socket;
-    var to_send = [];
-    var listeners = {};
-
-    var connect = function()
+    var primus;
+    
+    this.connect = function(host, port)
     {
-        socket = new goog.net.WebSocket(true, retry_connect);
-        socket.listen(goog.net.WebSocket.EventType.OPENED, opened);
-        socket.listen(goog.net.WebSocket.EventType.MESSAGE, receive);
-        socket.open('127.0.0.1', 7854);
+        primus = new Primus('http://' + host + ':' + port, {});
+
+        primus.on('data', on_data);
     };
 
-    var retry_connect = function(tries)
+    var callbacks = [];
+    this.request = function(query, data, callback)
     {
-        var time = Math.pow(2, tries) * 1000;
-        return Math.min(time, 60 * 1000);
+        goog.asserts.assert(typeof data.query === 'undefined');
+        data.query = query;
+        
+        goog.asserts.assert(typeof data.reply === 'undefined');
+        var reply = callbacks.length;
+        callbacks[reply] = function(reply_data) {callback(query, reply_data);};
+        data.reply = reply;
+        
+        primus.write(data);
     };
-
-    var opened = function()
+    
+    var rouge_callback;
+    this.set_rouge_callback = function(callback) {rouge_callback = callback;};
+    
+    var on_data = function(data)
     {
-        for (var i in to_send)
+        var query;
+        if (typeof data.query !== 'undefined')
         {
-            socket.send(to_send[i]);
+            query = data.query;
+            delete data.query;
         }
-        to_send = [];
-    };
-
-    var receive = function(e)
-    {
-        var data = e.message;
-        var space = data.indexOf(' ');
-        var command = data.substr(0, space);
-        var msg = data.substr(space + 1);
-
-        if (command in listeners)
+        
+        if (typeof data.reply !== 'undefined')
         {
-            for (var i in listeners[command])
+            var callback = callbacks[data.reply];
+            delete data.reply;
+            
+            if (typeof callback === 'function')
             {
-                listeners[command][i](command, msg);
+                callback(data);
             }
         }
         else
         {
-            console.warn('Received a "' + command + '" command, but no listeners registered.');
+            rouge_callback(query, data);
         }
     };
-
-    var send = this.send = function(command, msg)
-    {
-        if (command.length >= 256)
-        {
-            throw new Error('sector8.net.send(): First argument (command) must be shorter than 256 characters');
-        }
-        if (msg.length >= 65536)
-        {
-            throw new Error('sector8.net.send(): Second argument (msg) must be shorter than 65536 characters');
-        }
-
-        var data = '';
-        data += String.fromCharCode(command.length);
-        data += String.fromCharCode(msg.length / 256);
-        data += String.fromCharCode(msg.length % 256);
-        data += command;
-        data += msg;
-
-        if (socket.isOpen())
-        {
-            socket.send(data);
-        }
-        else
-        {
-            to_send.push(data);
-        }
-    };
-
-    var listen = this.listen = function(command, callback)
-    {
-        if (command in listeners)
-        {
-            listeners[command] = [callback];
-        }
-        else
-        {
-            listeners[command].push(callback);
-        }
-    };
-
-    connect();
 };

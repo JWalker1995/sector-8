@@ -124,7 +124,7 @@ sector8.user = function()
 };
 sector8.user.validate_username = function(username)
 {
-    return username.length > 5;
+    return username.length > 0;
 };
 sector8.user.validate_email = function(email)
 {
