@@ -11000,7 +11000,31 @@ goog.async.Throttle.prototype.doAction_ = function() {
   this.timer_ = goog.Timer.callOnce(this.callback_, this.interval_);
   this.listener_.call(this.handler_);
 };
-// Copyright 2006 The Closure Library Authors. All Rights Reserved.
+goog.provide('util.make_children_obj');
+
+util.make_children_obj = function(el)
+{
+    var obj = {};
+    
+    var add_el = function(el)
+    {
+        if (el.className) {obj[el.className] = el;}
+        
+        var children = el.childNodes;
+        if (children && children.length)
+        {
+            var i = 0;
+            while (i < children.length)
+            {
+                add_el(children[i]);
+                i++;
+            }
+        }
+    };
+    
+    add_el(el);
+    return obj;
+};// Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15579,14 +15603,204 @@ goog.dom.DomHelper.prototype.getAncestorByClass =
  *     no match.
  */
 goog.dom.DomHelper.prototype.getAncestor = goog.dom.getAncestor;
+goog.provide('util.make_getters_setters');
+
+util.make_getters_setters = function(obj, props)
+{
+    for (var prop in props)
+    {
+        (function(prop)
+        {
+            var type = typeof props[prop];
+
+            obj['get_' + prop] = function()
+            {
+                return props[prop];
+            };
+
+            if (type === 'function')
+            {
+                type = props[prop];
+                obj['set_' + prop] = function(val)
+                {
+                    if (val instanceof type)
+                    {
+                        props[prop] = val;
+                    }
+                    else
+                    {
+                        throw new Error('set_' + prop + '(): Argument must be an instanceof ' + type);
+                    }
+                };
+                props[prop] = null;
+            }
+            else
+            {
+                if (props[prop] === '_func') {type = 'function';}
+                obj['set_' + prop] = function(val)
+                {
+                    if (typeof val === type)
+                    {
+                        props[prop] = val;
+                    }
+                    else
+                    {
+                        throw new Error('set_' + prop + '(): Argument must be of type ' + type);
+                    }
+                };
+            }
+        })(prop);
+    }
+};
+goog.require('sector8.core');
+goog.require('util.make_getters_setters');
+
+goog.provide('sector8.user');
+
+sector8.user = function()
+{
+    if (!(this instanceof sector8.user))
+    {
+        throw new Error('A sector8.user must be created with the new keyword');
+    }
+
+    var props = {
+        'user_id': 0,
+        'username': '',
+        'password_hash': '',
+        'email': '',
+        'registration_code': '',
+        'match_id': 0,
+        'first_login': Date,
+        'last_login': Date
+    };
+
+    util.make_getters_setters(this, props);
+
+
+    this.get_id = this.get_user_id;
+
+    this.populate_from = function(prop, value, callback)
+    {
+        var query = 'SELECT * FROM ' + user_table + ' WHERE ' + prop + '=? LIMIT 1';
+        populate(query, [value], callback);
+    };
+
+    var populate = function(query, tokens, callback)
+    {
+        if (connection.state === 'authenticated')
+        {
+            connection.query(query, tokens, function(err, result)
+            {
+                handle_mysql_error(err);
+                var success = !err && result && result[0];
+                if (success)
+                {
+                    this.set_user_id(result[0].user_id);
+                    this.set_username(result[0].username);
+                    this.set_password_hash(result[0].password_hash);
+                    this.set_email(result[0].email);
+                    this.set_registration_code(result[0].registration_code);
+                    this.set_match_id(result[0].match_id);
+                    this.set_first_login(result[0].first_login);
+                    this.set_last_login(result[0].last_login);
+                }
+                callback();
+            });
+        }
+        else
+        {
+            callback();
+        }
+    };
+
+    this.save = function(callback)
+    {
+        var query;
+        if (this.get_user_id())
+        {
+            query = 'UPDATE ' + user_table + ' SET username=?, password_hash=?, email=?, registration_code=?, match_id=?, first_login=?, last_login=? WHERE user_id=?';
+        }
+        else
+        {
+            query = 'INSERT INTO ' + user_table + ' SET username=?, password_hash=?, email=?, registration_code=?, match_id=?, first_login=?, last_login=?, user_id=?';
+        }
+
+        if (connection.state === 'authenticated')
+        {
+            var tokens = [this.get_username(), this.get_password_hash(), this.get_email(), this.get_registration_code(), this.get_match_id(), this.get_first_login(), this.get_last_login(), this.get_user_id()];
+            connection.query(query, tokens, function(err, result)
+            {
+                handle_mysql_error(err);
+                if (result && result.insertId) {this.set_user_id(result.insertId);}
+                callback();
+            });
+        }
+        else
+        {
+            callback();
+        }
+    };
+
+    this.set_password = function(password)
+    {
+        var salt = bcrypt.genSaltSync(bcrypt_opts.hash_rounds);
+        var hash = bcrypt.hashSync(password, salt);
+        this.set_password_hash(hash);
+    };
+    this.check_login = function(username, password)
+    {
+        return username === this.get_username() && bcrypt.compareSync(password, this.get_password_hash());
+    };
+
+    this.generate_registration_code = function(email)
+    {
+        var code = '';
+        code += crypto.randomBytes(16).toString('base64');
+        code += ' ';
+        code += Buffer(email).toString('base64');
+        return code;
+    };
+    this.set_registered = function(registration_code)
+    {
+        if (registration_code === this.get_registration_code())
+        {
+            var email = registration_code.split(' ')[1];
+            this.set_email(email);
+            this.set_registration_code('');
+        }
+    }
+
+    this.get_registered = function()
+    {
+        return !!this.get_email();
+    };
+};
+sector8.user.validate_username = function(username)
+{
+    return username.length > 5;
+};
+sector8.user.validate_email = function(email)
+{
+    var email_regex = /^((([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*)|((\x22)((((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(([\x01-\x08\x0b\x0c\x0e-\x1f\x7f]|\x21|[\x23-\x5b]|[\x5d-\x7e]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(\\([\x01-\x09\x0b\x0c\x0d-\x7f]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))))*(((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(\x22)))@((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?$/i;
+    return email_regex.test(email);
+};
+
 goog.require('goog.dom');
 goog.require('goog.async.Throttle');
+goog.require('util.make_children_obj');
+goog.require('sector8.user');
 
 goog.provide('sector8.login');
 
 sector8.login = function(core)
 {
-    var el;
+    if (!(this instanceof sector8.login))
+    {
+        throw new Error('A sector8.login must be created with the new keyword');
+    }
+
+    var els;
 
     var render = function()
     {
@@ -15608,12 +15822,12 @@ sector8.login = function(core)
             html += '<span class="button_msg"></span>';
         html += '</div>';
 
-        el = goog.dom.htmlToDocumentFragment(html);
+        var el = goog.dom.htmlToDocumentFragment(html);
+        els = util.make_children_obj(el);
 
-        var username_input = goog.dom.getElementByClass('username_input', el);
-        username_input.oninput = username_input.onkeyup = username_input.onchange = username_changed;
+        els.username_input.oninput = els.username_input.onkeyup = els.username_input.onchange = username_changed;
 
-        goog.dom.getElementByClass('password', el).setAttribute('display', 'none');
+        els.password.setAttribute('display', 'none');
 
         return el;
     };
@@ -15622,7 +15836,7 @@ sector8.login = function(core)
     
     var update = function()
     {
-        button.setAttribute('disabled', 'disabled');
+        els.button.setAttribute('disabled', 'disabled');
 
         core.net.request({
             'query': 'login',
@@ -15637,19 +15851,19 @@ sector8.login = function(core)
                 break;
 
             case 'email not validated':
-                set_msg('button_msg', 'Email not validated');
+                set_msg(els.button_msg, 'Email not validated');
                 break;
 
             case 'login incorrect':
-                set_msg('button_msg', 'Login incorrect');
+                set_msg(els.button_msg, 'Login incorrect');
                 break;
 
             case 'username invalid':
-                set_msg('username_msg', 'Username invalid');
+                set_msg(els.username_msg, 'Username invalid');
                 break;
 
             case 'username unavailable':
-                set_msg('username_msg', 'Username unavailable');
+                set_msg(els.username_msg, 'Username unavailable');
                 break;
 
             case 'guest logged in':
@@ -15657,7 +15871,7 @@ sector8.login = function(core)
                 break;
 
             case 'username available':
-                set_msg('username_msg', 'Username available');
+                set_msg(els.username_msg, 'Username available');
                 break;
 
             }
@@ -15669,23 +15883,20 @@ sector8.login = function(core)
     {
         el.setAttribute('display', 'none');
     };
-    var set_msg = function(el_class, msg)
+    
+    var set_msg = function(msg_el, msg)
     {
-        var msg = goog.dom.getElementByClass(el_class, el);
-        msg.innerText = msg;
-        msg.setAttribute('display', msg ? '' : 'none');
+        msg_el.innerText = msg;
+        msg_el.setAttribute('display', msg ? '' : 'none');
     };
 
     var username_changed = function()
     {
-        username_msg.setAttribute('display', 'none');
-        if (sector8.user.valiate_username(username.value))
+        console.log('abc');
+        set_msg(els.username_msg, '');
+        if (sector8.user.validate_username(els.username_input.value))
         {
             update_throttle.fire();
-        }
-        else
-        {
-            username_invalid();
         }
     };
 };
