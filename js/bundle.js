@@ -5129,47 +5129,51 @@ sector8.net = function()
         primus.on('data', on_data);
     };
 
-    var callbacks = [];
-    this.request = function(query, data, callback)
+    var callbacks = {};
+    var next_callback = 0;
+    
+    var request = function(query, data, callback)
     {
         goog.asserts.assert(typeof data.query === 'undefined');
-        data.query = query;
         
-        goog.asserts.assert(typeof data.reply === 'undefined');
-        var reply = callbacks.length;
-        callbacks[reply] = function(reply_data) {callback(query, reply_data);};
-        data.reply = reply;
+        var reply = '_' + (++next_callback);
+        data.query = query + ':' + reply;
+        
+        await(reply, callback);
         
         primus.write(data);
     };
     
-    var rouge_callback;
-    this.set_rouge_callback = function(callback) {rouge_callback = callback;};
+    var await = function(reply, callback)
+    {
+        callbacks[reply] = function(reply_query, reply_data)
+        {
+            callback(reply_data, function(reply_reply_data, callback)
+            {
+                request(reply_query[1], reply_reply_data, callback);
+            });
+        };
+    };
     
     var on_data = function(data)
     {
-        var query;
         if (typeof data.query !== 'undefined')
         {
-            query = data.query;
-            delete data.query;
-        }
-        
-        if (typeof data.reply !== 'undefined')
-        {
-            var callback = callbacks[data.reply];
-            delete data.reply;
-            
+            var query = data.query.split(':', 2);
+            var callback = callbacks[query[0]];
             if (typeof callback === 'function')
             {
-                callback(data);
+                delete data.query;
+                callback(query, data);
+                return;
             }
         }
-        else
-        {
-            rouge_callback(query, data);
-        }
+        
+        console.error('Received data with invalid query: ', data);
     };
+
+    this.request = request;
+    this.await = await;
 };
 goog.require('sector8.net');
 
@@ -5179,11 +5183,6 @@ sector8.core = function()
 {
     this.net = new sector8.net();
     this.net.connect('localhost', 7854);
-    
-    this.net.set_rouge_callback(function(query, data)
-    {
-        console.log('Rouge data: ', query, data);
-    });
 };
 // Copyright 2011 The Closure Library Authors. All Rights Reserved.
 //
