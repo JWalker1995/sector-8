@@ -3,13 +3,29 @@ goog.require('primus');
 
 goog.provide('sector8.net');
 
-sector8.net = function()
+sector8.net = function(core)
 {
     var primus;
     
     this.connect = function(host, port)
     {
-        primus = new Primus('http://' + host + ':' + port, {});
+        var primus_class;
+        if (core.is_client()) {primus_class = Primus;}
+        if (core.is_server()) {primus_class = require('primus');}
+        
+        if (core.is_client())
+        {
+            primus = new Primus('http://' + host + ':' + port, {});
+        }
+        if (core.is_server())
+        {
+            primus = require('primus').createServer(function connection(spark)
+            {
+            }, {
+                'port': 8080,
+                'transformer': 'websockets'
+            });
+        }
 
         primus.on('data', on_data);
     };
@@ -29,11 +45,11 @@ sector8.net = function()
         primus.write(data);
     };
     
-    var await = function(reply, callback)
+    var await = function(query, callback)
     {
         if (typeof callback === 'function')
         {
-            callbacks[reply] = function(reply_query, reply_data)
+            callbacks[query] = function(reply_query, reply_data)
             {
                 callback(reply_data, function(reply_reply_data, callback)
                 {

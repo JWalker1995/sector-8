@@ -1,4 +1,6 @@
-require('/home/joel/source/closure-library/closure/goog/bootstrap/nodejs');
+goog.require('sector8.core');
+
+goog.provide('sector8.server');
 
 var fs = require('fs');
 var primus = require('primus');
@@ -31,8 +33,6 @@ var primus_opts = {
     'iknowhttpsisbetter': true
 };
 
-
-var handle_error = function(level, 
 
 var handle_mysql_error = function(err)
 {
@@ -345,6 +345,11 @@ var Session = function(spark)
     });
 
 
+    queries.uptime = function(obj, reply)
+    {
+        reply({'uptime': process.uptime()});
+    };
+    
     queries.login = function(obj, reply)
     {
         var tmp_user = load_class(User, 'username', obj.username, function()

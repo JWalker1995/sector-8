@@ -1,16 +1,18 @@
+goog.require('util.logger');
 goog.require('sector8.net');
 
 goog.provide('sector8.core');
 
 sector8.core = function()
 {
-    var log_path = '';
+    var log_path = 'log/';
     
     var is_nodejs = !(typeof document !== 'undefined' && typeof document.getElementById === 'function');
     this.is_client = function() {return !is_nodejs;};
     this.is_server = function() {return is_nodejs;};
     
     this.logger = new util.logger();
+    var logger = this.logger;
     
     if (this.is_client())
     {
@@ -38,7 +40,7 @@ sector8.core = function()
         logger.update_handler('error_file', true, logger.notice, make_func(error_stream.write));
         
         logger.update_handler('stdout', true, logger.trace, make_func(process.stdout.write));
-        logger.update_handler('client', true, logger.notice, make_func(function(level, time, info, msg)
+        logger.update_handler('client', true, logger.notice, function(level, time, info, msg)
         {
             this.net.request('error', {
                 'level': level,
@@ -53,14 +55,14 @@ sector8.core = function()
         });
     }
 
-
-
-    logger.log_trace('trace');
-    logger.log_event('event');
-    logger.log_alert('alert');
-    logger.log_notice('notice');
-    logger.log_warning('warning');
-    logger.log_fatal('fatal');
+    /*
+    this.logger.log_trace('trace');
+    this.logger.log_event('event');
+    this.logger.log_alert('alert');
+    this.logger.log_notice('notice');
+    this.logger.log_warning('warning');
+    this.logger.log_fatal('fatal');
+    */
     
     this.net = new sector8.net(this);
     this.net.connect('localhost', 7854);
