@@ -31,13 +31,16 @@ sector8.net = function()
     
     var await = function(reply, callback)
     {
-        callbacks[reply] = function(reply_query, reply_data)
+        if (typeof callback === 'function')
         {
-            callback(reply_data, function(reply_reply_data, callback)
+            callbacks[reply] = function(reply_query, reply_data)
             {
-                request(reply_query[1], reply_reply_data, callback);
-            });
-        };
+                callback(reply_data, function(reply_reply_data, callback)
+                {
+                    request(reply_query[1], reply_reply_data, callback);
+                });
+            };
+        }
     };
     
     var on_data = function(data)

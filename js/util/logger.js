@@ -4,59 +4,109 @@ goog.provide('util.logger');
 
 util.logger = function()
 {
-    var levels = ['info', 'notice', 'warning', 'error'];
-    
-    var num_handlers = 0;
-    var handler_map = {};
-    var handler_funcs = [];
-    var handler_levels = [];
-    
-    var log = function(level, msg)
+    var throttle_ms = 1000;
+    var levels = ['trace', 'event', 'alert', 'notice', 'warning', 'fatal'];
+    var num_levels = levels.length;
+
+    // Trace - method calls, loops
+    // Event - user login/logout/register, moves
+    // Alert - user login failed 3 times, client sends invalid packet
+    // Notice - timeouts or reconnects
+    // Warning - assertion failed
+    // Fatal - cannot connect to db
+
+    var handlers = {};
+
+    this.update_handler = function(name, args)
     {
-        var i = 0;
-        while (i < num_handlers)
+        var handler = handlers[name];
+        if (typeof handler === 'undefined') {handler = handlers[name] = {};}
+
+        var i = 1;
+        var c = arguments.length;
+        while (i < c)
         {
-            if (level >= handler_levels[i])
+            var arg = arguments[i];
+            switch (typeof arg)
             {
-                if (typeof msg === 'function')
+            case 'object':
+                handler.levels = 0;
+                var j = 0;
+                while (j < arg.length)
                 {
-                    msg = msg();
+                    handler.levels |= 1 << arg[j];
+                    j++;
                 }
-                handler_funcs[i][level](msg);
+                break;
+
+            case 'number':
+                handler.levels = (1 << levels.length) - (1 << arg);
+                break;
+
+            case 'boolean':
+                handler.enabled = arg;
+                break;
+
+            case 'function':
+                handler.func = arg;
+                break;
             }
             i++;
         }
+
+        if (typeof handler.levels !== 'number') {handler.levels = 0;}
+        if (typeof handler.enabled !== 'boolean') {handler.enabled = true;}
+        if (typeof handler.func !== 'function') {delete handlers[name];}
     };
+
+    var infos = {};
     
-    var i = 0;
-    while (i < levels.length)
+    this.log = function(level, errno, msg)
     {
-        this['level_' + levels[i]] = i;
-        this[levels[i]] = log.bind(this, i);
-        i++;
-    }
-    
-    this.add_handler = function(name, funcs, level)
-    {
-        goog.asserts.assert(handler_funcs.length === handler_levels.length);
+        var date = new Date();
+        var time = date.getTime();
         
-        if (funcs.length === levels.length)
+        if (typeof errno === 'undefined') {errno = 0;}
+        var info = infos[errno];
+        if (typeof info !== 'object')
         {
-            handler_map[name] = num_handlers;
-            handler_funcs[num_handlers] = funcs;
-            handler_levels[num_handlers] = level || 0;
-            num_handlers++;
-            
-            return true;
+            info = infos[errno] = {
+                'errno': errno,
+                'throttles': 0,
+                'next_report': time
+            };
+        }
+        
+        if (time < info.next)
+        {
+            info.throttles++;
+            return;
         }
         else
         {
-            return false;
+            info.throttles = 0;
+            info.next_report = time + throttle_ms;
+        }
+        
+        var level_bit = 1 << level;
+        var level_str = levels[level];
+
+        for (var i in handlers)
+        {
+            var handler = handlers[i];
+            if (handler.enabled && (handler.levels & level_bit))
+            {
+                if (typeof msg === 'function') {msg = msg();}
+                handler.func(level_str, date, info, msg);
+            }
         }
     };
-    
-    this.set_handler_min_level = function(name, level)
+
+    var i = 0;
+    while (i < num_levels)
     {
-        handler_levels[handler_map[name]] = level;
-    };
+        this[levels[i]] = i;
+        this['log_' + levels[i]] = this.log.bind(this, i);
+        i++;
+    }
 };
