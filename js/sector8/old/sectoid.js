@@ -1,6 +1,6 @@
-goog.require('util.make_getters_setters');
-
 goog.provide('sector8.sectoid');
+
+goog.require('util.make_getters_setters');
 
 sector8.sectoid = function()
 {

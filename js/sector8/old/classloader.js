@@ -1,6 +1,6 @@
-goog.require('sector8.core');
-
 goog.provide('sector8.classloader');
+
+goog.require('sector8.core');
 
 sector8.classloader = function(db)
 {

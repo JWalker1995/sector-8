@@ -5113,14 +5113,26 @@ goog.asserts.assertObjectPrototypeIsIntact = function() {
     goog.asserts.fail(key + ' should not be enumerable in Object.prototype.');
   }
 };
+goog.provide('sector8.net');
+
 goog.require('goog.asserts');
 goog.require('primus');
 
-goog.provide('sector8.net');
-
-sector8.net = function()
+sector8.net = function(core)
 {
     var primus;
+    
+    this.listen = function(host, port)
+    {
+        primus = require('primus').createServer(function connection(spark)
+        {
+        }, {
+            'port': 8080,
+            'transformer': 'websockets'
+        });
+        
+        primus.on('data', on_data);
+    };
     
     this.connect = function(host, port)
     {
@@ -5144,11 +5156,11 @@ sector8.net = function()
         primus.write(data);
     };
     
-    var await = function(reply, callback)
+    var await = function(query, callback)
     {
         if (typeof callback === 'function')
         {
-            callbacks[reply] = function(reply_query, reply_data)
+            callbacks[query] = function(reply_query, reply_data)
             {
                 callback(reply_data, function(reply_reply_data, callback)
                 {
@@ -5178,72 +5190,326 @@ sector8.net = function()
     this.request = request;
     this.await = await;
 };
-goog.require('sector8.net');
+goog.provide('util.logger');
 
+goog.require('goog.asserts');
+
+util.logger = function()
+{
+    var throttle_ms = 1000;
+    var levels = ['all', 'trace', 'event', 'alert', 'notice', 'warning', 'fatal'];
+    var num_levels = levels.length;
+
+    // Trace - method calls, loops
+    // Event - user login/logout/register, moves
+    // Alert - user login failed 3 times, client sends invalid packet
+    // Notice - timeouts or reconnects
+    // Warning - assertion failed
+    // Fatal - cannot connect to db
+
+    var handlers = {};
+
+    this.update_handler = function(name, args)
+    {
+        var handler = handlers[name];
+        if (typeof handler === 'undefined') {handler = handlers[name] = {};}
+
+        var i = 1;
+        var c = arguments.length;
+        while (i < c)
+        {
+            var arg = arguments[i];
+            switch (typeof arg)
+            {
+            case 'object':
+                handler.levels = 0;
+                var j = 0;
+                while (j < arg.length)
+                {
+                    handler.levels |= 1 << arg[j];
+                    j++;
+                }
+                break;
+
+            case 'number':
+                handler.levels = (1 << levels.length) - (1 << arg);
+                break;
+
+            case 'boolean':
+                handler.enabled = arg;
+                break;
+
+            case 'function':
+                handler.func = arg;
+                break;
+            }
+            i++;
+        }
+
+        if (typeof handler.levels !== 'number') {handler.levels = 0;}
+        if (typeof handler.enabled !== 'boolean') {handler.enabled = true;}
+        if (typeof handler.func !== 'function') {delete handlers[name];}
+    };
+
+    var infos = {};
+    
+    this.log = function(level, errno, msg)
+    {
+        var date = new Date();
+        var time = date.getTime();
+        
+        if (typeof errno === 'undefined') {errno = 0;}
+        var info = infos[errno];
+        if (typeof info !== 'object')
+        {
+            info = infos[errno] = {
+                'errno': errno,
+                'throttles': 0,
+                'next_report': time
+            };
+        }
+        
+        if (time < info.next)
+        {
+            info.throttles++;
+            return;
+        }
+        else
+        {
+            info.throttles = 0;
+            info.next_report = time + throttle_ms;
+        }
+        
+        var level_bit = 1 << level;
+
+        for (var i in handlers)
+        {
+            var handler = handlers[i];
+            if (handler.enabled && (handler.levels & level_bit))
+            {
+                if (typeof msg === 'function') {msg = msg();}
+                handler.func(level, date, info, msg);
+            }
+        }
+    };
+
+    var i = 0;
+    while (i < num_levels)
+    {
+        this[levels[i]] = i;
+        this['log_' + levels[i]] = this.log.bind(this, i);
+        i++;
+    }
+    
+    this.get_level_str = function(level) {return levels[level];};
+};
 goog.provide('sector8.core');
+
+goog.require('util.logger');
+goog.require('sector8.net');
 
 sector8.core = function()
 {
-    var log_path = '';
-    
-    var is_nodejs = !(typeof document !== 'undefined' && typeof document.getElementById === 'function');
-    this.is_client = function() {return !is_nodejs;};
-    this.is_server = function() {return is_nodejs;};
-    
     this.logger = new util.logger();
-    
-    if (this.is_client())
-    {
-    }
-    
-    if (this.is_server())
-    {
-        var fs = require('fs');
-        var trace_stream = fs.createWriteStream(log_path + 'trace_file.log', {'flags': 'a', 'mode': 0666});
-        var event_stream = fs.createWriteStream(log_path + 'event_file.log', {'flags': 'a', 'mode': 0666});
-        var error_stream = fs.createWriteStream(log_path + 'error_file.log', {'flags': 'a', 'mode': 0666});
-        
-        var make_func = function(endpoint)
-        {
-            return function(level, time, info, msg)
-            {
-                var throttle_str = (info.throttles ? ' throttled ' + info.throttles + 'x' : '');
-                var str = level + ' ' + info.errno + throttle_str + ' at ' + time.getTime() + ' : ' + msg;
-                endpoint(str);
-            };
-        };
-        
-        logger.update_handler('trace_file', true, [logger.trace], make_func(trace_stream.write));
-        logger.update_handler('event_file', true, [logger.event, logger.alert], make_func(event_stream.write));
-        logger.update_handler('error_file', true, logger.notice, make_func(error_stream.write));
-        
-        logger.update_handler('stdout', true, logger.trace, make_func(process.stdout.write));
-        logger.update_handler('client', true, logger.notice, make_func(function(level, time, info, msg)
-        {
-            this.net.request('error', {
-                'level': level,
-                'time': time,
-                'msg': msg,
-                'errno': info.errno,
-                'throttles': info.throttles
-            });
-        });
-        logger.update_handler('email', true, logger.fatal, function(level, time, info, msg)
-        {
-        });
-    }
 
-
-
-    logger.log_trace('trace');
-    logger.log_event('event');
-    logger.log_alert('alert');
-    logger.log_notice('notice');
-    logger.log_warning('warning');
-    logger.log_fatal('fatal');
+    /*
+    this.logger.log_trace('trace');
+    this.logger.log_event('event');
+    this.logger.log_alert('alert');
+    this.logger.log_notice('notice');
+    this.logger.log_warning('warning');
+    this.logger.log_fatal('fatal');
+    */
     
     this.net = new sector8.net(this);
-    this.net.connect('localhost', 7854);
+};
+goog.provide('util.make_getters_setters');
+
+util.make_getters_setters = function(obj, props)
+{
+    for (var prop in props)
+    {
+        (function(prop)
+        {
+            var type = typeof props[prop];
+
+            obj['get_' + prop] = function()
+            {
+                return props[prop];
+            };
+
+            if (type === 'function')
+            {
+                type = props[prop];
+                obj['set_' + prop] = function(val)
+                {
+                    if (val instanceof type)
+                    {
+                        props[prop] = val;
+                    }
+                    else
+                    {
+                        throw new Error('set_' + prop + '(): Argument must be an instanceof ' + type);
+                    }
+                };
+                props[prop] = null;
+            }
+            else
+            {
+                if (props[prop] === '_func') {type = 'function';}
+                obj['set_' + prop] = function(val)
+                {
+                    if (typeof val === type)
+                    {
+                        props[prop] = val;
+                    }
+                    else
+                    {
+                        throw new Error('set_' + prop + '(): Argument must be of type ' + type);
+                    }
+                };
+            }
+        })(prop);
+    }
+};
+goog.provide('sector8.user');
+
+goog.require('sector8.core');
+goog.require('util.make_getters_setters');
+
+var user_table = 'test.users';
+
+sector8.user = function()
+{
+    if (!(this instanceof sector8.user))
+    {
+        throw new Error('A sector8.user must be created with the new keyword');
+    }
+
+    var props = {
+        'user_id': 0,
+        'username': '',
+        'password_hash': '',
+        'email': '',
+        'registration_code': '',
+        'match_id': 0,
+        'first_login': Date,
+        'last_login': Date
+    };
+
+    util.make_getters_setters(this, props);
+
+
+    this.get_id = this.get_user_id;
+
+    this.populate_from = function(prop, value, callback)
+    {
+        var query = 'SELECT * FROM ' + user_table + ' WHERE ' + prop + '=? LIMIT 1';
+        populate(query, [value], callback);
+    };
+
+    var populate = function(query, tokens, callback)
+    {
+        if (connection.state === 'authenticated')
+        {
+            connection.query(query, tokens, function(err, result)
+            {
+                handle_mysql_error(err);
+                var success = !err && result && result[0];
+                if (success)
+                {
+                    this.set_user_id(result[0].user_id);
+                    this.set_username(result[0].username);
+                    this.set_password_hash(result[0].password_hash);
+                    this.set_email(result[0].email);
+                    this.set_registration_code(result[0].registration_code);
+                    this.set_match_id(result[0].match_id);
+                    this.set_first_login(result[0].first_login);
+                    this.set_last_login(result[0].last_login);
+                }
+                callback();
+            });
+        }
+        else
+        {
+            callback();
+        }
+    };
+
+    this.save = function(callback)
+    {
+        var query;
+        if (this.get_user_id())
+        {
+            query = 'UPDATE ' + user_table + ' SET username=?, password_hash=?, email=?, registration_code=?, match_id=?, first_login=?, last_login=? WHERE user_id=?';
+        }
+        else
+        {
+            query = 'INSERT INTO ' + user_table + ' SET username=?, password_hash=?, email=?, registration_code=?, match_id=?, first_login=?, last_login=?, user_id=?';
+        }
+
+        if (connection.state === 'authenticated')
+        {
+            var tokens = [this.get_username(), this.get_password_hash(), this.get_email(), this.get_registration_code(), this.get_match_id(), this.get_first_login(), this.get_last_login(), this.get_user_id()];
+            connection.query(query, tokens, function(err, result)
+            {
+                handle_mysql_error(err);
+                if (result && result.insertId) {this.set_user_id(result.insertId);}
+                callback();
+            });
+        }
+        else
+        {
+            callback();
+        }
+    };
+
+    this.set_password = function(password)
+    {
+        var salt = bcrypt.genSaltSync(bcrypt_opts.hash_rounds);
+        var hash = bcrypt.hashSync(password, salt);
+        this.set_password_hash(hash);
+    };
+    this.check_login = function(username, password)
+    {
+        return username === this.get_username() && bcrypt.compareSync(password, this.get_password_hash());
+    };
+
+    this.generate_registration_code = function(email)
+    {
+        var code = '';
+        code += crypto.randomBytes(16).toString('base64');
+        code += ' ';
+        code += Buffer(email).toString('base64');
+        return code;
+    };
+    this.set_registered = function(registration_code)
+    {
+        if (registration_code === this.get_registration_code())
+        {
+            var email = registration_code.split(' ')[1];
+            this.set_email(email);
+            this.set_registration_code('');
+        }
+    }
+
+    this.get_registered = function()
+    {
+        return !!this.get_email();
+    };
+};
+sector8.user.validate_username = function(username)
+{
+    return username.length > 0;
+};
+sector8.user.validate_password = function(password)
+{
+    return password.length > 8;
+};
+sector8.user.validate_email = function(email)
+{
+    var email_regex = /^((([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*)|((\x22)((((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(([\x01-\x08\x0b\x0c\x0e-\x1f\x7f]|\x21|[\x23-\x5b]|[\x5d-\x7e]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(\\([\x01-\x09\x0b\x0c\x0d-\x7f]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))))*(((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(\x22)))@((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?$/i;
+    return email_regex.test(email);
 };
 // Copyright 2011 The Closure Library Authors. All Rights Reserved.
 //
@@ -17312,201 +17578,19 @@ goog.dom.DomHelper.prototype.getAncestorByClass =
  *     no match.
  */
 goog.dom.DomHelper.prototype.getAncestor = goog.dom.getAncestor;
-goog.provide('util.make_getters_setters');
-
-util.make_getters_setters = function(obj, props)
-{
-    for (var prop in props)
-    {
-        (function(prop)
-        {
-            var type = typeof props[prop];
-
-            obj['get_' + prop] = function()
-            {
-                return props[prop];
-            };
-
-            if (type === 'function')
-            {
-                type = props[prop];
-                obj['set_' + prop] = function(val)
-                {
-                    if (val instanceof type)
-                    {
-                        props[prop] = val;
-                    }
-                    else
-                    {
-                        throw new Error('set_' + prop + '(): Argument must be an instanceof ' + type);
-                    }
-                };
-                props[prop] = null;
-            }
-            else
-            {
-                if (props[prop] === '_func') {type = 'function';}
-                obj['set_' + prop] = function(val)
-                {
-                    if (typeof val === type)
-                    {
-                        props[prop] = val;
-                    }
-                    else
-                    {
-                        throw new Error('set_' + prop + '(): Argument must be of type ' + type);
-                    }
-                };
-            }
-        })(prop);
-    }
-};
-goog.require('sector8.core');
-goog.require('util.make_getters_setters');
-
-goog.provide('sector8.user');
-
-sector8.user = function()
-{
-    if (!(this instanceof sector8.user))
-    {
-        throw new Error('A sector8.user must be created with the new keyword');
-    }
-
-    var props = {
-        'user_id': 0,
-        'username': '',
-        'password_hash': '',
-        'email': '',
-        'registration_code': '',
-        'match_id': 0,
-        'first_login': Date,
-        'last_login': Date
-    };
-
-    util.make_getters_setters(this, props);
-
-
-    this.get_id = this.get_user_id;
-
-    this.populate_from = function(prop, value, callback)
-    {
-        var query = 'SELECT * FROM ' + user_table + ' WHERE ' + prop + '=? LIMIT 1';
-        populate(query, [value], callback);
-    };
-
-    var populate = function(query, tokens, callback)
-    {
-        if (connection.state === 'authenticated')
-        {
-            connection.query(query, tokens, function(err, result)
-            {
-                handle_mysql_error(err);
-                var success = !err && result && result[0];
-                if (success)
-                {
-                    this.set_user_id(result[0].user_id);
-                    this.set_username(result[0].username);
-                    this.set_password_hash(result[0].password_hash);
-                    this.set_email(result[0].email);
-                    this.set_registration_code(result[0].registration_code);
-                    this.set_match_id(result[0].match_id);
-                    this.set_first_login(result[0].first_login);
-                    this.set_last_login(result[0].last_login);
-                }
-                callback();
-            });
-        }
-        else
-        {
-            callback();
-        }
-    };
-
-    this.save = function(callback)
-    {
-        var query;
-        if (this.get_user_id())
-        {
-            query = 'UPDATE ' + user_table + ' SET username=?, password_hash=?, email=?, registration_code=?, match_id=?, first_login=?, last_login=? WHERE user_id=?';
-        }
-        else
-        {
-            query = 'INSERT INTO ' + user_table + ' SET username=?, password_hash=?, email=?, registration_code=?, match_id=?, first_login=?, last_login=?, user_id=?';
-        }
-
-        if (connection.state === 'authenticated')
-        {
-            var tokens = [this.get_username(), this.get_password_hash(), this.get_email(), this.get_registration_code(), this.get_match_id(), this.get_first_login(), this.get_last_login(), this.get_user_id()];
-            connection.query(query, tokens, function(err, result)
-            {
-                handle_mysql_error(err);
-                if (result && result.insertId) {this.set_user_id(result.insertId);}
-                callback();
-            });
-        }
-        else
-        {
-            callback();
-        }
-    };
-
-    this.set_password = function(password)
-    {
-        var salt = bcrypt.genSaltSync(bcrypt_opts.hash_rounds);
-        var hash = bcrypt.hashSync(password, salt);
-        this.set_password_hash(hash);
-    };
-    this.check_login = function(username, password)
-    {
-        return username === this.get_username() && bcrypt.compareSync(password, this.get_password_hash());
-    };
-
-    this.generate_registration_code = function(email)
-    {
-        var code = '';
-        code += crypto.randomBytes(16).toString('base64');
-        code += ' ';
-        code += Buffer(email).toString('base64');
-        return code;
-    };
-    this.set_registered = function(registration_code)
-    {
-        if (registration_code === this.get_registration_code())
-        {
-            var email = registration_code.split(' ')[1];
-            this.set_email(email);
-            this.set_registration_code('');
-        }
-    }
-
-    this.get_registered = function()
-    {
-        return !!this.get_email();
-    };
-};
-sector8.user.validate_username = function(username)
-{
-    return username.length > 0;
-};
-sector8.user.validate_email = function(email)
-{
-    var email_regex = /^((([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*)|((\x22)((((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(([\x01-\x08\x0b\x0c\x0e-\x1f\x7f]|\x21|[\x23-\x5b]|[\x5d-\x7e]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(\\([\x01-\x09\x0b\x0c\x0d-\x7f]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))))*(((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(\x22)))@((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?$/i;
-    return email_regex.test(email);
-};
+goog.provide('sector8.ui.login');
 
 goog.require('goog.dom');
+goog.require('goog.functions');
 goog.require('goog.async.Throttle');
 goog.require('util.make_children_obj');
 goog.require('sector8.user');
 
-goog.provide('sector8.login');
-
-sector8.login = function(core)
+sector8.ui.login = function(core)
 {
-    if (!(this instanceof sector8.login))
+    if (!(this instanceof sector8.ui.login))
     {
-        throw new Error('A sector8.login must be created with the new keyword');
+        throw new Error('A sector8.ui.login must be created with the new keyword');
     }
 
     var els;
@@ -17608,15 +17692,16 @@ sector8.login = function(core)
         }
     };
 };
-goog.require('sector8.login');
+goog.provide('sector8.ui.ui');
 
-goog.provide('sector8.game');
+goog.require('goog.functions');
+goog.require('sector8.ui.login');
 
-sector8.game = function(core)
+sector8.ui.ui = function(core)
 {
     var el;
 
-    var login = new sector8.login(core);
+    var login = new sector8.ui.login(core);
 
     var render = function()
     {
@@ -17643,4 +17728,26 @@ sector8.game = function(core)
     };
 
     this.render = goog.functions.cacheReturnValue(render);
+};
+goog.provide('sector8.client');
+
+goog.require('goog.functions');
+goog.require('sector8.ui.ui');
+
+sector8.client = function(core)
+{
+    var ui = new sector8.ui.ui(core);
+    
+    var run = function()
+    {
+        setup_net();
+        
+        return ui.render();
+    };
+    this.run = goog.functions.cacheReturnValue(run);
+    
+    var setup_net = function()
+    {
+        core.net.connect('localhost', 7854);
+    };
 };

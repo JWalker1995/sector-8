@@ -1,15 +1,16 @@
+goog.provide('sector8.ui.login');
+
 goog.require('goog.dom');
+goog.require('goog.functions');
 goog.require('goog.async.Throttle');
 goog.require('util.make_children_obj');
 goog.require('sector8.user');
 
-goog.provide('sector8.login');
-
-sector8.login = function(core)
+sector8.ui.login = function(core)
 {
-    if (!(this instanceof sector8.login))
+    if (!(this instanceof sector8.ui.login))
     {
-        throw new Error('A sector8.login must be created with the new keyword');
+        throw new Error('A sector8.ui.login must be created with the new keyword');
     }
 
     var els;

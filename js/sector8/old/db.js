@@ -1,7 +1,7 @@
+goog.provide('sector8.db');
+
 goog.require('goog.asserts');
 goog.require('sector8.core');
-
-goog.provide('sector8.db');
 
 sector8.db = function()
 {

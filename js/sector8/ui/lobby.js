@@ -1,9 +1,9 @@
+goog.provide('sector8.ui.lobby');
+
 goog.require('goog.dom');
 goog.require('goog.functions');
 
-goog.provide('sector8.lobby');
-
-sector8.lobby = function()
+sector8.ui.lobby = function()
 {
     var el;
     var render = function()

@@ -1,11 +1,11 @@
-goog.require('goog.asserts');
-
 goog.provide('util.logger');
+
+goog.require('goog.asserts');
 
 util.logger = function()
 {
     var throttle_ms = 1000;
-    var levels = ['trace', 'event', 'alert', 'notice', 'warning', 'fatal'];
+    var levels = ['all', 'trace', 'event', 'alert', 'notice', 'warning', 'fatal'];
     var num_levels = levels.length;
 
     // Trace - method calls, loops
@@ -89,7 +89,6 @@ util.logger = function()
         }
         
         var level_bit = 1 << level;
-        var level_str = levels[level];
 
         for (var i in handlers)
         {
@@ -97,7 +96,7 @@ util.logger = function()
             if (handler.enabled && (handler.levels & level_bit))
             {
                 if (typeof msg === 'function') {msg = msg();}
-                handler.func(level_str, date, info, msg);
+                handler.func(level, date, info, msg);
             }
         }
     };
@@ -109,4 +108,6 @@ util.logger = function()
         this['log_' + levels[i]] = this.log.bind(this, i);
         i++;
     }
+    
+    this.get_level_str = function(level) {return levels[level];};
 };

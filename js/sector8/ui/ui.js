@@ -1,12 +1,13 @@
-goog.require('sector8.login');
+goog.provide('sector8.ui.ui');
 
-goog.provide('sector8.game');
+goog.require('goog.functions');
+goog.require('sector8.ui.login');
 
-sector8.game = function(core)
+sector8.ui.ui = function(core)
 {
     var el;
 
-    var login = new sector8.login(core);
+    var login = new sector8.ui.login(core);
 
     var render = function()
     {

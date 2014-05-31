@@ -39,15 +39,15 @@
 
     <script type="text/javascript">
     goog.require('sector8.core');
-    goog.require('sector8.game');
+    goog.require('sector8.client');
     goog.require('goog.dom');
     </script>
     <!-- goog.require will insert script tags here -->
 
     <script type="text/javascript">
     var core = new sector8.core();
-    var game = new sector8.game(core);
-    goog.dom.append(document.body, game.render());
+    var client = new sector8.client(core);
+    goog.dom.append(document.body, client.run());
     </script>
 </body>
 </html>
