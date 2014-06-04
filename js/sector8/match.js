@@ -6,10 +6,7 @@ goog.provide('sector8.match');
 
 sector8.match = function()
 {
-    if (!this instanceof sector8.match)
-    {
-        throw new Error('A sector8.match must be created with the new keyword');
-    }
+    goog.asserts.assertInstanceof(this, sector8.match);
 
     var props = {
         'match_id': 0,

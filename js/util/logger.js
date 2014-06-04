@@ -10,8 +10,8 @@ util.logger = function()
 
     // Trace - method calls, loops
     // Event - user login/logout/register, moves
-    // Alert - user login failed 3 times, client sends invalid packet
-    // Notice - timeouts or reconnects
+    // Alert - user login failed 3 times
+    // Notice - timeouts or reconnects, client sends invalid packet
     // Warning - assertion failed
     // Fatal - cannot connect to db
 
@@ -59,19 +59,19 @@ util.logger = function()
         if (typeof handler.func !== 'function') {delete handlers[name];}
     };
 
+    /*
     var infos = {};
     
-    this.log = function(level, errno, msg)
+    this.log = function(level, type, msg)
     {
         var date = new Date();
         var time = date.getTime();
         
-        if (typeof errno === 'undefined') {errno = 0;}
-        var info = infos[errno];
+        var info = infos[type];
         if (typeof info !== 'object')
         {
-            info = infos[errno] = {
-                'errno': errno,
+            info = infos[type] = {
+                'type': type,
                 'throttles': 0,
                 'next_report': time
             };
@@ -100,14 +100,73 @@ util.logger = function()
             }
         }
     };
+    */
+    
+    this.get_reporter = function(level, reporter)
+    {
+        var info = {
+            'level': level,
+            'level_str': levels[level],
+            'reporter': reporter,
+            'throttles': 0,
+            'next_report': new Date().getTime()
+        };
+        
+        var level_bit = 1 << level;
+        
+        return function(msg)
+        {
+            var date = new Date();
+            var time = date.getTime();
+            
+            if (time < info.next)
+            {
+                info.throttles++;
+                return;
+            }
+            else
+            {
+                info.throttles = 0;
+                info.next_report = time + throttle_ms;
+            }
+
+            for (var i in handlers)
+            {
+                var handler = handlers[i];
+                if (handler.enabled && (handler.levels & level_bit))
+                {
+                    handler.func(date, info, msg_to_string(msg));
+                }
+            }
+        };
+    };
+    
+    var msg_to_string = function(msg)
+    {
+        switch (typeof msg)
+        {
+        case 'function':
+            msg = msg();
+            break;
+        
+        case 'object':
+            if (typeof msg.toString === 'function')
+            {
+                var toString = msg.toString();
+                if (typeof toString === 'string') {msg.toString = toString;}
+            }
+            msg = JSON.stringify(msg);
+            break;
+        }
+        
+        return msg + '';
+    };
 
     var i = 0;
     while (i < num_levels)
     {
         this[levels[i]] = i;
-        this['log_' + levels[i]] = this.log.bind(this, i);
+        //this['log_' + levels[i]] = this.log.bind(this, i);
         i++;
     }
-    
-    this.get_level_str = function(level) {return levels[level];};
 };

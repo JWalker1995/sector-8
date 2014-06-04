@@ -7,10 +7,7 @@ goog.require('sector8.sectoid');
 
 sector8.ui.match = function(map)
 {
-    if (!(this instanceof sector8.ui.match))
-    {
-        throw new Error('sector8.ui.match must be created with the new keyword');
-    }
+    goog.asserts.assertInstanceof(this, sector8.ui.match);
 
     var BOARD_SIZE_X = 8;
     var BOARD_SIZE_Y = 8;

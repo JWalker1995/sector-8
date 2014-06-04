@@ -1484,7 +1484,7 @@ Primus.prototype.client = function client() {
   });
 };
 Primus.prototype.authorization = false;
-Primus.prototype.pathname = "/sector8_socket";
+Primus.prototype.pathname = "/sector8/socket";
 Primus.prototype.encoder = function encoder(data, fn) {
   var err;
 

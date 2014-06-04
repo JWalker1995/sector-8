@@ -7,11 +7,8 @@ var user_table = 'test.users';
 
 sector8.user = function()
 {
-    if (!(this instanceof sector8.user))
-    {
-        throw new Error('A sector8.user must be created with the new keyword');
-    }
-
+    goog.asserts.assertInstanceof(this, sector8.user);
+    
     var props = {
         'user_id': 0,
         'username': '',

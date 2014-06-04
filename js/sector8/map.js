@@ -4,10 +4,7 @@ goog.require('util.make_getters_setters');
 
 sector8.map = function()
 {
-    if (!(this instanceof sector8.map))
-    {
-        throw new Error('sector8.map must be created with the new keyword');
-    }
+    goog.asserts.assertInstanceof(this, sector8.map);
 
     var props = {
         'map_id': 0,

@@ -4,12 +4,23 @@ goog.require('goog.functions');
 goog.require('sector8.core');
 goog.require('sector8.user');
 goog.require('sector8.map');
+goog.require('sector8.session');
 
+var fs = require('fs');
+var primus = require('primus');
+var mysql = require('mysql');
+
+// Like sector8.client, really should use inheritance here instead of passing core as an argument and proxying it's methods
 sector8.server = function(core)
 {
+    goog.asserts.assertInstanceof(this, sector8.server);
+    
     var run = function()
     {
         setup_logger();
+        setup_server();
+        write_client_js();
+        setup_mysql();
     };
     this.run = goog.functions.cacheReturnValue(run);
     
@@ -17,124 +28,63 @@ sector8.server = function(core)
     {
         var log_path = 'log/';
         
-        var fs = require('fs');
         var trace_stream = fs.createWriteStream(log_path + 'trace_file.log', {'flags': 'a', 'mode': 0666});
         var event_stream = fs.createWriteStream(log_path + 'event_file.log', {'flags': 'a', 'mode': 0666});
         var error_stream = fs.createWriteStream(log_path + 'error_file.log', {'flags': 'a', 'mode': 0666});
         
-        var logger = core.logger;
+        this.logger = core.logger;
         
         var make_func = function(endpoint)
         {
-            return function(level, time, info, msg)
+            return function(date, info, msg)
             {
                 var throttle_str = (info.throttles ? ' throttled ' + info.throttles + 'x' : '');
-                var str = logger.get_level_str(level) + ' ' + info.errno + throttle_str + ' at ' + time.getTime() + ' : ' + msg;
+                var str = info.level_str + ' ' + info.type + throttle_str + ' at ' + date.getTime() + ' : ' + msg;
                 endpoint(str);
             };
         };
         
-        logger.update_handler('trace_file', true, [logger.trace], make_func(trace_stream.write));
-        logger.update_handler('event_file', true, [logger.event, logger.alert], make_func(event_stream.write));
-        logger.update_handler('error_file', true, logger.notice, make_func(error_stream.write));
+        this.logger.update_handler('trace_file', true, [this.logger.trace], make_func(trace_stream.write));
+        this.logger.update_handler('event_file', true, [this.logger.event, this.logger.alert], make_func(event_stream.write));
+        this.logger.update_handler('error_file', true, this.logger.notice, make_func(error_stream.write));
         
-        logger.update_handler('stdout', true, logger.trace, make_func(process.stdout.write));
-        logger.update_handler('client', true, logger.notice, function(level, time, info, msg)
+        this.logger.update_handler('stdout', true, this.logger.trace, make_func(process.stdout.write));
+        this.logger.update_handler('client', true, this.logger.notice, function(date, info, msg)
         {
             this.net.request('error', {
-                'level': level,
-                'time': time,
+                'level': info.level_str,
+                'time': date,
                 'msg': msg,
-                'errno': info.errno,
+                'type': info.type,
                 'throttles': info.throttles
             });
         });
-        logger.update_handler('email', true, logger.fatal, function(level, time, info, msg)
+        this.logger.update_handler('email', true, this.logger.fatal, function(date, info, msg)
         {
         });
     };
-};
-
-var fs = require('fs');
-var primus = require('primus');
-var mysql = require('mysql');
-var bcrypt = require('bcrypt');
-var email = require('nodemailer');
-
-var sector8_opts = {
-    'host': 'localhost',
-    'path': '/sector8',
-    'debug': 4 // 0:none, 1:errors, 2:warnings, 3:notices, 4:messages
-};
-
-var bcrypt_ops = {
-    'hash_rounds': 12
-};
-
-var mysql_opts = {
-    'host': 'localhost',
-    'port': 3306,
-    'user': 'root',
-    'password': ''
-};
-
-var primus_opts = {
-    'port': 7854,
-    'pathname': '/sector8_socket',
-    'parser': 'JSON',
-    'transformer': 'websockets',
-    'iknowhttpsisbetter': true
-};
-
-
-var handle_mysql_error = function(err)
-{
-};
-var connection = mysql.createConnection(mysql_opts);
-connection.connect(handle_mysql_error);
-//connection.end();
-
-
-
-var load_class = function(Class, prop, value, callback)
-{
-    if (typeof Class.cache === 'undefined')
+    
+    var server;
+    var setup_server = function()
     {
-        Class.cache = {'id': {}};
-    }
-
-    var id_cache = Class.cache['id'];
-    var prop_cache = Class.cache[prop];
-    if (typeof prop_cache === 'undefined')
+        server = primus.createServer(sector8.session, core.primus_opts);
+    };
+    
+    var write_client_js = function()
     {
-        prop_cache = Class.cache[prop] = {};
-    }
+        var str = '';
+        str += 'goog.provide(\'primus\');\n';
+        str += '\n';
+        str += server.library();
 
-    var prop_inst = prop_cache[value];
-    if (typeof prop_inst === 'undefined' && prop_inst['get_' + prop]() === value)
+        fs.writeFileSync(__dirname + '/primus.js', str, 'utf-8');
+    };
+    
+    var setup_mysql = function()
     {
-        prop_inst = new Class();
-        prop_inst.populate_from(prop, value, callback);
-
-        var id_inst = id_cache[prop_inst.get_id()];
-        if (typeof id_inst === 'undefined')
-        {
-            id_cache[prop_inst.get_id()] = prop_inst;
-        }
-        else
-        {
-            delete prop_inst;
-            prop_inst = id_inst;
-        }
-
-        prop_cache[prop] = prop_inst;
-    }
-    else
-    {
-        callback();
-    }
-
-    return prop_inst;
+        var conn = mysql.createConnection(core.mysql_opts);
+        conn.connect(this.logger.get_reporter(this.logger.fatal, 'sector8.server.setup_mysql'));
+    };
 };
 
 
@@ -186,213 +136,3 @@ Dishonorable loss - When a player leaves a game without resigning and his oppone
 LN(games_played + 1) * (foreach game: stakes * (dishonorable_loss ? -1 : distance_from_last_place * (1 + legendary * 10))) / (sum_of_total_players)
 
 */
-
-
-var Session = function(spark)
-{
-    var user;
-
-    var queries = {};
-    spark.on('data', function(obj)
-    {
-        var reply = function(reply_obj)
-        {
-            reply_obj.query = obj.query + '_reply';
-            spark.write(reply_obj);
-        };
-
-        var func = queries[obj.query];
-        if (typeof func === 'function')
-        {
-            func(obj, reply);
-        }
-        else
-        {
-            reply({'error': 'Invalid query "' + obj.query + '"'});
-        }
-    });
-
-
-    queries.uptime = function(obj, reply)
-    {
-        reply({'uptime': process.uptime()});
-    };
-    
-    queries.login = function(obj, reply)
-    {
-        var tmp_user = load_class(User, 'username', obj.username, function()
-        {
-            var msg;
-            if (obj.password)
-            {
-                if (tmp_user.check_login(obj.username, obj.password))
-                {
-                    if (obj.register)
-                    {
-                        tmp_user.set_registered(obj.register);
-                        if (tmp_user.get_registered())
-                        {
-                            tmp_user.save();
-                        }
-                    }
-
-                    if (obj.get_registered())
-                    {
-                        user = tmp_user;
-                        user.set_last_login(new Date());
-                        user.save();
-
-                        msg = 'user logged in';
-                    }
-                    else
-                    {
-                        msg = 'email not validated';
-                    }
-                }
-                else
-                {
-                    msg = 'login incorrect';
-                }
-            }
-            else
-            {
-                if (!User.validate_username(obj.username))
-                {
-                    msg = 'username invalid';
-                }
-                else if (tmp_user.get_username())
-                {
-                    msg = 'username unavailable';
-                }
-                else
-                {
-                    if (obj.finish)
-                    {
-                        user = tmp_user;
-                        user.set_username(obj.username);
-                        user.set_first_login(new Date());
-                        user.set_last_login(new Date());
-                        user.save();
-
-                        msg = 'guest logged in';
-                    }
-                    else
-                    {
-                        msg = 'username available';
-                    }
-                }
-            }
-
-            var user_json;
-            if (user instanceof User)
-            {
-                user_json = {
-                    'username': user.get_username(),
-                    'email': user.get_email(),
-                    'registered': user.get_registered(),
-                    'match_id': user.get_match_id(),
-                    'first_login': user.get_first_login(),
-                    'last_login': user.get_last_login()
-                };
-            }
-            else
-            {
-                user_json = false;
-            }
-
-            reply({'msg': msg, 'user': user_json});
-        });
-    };
-
-    queries.register = function(obj, reply)
-    {
-        if (user instanceof User && !user.get_registered() && obj.password && obj.email)
-        {
-            if (User.validate_email(obj.email))
-            {
-                var code = user.generate_registration_code(obj.email);
-                user.set_registration_code(code);
-                user.save();
-                var confirm_link = 'http://' + sector8_opts.host + sector8_opts.path + '?register=' + code;
-
-                var html = '';
-                html += '<html>';
-                    html += '<body>';
-                        html += '<h3>Welcome to Sector-8</h3>';
-                        html += '<a href="' + confirm_link + '">Click here to confirm your registration</a>';
-                    html += '</body>';
-                html += '</html>';
-
-                var text = '';
-                text += 'Welcome to Sector-8\n';
-                text += 'Go to this link to confirm your registration: ' + confirm_link + '\n';
-
-                email_transport.sendMail({
-                    'from': 'Sector-8 <no-reply@' + sector8_opts.host + '>',
-                    'to': user.get_username() + ' <' + obj.email + '>',
-                    'subject': 'Sector-8 Registration Confirmation',
-                    'html': html,
-                    'text': text
-                }, function(err, resp)
-                {
-                    if (err)
-                    {
-                        reply({'error': err.message});
-                    }
-                    else
-                    {
-                        reply({'msg': 'email sent'});
-                    }
-                });
-            }
-            else
-            {
-                reply({'msg': 'email invalid'});
-            }
-        }
-    };
-
-    queries.logout = function(obj, reply)
-    {
-        var msg;
-        if (user instanceof User)
-        {
-            user.set_last_login(new Date());
-            user.save();
-            user = undefined;
-
-            msg = 'logged out';
-        }
-        else
-        {
-            msg = 'not logged in';
-        }
-
-        reply({'msg': msg});
-    };
-
-    queries.create_match = function(obj, reply)
-    {
-        if (user instanceof User)
-        {
-
-        }
-    };
-
-    queries.enter_match = function(obj, reply)
-    {
-        if (user instanceof User)
-        {
-
-        }
-    };
-};
-
-var server = primus.createServer(Session, primus_opts);
-
-var str = '';
-str += 'goog.provide(\'primus\');\n';
-str += '\n';
-str += server.library();
-
-fs.writeFileSync(__dirname + '/primus.js', str, 'utf-8');

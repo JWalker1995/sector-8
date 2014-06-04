@@ -5,6 +5,8 @@ goog.require('sector8.ui.login');
 
 sector8.ui.ui = function(core)
 {
+    goog.asserts.assertInstanceof(this, sector8.ui.ui);
+    
     var el;
 
     var login = new sector8.ui.login(core);

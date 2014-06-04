@@ -1,30 +1,14 @@
 goog.provide('sector8.net');
 
 goog.require('goog.asserts');
-goog.require('primus');
 
-sector8.net = function(core)
+sector8.net = function(core, spark)
 {
-    var primus;
+    goog.asserts.assertInstanceof(this, sector8.net);
     
-    this.listen = function(host, port)
-    {
-        primus = require('primus').createServer(function connection(spark)
-        {
-        }, {
-            'port': 8080,
-            'transformer': 'websockets'
-        });
-        
-        primus.on('data', on_data);
-    };
+    var reporter = core.logger.get_reporter(core.logger.notice, 'sector8.net');
     
-    this.connect = function(host, port)
-    {
-        primus = new Primus('http://' + host + ':' + port, {});
-
-        primus.on('data', on_data);
-    };
+    spark.on('data', on_data);
 
     var callbacks = {};
     var next_callback = 0;
@@ -38,7 +22,7 @@ sector8.net = function(core)
         
         await(reply, callback);
         
-        primus.write(data);
+        spark.write(data);
     };
     
     var await = function(query, callback)
@@ -69,7 +53,7 @@ sector8.net = function(core)
             }
         }
         
-        console.error('Received data with invalid query: ', data);
+        reporter('Received data with invalid query: ' + JSON.stringify(data));
     };
 
     this.request = request;

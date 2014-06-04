@@ -5,6 +5,8 @@ goog.require('goog.functions');
 
 sector8.ui.lobby = function()
 {
+    goog.asserts.assertInstanceof(this, sector8.ui.lobby);
+    
     var el;
     var render = function()
     {

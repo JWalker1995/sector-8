@@ -8,10 +8,7 @@ goog.require('sector8.user');
 
 sector8.ui.login = function(core)
 {
-    if (!(this instanceof sector8.ui.login))
-    {
-        throw new Error('A sector8.ui.login must be created with the new keyword');
-    }
+    goog.asserts.assertInstanceof(this, sector8.ui.login);
 
     var els;
 
