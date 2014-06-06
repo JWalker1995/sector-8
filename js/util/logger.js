@@ -116,6 +116,8 @@ util.logger = function()
         
         return function(msg)
         {
+            if (!msg) {return;}
+            
             var date = new Date();
             var time = date.getTime();
             

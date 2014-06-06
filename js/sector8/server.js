@@ -20,7 +20,7 @@ sector8.server = function(core)
         setup_logger();
         setup_server();
         write_client_js();
-        setup_mysql();
+        setup_facade();
     };
     this.run = goog.functions.cacheReturnValue(run);
     
@@ -67,7 +67,7 @@ sector8.server = function(core)
     var server;
     var setup_server = function()
     {
-        server = primus.createServer(sector8.session, core.primus_opts);
+        server = primus.createServer(sector8.session.bind(sector8.session, this), core.primus_opts);
     };
     
     var write_client_js = function()
@@ -80,10 +80,11 @@ sector8.server = function(core)
         fs.writeFileSync(__dirname + '/primus.js', str, 'utf-8');
     };
     
-    var setup_mysql = function()
+    var setup_facade = function()
     {
         var conn = mysql.createConnection(core.mysql_opts);
         conn.connect(this.logger.get_reporter(this.logger.fatal, 'sector8.server.setup_mysql'));
+        this.facade = new sector8.facade(conn);
     };
 };
 
@@ -126,6 +127,7 @@ Match creation options:
     Turn type (parallel, serial)
     Timer type (hourglass, per-turn, per-game)
     Shadow match (if yes, then a player can only see cells consecutive to his territory)
+    Unit match (if yes, then sectoids can only move one cell on each turn)
     Spectators
     
 

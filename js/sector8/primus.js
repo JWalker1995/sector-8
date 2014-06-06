@@ -414,7 +414,7 @@ try {
 
     //
     // If we don't obtain a port number (e.g. when using zombie) then try
-    // and guess at a value from the 'href' value
+    // and guess at a value from the 'href' value.
     //
     if (!data.port) {
       var splits = (data.href || '').split('/');
@@ -430,9 +430,17 @@ try {
     }
 
     //
-    // Safari 5.1.7 (windows) quirk: When parsing an URL without a port number
+    // IE quirk: The `protocol` is parsed as ":" when a protocol agnostic URL
+    // is used. In this case we extract the value from the `href` value.
+    //
+    if (':' === data.protocol) {
+      data.protocol = data.href.substr(0, data.href.indexOf(':') + 1);
+    }
+
+    //
+    // Safari 5.1.7 (windows) quirk: When parsing a URL without a port number
     // the `port` in the data object will default to "0" instead of the expected
-    // "". We're going to do an explicit check on "0" and force it "".
+    // "". We're going to do an explicit check on "0" and force it to "".
     //
     if ('0' === data.port) data.port = '';
 
@@ -1070,18 +1078,18 @@ Primus.prototype.backoff = function backoff(callback, opts) {
       ), opts.maxDelay)
     : opts.minDelay;
 
-  //
-  // Emit a `reconnecting` event with current reconnect options. This allows
-  // them to update the UI and provide their users with feedback.
-  //
-  primus.emit('reconnecting', opts);
-
   primus.timers.reconnect = setTimeout(function delay() {
     opts.backoff = false;
     primus.clearTimeout('reconnect');
 
     callback(undefined, opts);
   }, opts.timeout);
+
+  //
+  // Emit a `reconnecting` event with current reconnect options. This allows
+  // them to update the UI and provide their users with feedback.
+  //
+  primus.emit('reconnecting', opts);
 
   return primus;
 };
@@ -1124,7 +1132,19 @@ Primus.prototype.reconnect = function reconnect() {
 Primus.prototype.end = function end(data) {
   context(this, 'end');
 
-  if (this.readyState === Primus.CLOSED && !this.timers.connect) return this;
+  if (this.readyState === Primus.CLOSED && !this.timers.connect) {
+    //
+    // If we are reconnecting stop the reconnection procedure.
+    //
+    if (this.timers.reconnect) {
+      this.clearTimeout('reconnect');
+      this.attempt = null;
+      this.emit('end');
+    }
+
+    return this;
+  }
+
   if (data) this.write(data);
 
   this.writable = false;
@@ -1501,7 +1521,7 @@ Primus.prototype.decoder = function decoder(data, fn) {
 
   fn(err, data);
 };
-Primus.prototype.version = "2.2.1";
+Primus.prototype.version = "2.2.2";
 
 //
 // Hack 1: \u2028 and \u2029 are allowed inside string in JSON. But JavaScript

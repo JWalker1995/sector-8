@@ -3,14 +3,22 @@ goog.provide('sector8.ui.lobby');
 goog.require('goog.dom');
 goog.require('goog.functions');
 
-sector8.ui.lobby = function()
+sector8.ui.lobby = function(core)
 {
     goog.asserts.assertInstanceof(this, sector8.ui.lobby);
     
-    var el;
+    var challenge_list = new sector8.ui.challenge_list(core);
+    var user_list = new sector8.ui.user_list(core);
+    var match_list = new sector8.ui.match_list(core);
+
     var render = function()
     {
-        el = goog.dom.createDom('div', {'class': 'lobby'}, 'Loading...');
+        var el = goog.dom.createDom('div', {'class': 'lobby'});
+        
+        goog.dom.append(el, challenge_list.render());
+        goog.dom.append(el, user_list.render());
+        goog.dom.append(el, match_list.render());
+        
         return el;
     };
 

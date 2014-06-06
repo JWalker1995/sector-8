@@ -6,7 +6,7 @@ goog.require('sector8.net');
 var email = require('nodemailer');
 
 // Really should inherit from sector8.net
-sector8.session = function(spark)
+sector8.session = function(server, spark)
 {
     goog.asserts.assertInstanceof(this, sector8.session);
     
@@ -36,7 +36,7 @@ sector8.session = function(spark)
                         }
                     }
 
-                    if (data.get_registered())
+                    if (tmp_user.get_registered())
                     {
                         user = tmp_user;
                         user.set_last_login(new Date());
