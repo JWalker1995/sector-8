@@ -1,6 +1,5 @@
 goog.provide('sector8.user');
 
-goog.require('sector8.core');
 goog.require('util.make_getters_setters');
 
 var user_table = 'test.users';

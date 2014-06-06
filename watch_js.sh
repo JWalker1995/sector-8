@@ -13,7 +13,6 @@ when-changed -r js/sector8/ "\
         --root=js/util/ \
         --root=js/sector8/ \
         --namespace=goog.dom \
-        --namespace=sector8.core \
         --namespace=sector8.client \
         --output_mode=script \
         --compiler_jar=/home/joel/source/closure-compiler/build/compiler.jar \

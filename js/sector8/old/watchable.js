@@ -1,8 +1,6 @@
 goog.provide('sector8.watchable');
 
 goog.require('goog.asserts');
-goog.require('sector8.core');
-
 
 // lobby.*.user_id,username
 

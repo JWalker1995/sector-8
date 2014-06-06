@@ -3,7 +3,7 @@ goog.provide('sector8.session');
 goog.require('goog.asserts');
 goog.require('sector8.net');
 
-var email = require('nodemailer');
+//var mailer = require('nodemailer');
 
 // Really should inherit from sector8.net
 sector8.session = function(server, spark)
@@ -113,7 +113,7 @@ sector8.session = function(server, spark)
                 var code = user.generate_registration_code(data.email);
                 user.set_registration_code(code);
                 user.save();
-                var confirm_link = 'http://' + sector8_opts.host + sector8_opts.path + '?register=' + code;
+                var confirm_link = 'http://' + server.core.config.sector8.host + server.core.config.sector8.path + '?register=' + code;
 
                 var html = '';
                 html += '<html>';
@@ -128,7 +128,7 @@ sector8.session = function(server, spark)
                 text += 'Go to this link to confirm your registration: ' + confirm_link + '\n';
 
                 email_transport.sendMail({
-                    'from': 'Sector-8 <no-reply@' + sector8_opts.host + '>',
+                    'from': 'Sector-8 <no-reply@' + server.core.config.sector8.host + '>',
                     'to': user.get_username() + ' <' + data.email + '>',
                     'subject': 'Sector-8 Registration Confirmation',
                     'html': html,

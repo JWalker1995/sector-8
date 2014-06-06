@@ -102,6 +102,22 @@ util.logger = function()
     };
     */
     
+    this.log = function(level, msg)
+    {
+        if (!msg) {return;}
+        
+        var info = {
+            'level': level,
+            'level_str': levels[level]
+        };
+        
+        var level_bit = 1 << level;
+        
+        var date = new Date();
+        
+        log(level_bit, date, info, msg);
+    };
+    
     this.get_reporter = function(level, reporter)
     {
         var info = {
@@ -132,15 +148,21 @@ util.logger = function()
                 info.next_report = time + throttle_ms;
             }
 
-            for (var i in handlers)
-            {
-                var handler = handlers[i];
-                if (handler.enabled && (handler.levels & level_bit))
-                {
-                    handler.func(date, info, msg_to_string(msg));
-                }
-            }
+            log(level_bit, date, info, msg);
         };
+    };
+    
+    var log = function(level_bit, date, info, msg)
+    {
+        for (var i in handlers)
+        {
+            var handler = handlers[i];
+            if (handler.enabled && (handler.levels & level_bit))
+            {
+                if (typeof msg !== 'string') {msg = msg_to_string(msg);}
+                handler.func(date, info, msg);
+            }
+        }
     };
     
     var msg_to_string = function(msg)

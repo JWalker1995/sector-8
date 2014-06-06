@@ -1,7 +1,5 @@
 goog.provide('sector8.classloader');
 
-goog.require('sector8.core');
-
 sector8.classloader = function(db)
 {
     if (!(this instanceof sector8.classloader))

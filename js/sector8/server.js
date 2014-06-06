@@ -1,23 +1,28 @@
 goog.provide('sector8.server');
 
 goog.require('goog.functions');
-goog.require('sector8.core');
+goog.require('sector8.config');
+goog.require('sector8.facade');
 goog.require('sector8.user');
 goog.require('sector8.map');
 goog.require('sector8.session');
+goog.require('util.logger');
 
 var fs = require('fs');
 var primus = require('primus');
 var mysql = require('mysql');
 
 // Like sector8.client, really should use inheritance here instead of passing core as an argument and proxying it's methods
-sector8.server = function(core)
+sector8.server = function()
 {
     goog.asserts.assertInstanceof(this, sector8.server);
+ 
+    var _this = this;
     
     var run = function()
     {
         setup_logger();
+        setup_config();
         setup_server();
         write_client_js();
         setup_facade();
@@ -28,16 +33,19 @@ sector8.server = function(core)
     {
         var log_path = 'log/';
         
-        var trace_stream = fs.createWriteStream(log_path + 'trace_file.log', {'flags': 'a', 'mode': 0666});
-        var event_stream = fs.createWriteStream(log_path + 'event_file.log', {'flags': 'a', 'mode': 0666});
-        var error_stream = fs.createWriteStream(log_path + 'error_file.log', {'flags': 'a', 'mode': 0666});
+        var trace_stream = fs.createWriteStream(log_path + 'trace_file.log', {'flags': 'a', 'encoding': 'utf8', 'mode': 0666});
+        var event_stream = fs.createWriteStream(log_path + 'event_file.log', {'flags': 'a', 'encoding': 'utf8', 'mode': 0666});
+        var error_stream = fs.createWriteStream(log_path + 'error_file.log', {'flags': 'a', 'encoding': 'utf8', 'mode': 0666});
         
-        this.logger = core.logger;
+        debugger;
+        
+        this.logger = new util.logger();
         
         var make_func = function(endpoint)
         {
             return function(date, info, msg)
             {
+                debugger;
                 var throttle_str = (info.throttles ? ' throttled ' + info.throttles + 'x' : '');
                 var str = info.level_str + ' ' + info.type + throttle_str + ' at ' + date.getTime() + ' : ' + msg;
                 endpoint(str);
@@ -64,10 +72,17 @@ sector8.server = function(core)
         });
     };
     
+    var setup_config = function()
+    {
+        this.config = new sector8.config(this);
+        this.config.load('config/common.json');
+        this.config.load('config/server.json');
+    };
+    
     var server;
     var setup_server = function()
     {
-        server = primus.createServer(sector8.session.bind(sector8.session, this), core.primus_opts);
+        server = primus.createServer(sector8.session.bind(sector8.session, this), this.config.primus);
     };
     
     var write_client_js = function()
@@ -82,9 +97,9 @@ sector8.server = function(core)
     
     var setup_facade = function()
     {
-        var conn = mysql.createConnection(core.mysql_opts);
+        var conn = mysql.createConnection(this.config.mysql);
         conn.connect(this.logger.get_reporter(this.logger.fatal, 'sector8.server.setup_mysql'));
-        this.facade = new sector8.facade(conn);
+        this.facade = new sector8.facade(_this, conn);
     };
 };
 

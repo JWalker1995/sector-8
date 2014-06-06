@@ -6,20 +6,21 @@ sector8.facade = function(server, conn)
 {
     goog.asserts.assertInstanceof(this, sector8.facade);
 
-    var report_registration = server.logger.get_reporter(this.logger.fatal, 'sector8.facade.show_columns');
-    var report_load = server.logger.get_reporter(this.logger.error, 'sector8.facade.load');
+    var report_registration = server.core.logger.get_reporter(server.core.logger.fatal, 'sector8.facade.show_columns');
+    var report_load = server.core.logger.get_reporter(server.core.logger.error, 'sector8.facade.load');
+    var report_save = server.core.logger.get_reporter(server.core.logger.error, 'sector8.facade.save');
     
-    var classes = [];
+    var types = [];
     
     var showing = 0;
     var ready_callbacks = [];
     
-    this.register_class = function(class, table)
+    this.register_type = function(type, table)
     {
         showing++;
         
-        class._facade = classes.length;
-        var c = classes[classes.length] = {};
+        type._facade = types.length;
+        var c = types[types.length] = {};
         
         c.table = table;
         c.primaries = [];
@@ -32,24 +33,16 @@ sector8.facade = function(server, conn)
             report_registration(err);
             if (result)
             {
-                var primaries_sets = [];
-                var composites_sets = [];
+                var sets = [];
                 
                 var i = 0;
                 while (i < result.length)
                 {
                     var field = result[i].Field;
                     
-                    if (result[i].Key === 'PRI')
-                    {
-                        c.primaries.push(field);
-                        primaries_sets.push(field + '=?');
-                    }
-                    else
-                    {
-                        c.composites.push(field);
-                        composites_sets.push(field + '=?');
-                    }
+                    (result[i].Key === 'PRI' ? c.primaries : c.composites).push(field);
+                    c.cols.push(field);
+                    sets.push(field + '=?');
 
                     i++;
                 }
@@ -59,13 +52,8 @@ sector8.facade = function(server, conn)
                     report_registration('No primary key for table ' + table);
                 }
                 
-                primaries_sets = primaries_sets.join(', ');
-                composites_sets = composites_sets.join(', ');
-                
-                c.insert_query = 'INSERT INTO ' + table + ' SET ' + composites_sets + ', ' + primaries_sets;
-                c.update_query = 'UPDATE ' + table + ' SET ' + composites_sets + ' WHERE ' + primaries_sets;
-                
-                c.cols = c.composites.concat(c.primaries);
+                sets = sets.join(', ');
+                c.save_query = 'INSERT INTO ' + table + ' SET ' + sets + ' ON DUPLICATE KEY UPDATE ' + sets;
             }
             else
             {
@@ -91,10 +79,13 @@ sector8.facade = function(server, conn)
         {
             if (!inst.constructor._facade)
             {
-                report_load('Tried to load an unregistered class');
+                report_load('Tried to load an unregistered type');
+                return;
             }
             
-            var c = classes[inst.constructor._facade];
+            var c = types[inst.constructor._facade];
+            goog.asserts.assert(c);
+            
             var query = 'SELECT * FROM ' + c.table + ' WHERE ' + prop + '=? LIMIT 1';
             conn.query(query, [value], function(err, result)
             {
@@ -125,32 +116,25 @@ sector8.facade = function(server, conn)
         {
             if (!inst.constructor._facade)
             {
-                report_load('Tried to save an unregistered class');
+                report_load('Tried to save an unregistered type');
+                return;
             }
             
-            var c = classes[inst.constructor._facade];
-            var set = [];
-            for (var i in c.cols)
+            var c = types[inst.constructor._facade];
+            goog.asserts.assert(c);
+            
+            var tokens = [];
+            var i = 0;
+            while (i < c.cols.length)
             {
-                set.push(c.cols[i]
+                tokens[i] = inst['get_' + c.cols[i]]();
+                i++;
             }
             
-            var query = 'SELECT * FROM ' + c.table + ' WHERE ' + prop + '=? LIMIT 1';
-            conn.query(query, [value], function(err, result)
+            conn.query(c.save_query, tokens, function(err, result)
             {
-                report_load(err);
-                if (result)
-                {
-                    var i = 0;
-                    while (i < result.length)
-                    {
-                        for (var key in result[i])
-                        {
-                            inst['set_' + key](result[i][key]);
-                        }
-                        i++;
-                    }
-                }
+                report_save(err);
+                debugger;
                 callback();
             });
         };
@@ -160,6 +144,7 @@ sector8.facade = function(server, conn)
     };
 };
 
+/*
     this.save = function(callback)
     {
         var query;
@@ -190,7 +175,7 @@ sector8.facade = function(server, conn)
     
     
     
-    var load_class = function(class, cache, prop, value, callback)
+    var load_type = function(class, cache, prop, value, callback)
     {
         var id_cache = cache['id'];
         var prop_cache = cache[prop];
@@ -272,3 +257,4 @@ sector8.facade = function(server, conn)
             callback();
         }
     };
+*/
