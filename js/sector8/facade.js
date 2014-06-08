@@ -6,9 +6,9 @@ sector8.facade = function(server, conn)
 {
     goog.asserts.assertInstanceof(this, sector8.facade);
 
-    var report_registration = server.core.logger.get_reporter(server.core.logger.fatal, 'sector8.facade.show_columns');
-    var report_load = server.core.logger.get_reporter(server.core.logger.error, 'sector8.facade.load');
-    var report_save = server.core.logger.get_reporter(server.core.logger.error, 'sector8.facade.save');
+    var report_registration = server.logger.get_reporter(server.logger.fatal, 'sector8.facade.show_columns');
+    var report_load = server.logger.get_reporter(server.logger.error, 'sector8.facade.load');
+    var report_save = server.logger.get_reporter(server.logger.error, 'sector8.facade.save');
     
     var types = [];
     

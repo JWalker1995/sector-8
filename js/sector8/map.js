@@ -12,7 +12,7 @@ sector8.map = function()
         'num_players': 0,
         'size_x': 0,
         'size_y': 0,
-        'cells': Uint16Array,
+        'cells': Array,
         //'primes': [],
         'symmetry_flip_x': false,
         'symmetry_flip_y': false,
@@ -25,4 +25,9 @@ sector8.map = function()
     // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
 
     util.make_getters_setters(this, props);
+    
+    this.get_cell_index = function(x, y)
+    {
+        return y * this.get_size_x() + x;
+    };
 };

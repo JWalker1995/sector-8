@@ -8,7 +8,7 @@ sector8.match = function()
         'match_id': 0,
         'name': '',
         'players': Array,
-        'map_id': sector8.map,
+        'map': sector8.map,
         'turn_type': 0,
         'timer_type': 0,
         'spectators': true,
@@ -21,6 +21,24 @@ sector8.match = function()
     util.make_getters_setters(this, props);
 
     this.get_id = this.get_match_id;
+    
+    this.generate_colors = function()
+    {
+        var randomcolor = require('randomcolor');
+        
+        var c = this.get_players().length;
+        var colors = randomcolor({
+            'count': c
+        });
+        
+        var i = 0;
+        while (i < c)
+        {
+            var color = parseInt(colors[i].substr(1), 16);
+            this.get_players()[i].set_color(color)
+            i++;
+        }
+    };
     
     this.from_notation = function(str)
     {
@@ -60,11 +78,6 @@ sector8.match = function()
         // A +2-4 :b5.01245 @4*3
         
     };
-};
-
-sector8.board = function()
-{
-    // Cell: territory/unclaimed/void, permanent, sectoid (prime, sectors)
 };
 
 sector8.cell = function()
@@ -107,6 +120,19 @@ sector8.order = function()
         'sectoids': 0,
         'direction': 0,
         'distance': 0
+    };
+
+    util.make_getters_setters(this, props);
+};
+    
+sector8.player = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.player);
+
+    var props = {
+        'id': 0,
+        'color': 0,
+        'time': 0
     };
 
     util.make_getters_setters(this, props);

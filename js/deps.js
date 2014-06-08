@@ -11,8 +11,10 @@ goog.addDependency('../../../sector8/old/db.js', ['sector8.db'], ['goog.asserts'
 goog.addDependency('../../../sector8/old/sectoid.js', ['sector8.sectoid'], ['util.make_getters_setters']);
 goog.addDependency('../../../sector8/old/watchable.js', ['sector8.watchable'], ['goog.asserts']);
 goog.addDependency('../../../sector8/primus.js', ['primus'], []);
-goog.addDependency('../../../sector8/server.js', ['sector8.server'], ['goog.functions', 'sector8.config', 'sector8.facade', 'sector8.map', 'sector8.session', 'sector8.user', 'util.logger']);
+goog.addDependency('../../../sector8/server.js', ['sector8.server'], ['goog.functions', 'sector8.config', 'sector8.facade', 'sector8.map', 'sector8.session', 'sector8.user', 'util.gate', 'util.logger']);
 goog.addDependency('../../../sector8/session.js', ['sector8.session'], ['goog.asserts', 'sector8.net']);
+goog.addDependency('../../../sector8/ui/board.js', ['sector8.ui.board'], []);
+goog.addDependency('../../../sector8/ui/challenge_list.js', ['sector8.ui.challenge_list'], ['sector8.match']);
 goog.addDependency('../../../sector8/ui/lobby.js', ['sector8.ui.lobby'], ['goog.dom', 'goog.functions']);
 goog.addDependency('../../../sector8/ui/login.js', ['sector8.ui.login'], ['goog.async.Throttle', 'goog.dom', 'goog.functions', 'sector8.user', 'util.make_children_obj']);
 goog.addDependency('../../../sector8/ui/match.js', ['sector8.ui.match'], ['goog.dom', 'goog.functions', 'sector8.map', 'sector8.sectoid']);
@@ -21,6 +23,7 @@ goog.addDependency('../../../sector8/ui/user.js', ['sector8.ui.user'], ['goog.do
 goog.addDependency('../../../sector8/ui/user_list.js', ['sector8.ui.user_list'], ['goog.dom', 'goog.functions', 'util.make_children_obj']);
 goog.addDependency('../../../sector8/user.js', ['sector8.user'], ['util.make_getters_setters']);
 goog.addDependency('../../../util/class.js', ['util.class'], ['goog.asserts']);
+goog.addDependency('../../../util/gate.js', ['util.gate'], []);
 goog.addDependency('../../../util/logger.js', ['util.logger'], ['goog.asserts']);
 goog.addDependency('../../../util/make_children_obj.js', ['util.make_children_obj'], []);
 goog.addDependency('../../../util/make_getters_setters.js', ['util.make_getters_setters'], []);

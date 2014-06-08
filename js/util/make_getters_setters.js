@@ -46,4 +46,25 @@ util.make_getters_setters = function(obj, props)
             }
         })(prop);
     }
+    
+    obj.to_obj = function()
+    {
+        var o = {};
+        for (var prop in props)
+        {
+            o[prop] = obj['get_' + prop]();
+        }
+        return o;
+    };
+    
+    obj.from_obj = function(o)
+    {
+        for (var prop in props)
+        {
+            if (typeof o[prop] !== 'undefined')
+            {
+                obj['set_' + prop](o[prop]);
+            }
+        }
+    };
 };

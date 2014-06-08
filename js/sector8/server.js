@@ -7,6 +7,7 @@ goog.require('sector8.user');
 goog.require('sector8.map');
 goog.require('sector8.session');
 goog.require('util.logger');
+goog.require('util.gate');
 
 var fs = require('fs');
 var primus = require('primus');
@@ -16,8 +17,6 @@ var mysql = require('mysql');
 sector8.server = function()
 {
     goog.asserts.assertInstanceof(this, sector8.server);
- 
-    var _this = this;
     
     var run = function()
     {
@@ -26,6 +25,7 @@ sector8.server = function()
         setup_server();
         write_client_js();
         setup_facade();
+        setup_caches();
     };
     this.run = goog.functions.cacheReturnValue(run);
     
@@ -37,7 +37,10 @@ sector8.server = function()
         var event_stream = fs.createWriteStream(log_path + 'event_file.log', {'flags': 'a', 'encoding': 'utf8', 'mode': 0666});
         var error_stream = fs.createWriteStream(log_path + 'error_file.log', {'flags': 'a', 'encoding': 'utf8', 'mode': 0666});
         
-        debugger;
+        var gate = new util.gate(3);
+        trace_stream.on('open', gate.open);
+        event_stream.on('open', gate.open);
+        error_stream.on('open', gate.open);
         
         this.logger = new util.logger();
         
@@ -45,18 +48,17 @@ sector8.server = function()
         {
             return function(date, info, msg)
             {
-                debugger;
                 var throttle_str = (info.throttles ? ' throttled ' + info.throttles + 'x' : '');
                 var str = info.level_str + ' ' + info.type + throttle_str + ' at ' + date.getTime() + ' : ' + msg;
                 endpoint(str);
             };
         };
         
-        this.logger.update_handler('trace_file', true, [this.logger.trace], make_func(trace_stream.write));
-        this.logger.update_handler('event_file', true, [this.logger.event, this.logger.alert], make_func(event_stream.write));
-        this.logger.update_handler('error_file', true, this.logger.notice, make_func(error_stream.write));
+        this.logger.update_handler('trace_file', true, [this.logger.trace], make_func(gate.pass(trace_stream.write.bind(trace_stream))));
+        this.logger.update_handler('event_file', true, [this.logger.event, this.logger.alert], make_func(gate.pass(event_stream.write.bind(event_stream))));
+        this.logger.update_handler('error_file', true, this.logger.notice, make_func(gate.pass(error_stream.write.bind(error_stream))));
         
-        this.logger.update_handler('stdout', true, this.logger.trace, make_func(process.stdout.write));
+        this.logger.update_handler('stdout', true, this.logger.trace, make_func(process.stdout.write.bind(process.stdout)));
         this.logger.update_handler('client', true, this.logger.notice, function(date, info, msg)
         {
             this.net.request('error', {
@@ -70,36 +72,59 @@ sector8.server = function()
         this.logger.update_handler('email', true, this.logger.fatal, function(date, info, msg)
         {
         });
+        
+        this.logger.log(this.logger.trace, 'Started logger');
     };
     
     var setup_config = function()
     {
+        this.logger.log(this.logger.trace, 'Importing config...');
+        
         this.config = new sector8.config(this);
         this.config.load('config/common.json');
         this.config.load('config/server.json');
+        
+        this.logger.log(this.logger.trace, 'Imported config');
     };
     
     var server;
     var setup_server = function()
     {
+        this.logger.log(this.logger.trace, 'Creating server...');
         server = primus.createServer(sector8.session.bind(sector8.session, this), this.config.primus);
+        this.logger.log(this.logger.trace, 'Created server');
     };
     
     var write_client_js = function()
     {
+        this.logger.log(this.logger.trace, 'Writing client js...');
+        
         var str = '';
         str += 'goog.provide(\'primus\');\n';
         str += '\n';
         str += server.library();
 
         fs.writeFileSync(__dirname + '/primus.js', str, 'utf-8');
+        
+        this.logger.log(this.logger.trace, 'Wrote client js');
     };
     
     var setup_facade = function()
     {
+        this.logger.log(this.logger.trace, 'Creating mysql connection...');
         var conn = mysql.createConnection(this.config.mysql);
+        
+        this.logger.log(this.logger.trace, 'Connecting to mysql server...');
         conn.connect(this.logger.get_reporter(this.logger.fatal, 'sector8.server.setup_mysql'));
-        this.facade = new sector8.facade(_this, conn);
+        
+        this.logger.log(this.logger.trace, 'Creating facade...');
+        this.facade = new sector8.facade(this, conn);
+        
+        this.logger.log(this.logger.trace, 'Created facade');
+    };
+    
+    var setup_caches = function()
+    {
     };
 };
 

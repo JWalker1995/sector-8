@@ -170,6 +170,15 @@ sector8.session = function(server, spark)
 
         reply({'msg': msg});
     });
+    
+    net.await('matches', function(data, reply)
+    {
+        switch (data.type)
+        {
+        case 'challenge':
+            break;
+        }
+    });
 
     net.await('create_match', function(data, reply)
     {

@@ -154,36 +154,41 @@ util.logger = function()
     
     var log = function(level_bit, date, info, msg)
     {
+        var process = true;
+        
         for (var i in handlers)
         {
             var handler = handlers[i];
             if (handler.enabled && (handler.levels & level_bit))
             {
-                if (typeof msg !== 'string') {msg = msg_to_string(msg);}
+                if (process)
+                {
+                    msg = process_msg(msg);
+                    process = false;
+                }
                 handler.func(date, info, msg);
             }
         }
     };
     
-    var msg_to_string = function(msg)
+    var process_msg = function(msg)
     {
-        switch (typeof msg)
+        if (typeof msg === 'function')
         {
-        case 'function':
             msg = msg();
-            break;
+        }
         
-        case 'object':
+        if (typeof msg === 'object')
+        {
             if (typeof msg.toString === 'function')
             {
                 var toString = msg.toString();
                 if (typeof toString === 'string') {msg.toString = toString;}
             }
             msg = JSON.stringify(msg);
-            break;
         }
         
-        return msg + '';
+        return msg + '\n';
     };
 
     var i = 0;

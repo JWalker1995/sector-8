@@ -16,7 +16,8 @@ sector8.user = function()
         'registration_code': '',
         'match_id': 0,
         'first_login': Date,
-        'last_login': Date
+        'last_login': Date,
+        'logins': 0
     };
 
     util.make_getters_setters(this, props);
