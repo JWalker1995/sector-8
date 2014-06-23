@@ -1,8 +1,9 @@
 goog.provide('sector8.client');
 
 goog.require('goog.functions');
-goog.require('sector8.ui.ui');
+goog.require('sector8.config');
 goog.require('sector8.net');
+goog.require('sector8.ui.ui');
 goog.require('util.logger');
 goog.require('primus');
 
@@ -43,4 +44,4 @@ sector8.client = function()
 
         this.net = new sector8.net(this, primus);
     };
-});
+};

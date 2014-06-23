@@ -1,8 +1,8 @@
 .sass-cache/
 
 local/
-
 log/
-
 config/
+
+node_modules/
 

@@ -17,7 +17,7 @@ sector8.config = function(core)
         core.logger.log(core.logger.trace, 'Finished parsing config.');
 
         copy(_this, config);
-    }
+    };
     
     var copy = function(to, from)
     {

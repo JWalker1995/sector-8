@@ -8,7 +8,7 @@ util.gate = function(times)
     
     this.open = function()
     {
-        if (times) {times--;}
+        times--;
         if (!times)
         {
             var i = 0;

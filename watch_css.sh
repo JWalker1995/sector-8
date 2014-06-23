@@ -1,4 +1,4 @@
 #!/bin/sh
 
-sass --scss --watch css:css
+sass --scss --watch css/main.scss:public/bundle.css
 

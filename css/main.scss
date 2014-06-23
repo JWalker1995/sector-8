@@ -87,3 +87,29 @@ $center_size: 40px;
     border-radius: 50%;
     background-color: red;
 }
+
+.cell.void
+{
+    opacity: 50%;
+}
+.cell.permanent
+{
+    border-width: 10px;
+}
+
+.cell.player_0
+{
+    color: silver;
+}
+.cell.player_1
+{
+    color: red;
+}
+.cell.player_2
+{
+    color: green;
+}
+.cell.player_3
+{
+    color: blue;
+}
