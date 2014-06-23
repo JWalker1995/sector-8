@@ -8,8 +8,6 @@ sector8.net = function(core, spark)
     
     var reporter = core.logger.get_reporter(core.logger.notice, 'sector8.net');
     
-    spark.on('data', on_data);
-
     var callbacks = {};
     var next_callback = 0;
     
@@ -58,4 +56,6 @@ sector8.net = function(core, spark)
 
     this.request = request;
     this.await = await;
+    
+    spark.on('data', on_data);
 };

@@ -49,8 +49,8 @@ sector8.ui.login = function(core)
         els.button.setAttribute('disabled', 'disabled');
 
         core.net.request('login', {
-            'username': els.username.value,
-            'password': els.password.value
+            'username': els.username_input.value,
+            'password': els.password_input.value
         }, function(reply)
         {
             switch (reply.msg)
@@ -101,7 +101,6 @@ sector8.ui.login = function(core)
 
     var username_changed = function()
     {
-        console.log('abc');
         set_msg(els.username_msg, '');
         if (sector8.user.validate_username(els.username_input.value))
         {

@@ -3541,8 +3541,6 @@ sector8.net = function(core, spark)
     
     var reporter = core.logger.get_reporter(core.logger.notice, 'sector8.net');
     
-    spark.on('data', on_data);
-
     var callbacks = {};
     var next_callback = 0;
     
@@ -3591,43 +3589,10 @@ sector8.net = function(core, spark)
 
     this.request = request;
     this.await = await;
+    
+    spark.on('data', on_data);
 };
-goog.provide('sector8.config');
-
-var fs = require('fs');
-
-sector8.config = function(core)
-{
-    var _this = this;
-    
-    this.load = function(path)
-    {
-        core.logger.log(core.logger.trace, 'Loading config at path "' + path + '"...');
-        var json = fs.readFileSync(path);
-
-        core.logger.log(core.logger.trace, 'Parsing config...');
-        var config = JSON.parse(json);
-
-        core.logger.log(core.logger.trace, 'Finished parsing config.');
-
-        copy(_this, config);
-    };
-    
-    var copy = function(to, from)
-    {
-        for (var i in from)
-        {
-            if (typeof to[i] !== 'object')
-            {
-                to[i] = from[i];
-            }
-            else
-            {
-                copy(to[i], from[i]);
-            }
-        }
-    };
-};goog.provide('util.make_getters_setters');
+goog.provide('util.make_getters_setters');
 
 util.make_getters_setters = function(obj, props)
 {
@@ -15951,8 +15916,8 @@ sector8.ui.login = function(core)
         els.button.setAttribute('disabled', 'disabled');
 
         core.net.request('login', {
-            'username': els.username.value,
-            'password': els.password.value
+            'username': els.username_input.value,
+            'password': els.password_input.value
         }, function(reply)
         {
             switch (reply.msg)
@@ -16003,7 +15968,6 @@ sector8.ui.login = function(core)
 
     var username_changed = function()
     {
-        console.log('abc');
         set_msg(els.username_msg, '');
         if (sector8.user.validate_username(els.username_input.value))
         {
@@ -17632,7 +17596,54 @@ if (
     Primus.prototype.AVOID_WEBSOCKETS = true;
   }
 }
- return Primus; });goog.provide('util.logger');
+ return Primus; });goog.provide('sector8.config.common');
+
+sector8.config.common = function()
+{
+    util.deepcopy(this, {
+        "sector8": {
+            "host": "localhost",
+            "path": "/sector8"
+        },
+        "primus": {
+            "host": "localhost",
+            "port": 7854,
+            "pathname": "/sector8/socket",
+            "parser": "JSON",
+            "transformer": "websockets",
+            "iknowhttpsisbetter": true
+        },
+        "bcrypt": {
+            "hash_rounds": 12
+        }
+    });
+};goog.provide('util.deepcopy');
+
+util.deepcopy = function(to, from)
+{
+    for (var i in from)
+    {
+        if (typeof to[i] !== 'object')
+        {
+            to[i] = from[i];
+        }
+        else
+        {
+            copy(to[i], from[i]);
+        }
+    }
+};goog.provide('sector8.config.client');
+
+goog.require('util.deepcopy');
+goog.require('sector8.config.common');
+
+sector8.config.client = function()
+{
+    util.deepcopy(this, new sector8.config.common());
+    
+    util.deepcopy(this, {
+    });
+};goog.provide('util.logger');
 
 goog.require('goog.asserts');
 
@@ -17836,15 +17847,16 @@ util.logger = function()
 goog.provide('sector8.client');
 
 goog.require('goog.functions');
-goog.require('sector8.config');
+goog.require('sector8.config.client');
 goog.require('sector8.net');
 goog.require('sector8.ui.ui');
 goog.require('util.logger');
 goog.require('primus');
 
-// Like sector8.server, really should inherit core instead of passing it as an argument and proxying it's methods
 sector8.client = function()
 {
+    var _this = this;
+    
     goog.asserts.assertInstanceof(this, sector8.client);
     
     var ui = new sector8.ui.ui(this);
@@ -17861,22 +17873,20 @@ sector8.client = function()
     
     var setup_logger = function()
     {
-        this.logger = new util.logger();
+        _this.logger = new util.logger();
     };
     
     var setup_config = function()
     {
-        this.config = new sector8.config(this);
-        this.config.load('config/common.json');
-        this.config.load('config/client.json');
+        _this.config = new sector8.config.client();
     };
     
     var setup_net = function()
     {
-        var host = this.config.primus.host;
-        var port = this.config.primus.port;
+        var host = _this.config.primus.host;
+        var port = _this.config.primus.port;
         var primus = new Primus('http://' + host + ':' + port, {});
 
-        this.net = new sector8.net(this, primus);
+        _this.net = new sector8.net(_this, primus);
     };
 };

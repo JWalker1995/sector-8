@@ -1,7 +1,7 @@
 goog.provide('sector8.server');
 
 goog.require('goog.functions');
-goog.require('sector8.config');
+goog.require('sector8.config.server');
 goog.require('sector8.facade');
 goog.require('sector8.user');
 goog.require('sector8.map');
@@ -13,9 +13,10 @@ var fs = require('fs');
 var primus = require('primus');
 var mysql = require('mysql');
 
-// Like sector8.client, really should use inheritance here instead of passing core as an argument and proxying it's methods
 sector8.server = function()
 {
+    var _this = this;
+    
     goog.asserts.assertInstanceof(this, sector8.server);
     
     var run = function()
@@ -42,7 +43,7 @@ sector8.server = function()
         event_stream.on('open', gate.open);
         error_stream.on('open', gate.open);
         
-        this.logger = new util.logger();
+        _this.logger = new util.logger();
         
         var make_func = function(endpoint)
         {
@@ -54,14 +55,14 @@ sector8.server = function()
             };
         };
         
-        this.logger.update_handler('trace_file', true, [this.logger.trace], make_func(gate.pass(trace_stream.write.bind(trace_stream))));
-        this.logger.update_handler('event_file', true, [this.logger.event, this.logger.alert], make_func(gate.pass(event_stream.write.bind(event_stream))));
-        this.logger.update_handler('error_file', true, this.logger.notice, make_func(gate.pass(error_stream.write.bind(error_stream))));
+        _this.logger.update_handler('trace_file', true, [_this.logger.trace], make_func(gate.pass(trace_stream.write.bind(trace_stream))));
+        _this.logger.update_handler('event_file', true, [_this.logger.event, _this.logger.alert], make_func(gate.pass(event_stream.write.bind(event_stream))));
+        _this.logger.update_handler('error_file', true, _this.logger.notice, make_func(gate.pass(error_stream.write.bind(error_stream))));
         
-        this.logger.update_handler('stdout', true, this.logger.trace, make_func(process.stdout.write.bind(process.stdout)));
-        this.logger.update_handler('client', true, this.logger.notice, function(date, info, msg)
+        _this.logger.update_handler('stdout', true, _this.logger.trace, make_func(process.stdout.write.bind(process.stdout)));
+        _this.logger.update_handler('client', true, _this.logger.notice, function(date, info, msg)
         {
-            this.net.request('error', {
+            _this.net.request('error', {
                 'level': info.level_str,
                 'time': date,
                 'msg': msg,
@@ -69,35 +70,33 @@ sector8.server = function()
                 'throttles': info.throttles
             });
         });
-        this.logger.update_handler('email', true, this.logger.fatal, function(date, info, msg)
+        _this.logger.update_handler('email', true, _this.logger.fatal, function(date, info, msg)
         {
         });
         
-        this.logger.log(this.logger.trace, 'Started logger');
+        _this.logger.log(_this.logger.trace, 'Started logger');
     };
     
     var setup_config = function()
     {
-        this.logger.log(this.logger.trace, 'Importing config...');
+        _this.logger.log(_this.logger.trace, 'Importing config...');
         
-        this.config = new sector8.config(this);
-        this.config.load('config/common.json');
-        this.config.load('config/server.json');
+        _this.config = new sector8.config.server();
         
-        this.logger.log(this.logger.trace, 'Imported config');
+        _this.logger.log(_this.logger.trace, 'Imported config');
     };
     
     var server;
     var setup_server = function()
     {
-        this.logger.log(this.logger.trace, 'Creating server...');
-        server = primus.createServer(sector8.session.bind(sector8.session, this), this.config.primus);
-        this.logger.log(this.logger.trace, 'Created server');
+        _this.logger.log(_this.logger.trace, 'Creating server...');
+        server = primus.createServer(sector8.session.bind(sector8.session, _this), _this.config.primus);
+        _this.logger.log(_this.logger.trace, 'Created server');
     };
     
     var write_client_js = function()
     {
-        this.logger.log(this.logger.trace, 'Writing client js...');
+        _this.logger.log(_this.logger.trace, 'Writing client js...');
         
         var str = '';
         str += 'goog.provide(\'primus\');\n';
@@ -106,21 +105,21 @@ sector8.server = function()
 
         fs.writeFileSync(__dirname + '/primus.js', str, 'utf-8');
         
-        this.logger.log(this.logger.trace, 'Wrote client js');
+        _this.logger.log(_this.logger.trace, 'Wrote client js');
     };
     
     var setup_facade = function()
     {
-        this.logger.log(this.logger.trace, 'Creating mysql connection...');
-        var conn = mysql.createConnection(this.config.mysql);
+        _this.logger.log(_this.logger.trace, 'Creating mysql connection...');
+        var conn = mysql.createConnection(_this.config.mysql);
         
-        this.logger.log(this.logger.trace, 'Connecting to mysql server...');
-        conn.connect(this.logger.get_reporter(this.logger.fatal, 'sector8.server.setup_mysql'));
+        _this.logger.log(_this.logger.trace, 'Connecting to mysql server...');
+        conn.connect(_this.logger.get_reporter(_this.logger.fatal, 'sector8.server.setup_mysql'));
         
-        this.logger.log(this.logger.trace, 'Creating facade...');
-        this.facade = new sector8.facade(this, conn);
+        _this.logger.log(_this.logger.trace, 'Creating facade...');
+        _this.facade = new sector8.facade(_this, conn);
         
-        this.logger.log(this.logger.trace, 'Created facade');
+        _this.logger.log(_this.logger.trace, 'Created facade');
     };
     
     var setup_caches = function()

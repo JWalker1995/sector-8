@@ -1,15 +1,16 @@
 goog.provide('sector8.client');
 
 goog.require('goog.functions');
-goog.require('sector8.config');
+goog.require('sector8.config.client');
 goog.require('sector8.net');
 goog.require('sector8.ui.ui');
 goog.require('util.logger');
 goog.require('primus');
 
-// Like sector8.server, really should inherit core instead of passing it as an argument and proxying it's methods
 sector8.client = function()
 {
+    var _this = this;
+    
     goog.asserts.assertInstanceof(this, sector8.client);
     
     var ui = new sector8.ui.ui(this);
@@ -26,22 +27,20 @@ sector8.client = function()
     
     var setup_logger = function()
     {
-        this.logger = new util.logger();
+        _this.logger = new util.logger();
     };
     
     var setup_config = function()
     {
-        this.config = new sector8.config(this);
-        this.config.load('config/common.json');
-        this.config.load('config/client.json');
+        _this.config = new sector8.config.client();
     };
     
     var setup_net = function()
     {
-        var host = this.config.primus.host;
-        var port = this.config.primus.port;
+        var host = _this.config.primus.host;
+        var port = _this.config.primus.port;
         var primus = new Primus('http://' + host + ':' + port, {});
 
-        this.net = new sector8.net(this, primus);
+        _this.net = new sector8.net(_this, primus);
     };
 };
