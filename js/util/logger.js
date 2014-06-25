@@ -108,7 +108,8 @@ util.logger = function()
         
         var info = {
             'level': level,
-            'level_str': levels[level]
+            'level_str': levels[level],
+            'reporter': 'LOG'
         };
         
         var level_bit = 1 << level;

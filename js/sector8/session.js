@@ -10,7 +10,7 @@ sector8.session = function(server, spark)
 {
     goog.asserts.assertInstanceof(this, sector8.session);
     
-    var net = new sector8.net(spark);
+    var net = new sector8.net(server, spark);
     var user;
     
     net.await('uptime', function(data, reply)
@@ -20,7 +20,7 @@ sector8.session = function(server, spark)
     
     net.await('login', function(data, reply)
     {
-        var tmp_user = load_class(User, 'username', data.username, function()
+        server.load_user(data.username, function(tmp_user)
         {
             var msg;
             if (data.password)

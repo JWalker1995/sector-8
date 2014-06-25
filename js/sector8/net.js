@@ -6,7 +6,8 @@ sector8.net = function(core, spark)
 {
     goog.asserts.assertInstanceof(this, sector8.net);
     
-    var reporter = core.logger.get_reporter(core.logger.notice, 'sector8.net');
+    var trace_reporter = core.logger.get_reporter(core.logger.trace, 'sector8.net');
+    var notice_reporter = core.logger.get_reporter(core.logger.notice, 'sector8.net');
     
     var callbacks = {};
     var next_callback = 0;
@@ -20,13 +21,15 @@ sector8.net = function(core, spark)
         
         await(reply, callback);
         
-        spark.write(data);
+        write_data(data);
     };
     
     var await = function(query, callback)
     {
         if (typeof callback === 'function')
         {
+            trace_reporter('Awaiting query: ' + query);
+            
             callbacks[query] = function(reply_query, reply_data)
             {
                 callback(reply_data, function(reply_reply_data, callback)
@@ -37,8 +40,17 @@ sector8.net = function(core, spark)
         }
     };
     
+    var write_data = function(data)
+    {
+        trace_reporter('Writing data: ' + JSON.stringify(data));
+        
+        spark.write(data);
+    };
+    
     var on_data = function(data)
     {
+        trace_reporter('Received data: ' + JSON.stringify(data));
+        
         if (typeof data.query !== 'undefined')
         {
             var query = data.query.split(':', 2);
@@ -51,7 +63,7 @@ sector8.net = function(core, spark)
             }
         }
         
-        reporter('Received data with invalid query: ' + JSON.stringify(data));
+        notice_reporter('Received data with invalid query: ' + JSON.stringify(data));
     };
 
     this.request = request;

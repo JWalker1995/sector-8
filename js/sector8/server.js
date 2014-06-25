@@ -50,7 +50,7 @@ sector8.server = function()
             return function(date, info, msg)
             {
                 var throttle_str = (info.throttles ? ' throttled ' + info.throttles + 'x' : '');
-                var str = info.level_str + ' ' + info.type + throttle_str + ' at ' + date.getTime() + ' : ' + msg;
+                var str = info.level_str + ' ' + info.reporter + throttle_str + ' at ' + date.getTime() + ' : ' + msg;
                 endpoint(str);
             };
         };
@@ -90,7 +90,12 @@ sector8.server = function()
     var setup_server = function()
     {
         _this.logger.log(_this.logger.trace, 'Creating server...');
-        server = primus.createServer(sector8.session.bind(sector8.session, _this), _this.config.primus);
+        
+        server = primus.createServer(function(spark)
+        {
+            return new sector8.session(_this, spark);
+        }, _this.config.primus);
+        
         _this.logger.log(_this.logger.trace, 'Created server');
     };
     
@@ -124,6 +129,24 @@ sector8.server = function()
     
     var setup_caches = function()
     {
+    };
+    
+    
+    var users = {};
+    this.load_user = function(username, callback)
+    {
+        var user = users[username];
+        
+        if (typeof user === 'undefined')
+        {
+            user = new sector8.user();
+            user.populate_from('username', username, callback.bind(null, user));
+            users[username] = user;
+        }
+        else
+        {
+            callback(user);
+        }
     };
 };
 

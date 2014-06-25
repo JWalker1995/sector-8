@@ -26,13 +26,14 @@ util.gate = function(times)
         {
             return function()
             {
+                var f = func.apply.bind(func, null, arguments);
                 if (times)
                 {
-                    funcs.push(func.apply.bind(func, null, arguments));
+                    funcs.push(f);
                 }
                 else
                 {
-                    func();
+                    f();
                 }
             };
         }
