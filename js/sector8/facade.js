@@ -77,7 +77,7 @@ sector8.facade = function(server, conn)
     {
         var func = function()
         {
-            if (!inst.constructor._facade)
+            if (typeof inst.constructor._facade !== 'number')
             {
                 report_load('Tried to load an unregistered type');
                 return;
@@ -95,9 +95,11 @@ sector8.facade = function(server, conn)
                     var i = 0;
                     while (i < result.length)
                     {
-                        for (var key in result[i])
+                        var j = 0;
+                        while (j < c.cols.length)
                         {
-                            inst['set_' + key](result[i][key]);
+                            inst['set_' + c.cols[j]](result[i][c.cols[j]]);
+                            j++;
                         }
                         i++;
                     }

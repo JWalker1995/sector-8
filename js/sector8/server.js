@@ -62,6 +62,7 @@ sector8.server = function()
         _this.logger.update_handler('stdout', true, _this.logger.trace, make_func(process.stdout.write.bind(process.stdout)));
         _this.logger.update_handler('client', true, _this.logger.notice, function(date, info, msg)
         {
+            /*
             _this.net.request('error', {
                 'level': info.level_str,
                 'time': date,
@@ -69,6 +70,7 @@ sector8.server = function()
                 'type': info.type,
                 'throttles': info.throttles
             });
+            */
         });
         _this.logger.update_handler('email', true, _this.logger.fatal, function(date, info, msg)
         {
@@ -123,8 +125,11 @@ sector8.server = function()
         
         _this.logger.log(_this.logger.trace, 'Creating facade...');
         _this.facade = new sector8.facade(_this, conn);
-        
         _this.logger.log(_this.logger.trace, 'Created facade');
+        
+        _this.logger.log(_this.logger.trace, 'Registering facade types...');
+        _this.facade.register_type(sector8.user, 'users');
+        _this.logger.log(_this.logger.trace, 'Registered facade types');
     };
     
     var setup_caches = function()
@@ -140,7 +145,7 @@ sector8.server = function()
         if (typeof user === 'undefined')
         {
             user = new sector8.user();
-            user.populate_from('username', username, callback.bind(null, user));
+            _this.facade.load(user, 'username', username, callback.bind(null, user));
             users[username] = user;
         }
         else

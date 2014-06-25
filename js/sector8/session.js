@@ -56,7 +56,7 @@ sector8.session = function(server, spark)
             }
             else
             {
-                if (!User.validate_username(data.username))
+                if (!sector8.user.validate_username(data.username))
                 {
                     msg = 'username invalid';
                 }
@@ -84,7 +84,7 @@ sector8.session = function(server, spark)
             }
 
             var user_json;
-            if (user instanceof User)
+            if (user instanceof sector8.user)
             {
                 user_json = {
                     'username': user.get_username(),
@@ -106,14 +106,14 @@ sector8.session = function(server, spark)
 
     net.await('register', function(data, reply)
     {
-        if (user instanceof User && !user.get_registered() && data.password && data.email)
+        if (user instanceof sector8.user && !user.get_registered() && data.password && data.email)
         {
-            if (User.validate_email(data.email))
+            if (sector8.user.validate_email(data.email))
             {
                 var code = user.generate_registration_code(data.email);
                 user.set_registration_code(code);
                 user.save();
-                var confirm_link = 'http://' + server.core.config.sector8.host + server.core.config.sector8.path + '?register=' + code;
+                var confirm_link = 'http://' + server.config.sector8.host + server.config.sector8.path + '?register=' + code;
 
                 var html = '';
                 html += '<html>';
@@ -128,7 +128,7 @@ sector8.session = function(server, spark)
                 text += 'Go to this link to confirm your registration: ' + confirm_link + '\n';
 
                 email_transport.sendMail({
-                    'from': 'Sector-8 <no-reply@' + server.core.config.sector8.host + '>',
+                    'from': 'Sector-8 <no-reply@' + server.config.sector8.host + '>',
                     'to': user.get_username() + ' <' + data.email + '>',
                     'subject': 'Sector-8 Registration Confirmation',
                     'html': html,
@@ -155,7 +155,7 @@ sector8.session = function(server, spark)
     net.await('logout', function(data, reply)
     {
         var msg;
-        if (user instanceof User)
+        if (user instanceof sector8.user)
         {
             user.set_last_login(new Date());
             user.save();
@@ -182,7 +182,7 @@ sector8.session = function(server, spark)
 
     net.await('create_match', function(data, reply)
     {
-        if (user instanceof User)
+        if (user instanceof sector8.user)
         {
 
         }
@@ -190,7 +190,7 @@ sector8.session = function(server, spark)
 
     net.await('enter_match', function(data, reply)
     {
-        if (user instanceof User)
+        if (user instanceof sector8.user)
         {
 
         }
