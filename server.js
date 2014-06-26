@@ -1,5 +1,5 @@
 require('./js/closure-library/closure/goog/bootstrap/nodejs.js');
-require('./js/deps.js');
+require('./public/deps.js');
 
 goog.require('sector8.server');
 

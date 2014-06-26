@@ -42,6 +42,7 @@ sector8.match = function()
     
     this.from_notation = function(str)
     {
+        /*
         var move = 0;
         var num_players = this.get_players().length;
         
@@ -76,7 +77,7 @@ sector8.match = function()
   '3',
         }
         // A +2-4 :b5.01245 @4*3
-        
+        */
     };
 };
 

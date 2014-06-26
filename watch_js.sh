@@ -6,7 +6,7 @@ when-changed -r js/sector8/ "\
     python js/closure-library/closure/bin/build/depswriter.py \
         --root_with_prefix=\"js/util/ ../../../util/\" \
         --root_with_prefix=\"js/sector8/ ../../../sector8/\" \
-        --output_file=js/deps.js \
+        --output_file=public/deps.js \
     && \
     python js/closure-library/closure/bin/build/closurebuilder.py \
         --root=js/closure-library/ \

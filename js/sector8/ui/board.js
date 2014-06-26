@@ -1,6 +1,6 @@
 goog.provide('sector8.ui.board');
 
-var randomcolor = require('randomcolor');
+//var randomcolor = require('randomcolor');
 
 sector8.ui.board = function(core, match)
 {
@@ -52,6 +52,9 @@ sector8.ui.board = function(core, match)
 
         // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
         */
+        
+        var html = '<div class="move_input">Move: <input type="text" /><button>Move</button></div>';
+        goog.dom.append(el, goog.dom.htmlToDocumentFragment(html));
 
         return el;
     };

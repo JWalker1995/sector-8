@@ -3678,8 +3678,6 @@ goog.provide('sector8.user');
 
 goog.require('util.make_getters_setters');
 
-var user_table = 'test.users';
-
 sector8.user = function()
 {
     goog.asserts.assertInstanceof(this, sector8.user);
@@ -3700,97 +3698,6 @@ sector8.user = function()
 
 
     this.get_id = this.get_user_id;
-
-    this.populate_from = function(prop, value, callback)
-    {
-        var query = 'SELECT * FROM ' + user_table + ' WHERE ' + prop + '=? LIMIT 1';
-        populate(query, [value], callback);
-    };
-
-    var populate = function(query, tokens, callback)
-    {
-        if (connection.state === 'authenticated')
-        {
-            connection.query(query, tokens, function(err, result)
-            {
-                handle_mysql_error(err);
-                var success = !err && result && result[0];
-                if (success)
-                {
-                    this.set_user_id(result[0].user_id);
-                    this.set_username(result[0].username);
-                    this.set_password_hash(result[0].password_hash);
-                    this.set_email(result[0].email);
-                    this.set_registration_code(result[0].registration_code);
-                    this.set_match_id(result[0].match_id);
-                    this.set_first_login(result[0].first_login);
-                    this.set_last_login(result[0].last_login);
-                }
-                callback();
-            });
-        }
-        else
-        {
-            callback();
-        }
-    };
-
-    this.save = function(callback)
-    {
-        var query;
-        if (this.get_user_id())
-        {
-            query = 'UPDATE ' + user_table + ' SET username=?, password_hash=?, email=?, registration_code=?, match_id=?, first_login=?, last_login=? WHERE user_id=?';
-        }
-        else
-        {
-            query = 'INSERT INTO ' + user_table + ' SET username=?, password_hash=?, email=?, registration_code=?, match_id=?, first_login=?, last_login=?, user_id=?';
-        }
-
-        if (connection.state === 'authenticated')
-        {
-            var tokens = [this.get_username(), this.get_password_hash(), this.get_email(), this.get_registration_code(), this.get_match_id(), this.get_first_login(), this.get_last_login(), this.get_user_id()];
-            connection.query(query, tokens, function(err, result)
-            {
-                handle_mysql_error(err);
-                if (result && result.insertId) {this.set_user_id(result.insertId);}
-                callback();
-            });
-        }
-        else
-        {
-            callback();
-        }
-    };
-
-    this.set_password = function(password)
-    {
-        var salt = bcrypt.genSaltSync(bcrypt_opts.hash_rounds);
-        var hash = bcrypt.hashSync(password, salt);
-        this.set_password_hash(hash);
-    };
-    this.check_login = function(username, password)
-    {
-        return username === this.get_username() && bcrypt.compareSync(password, this.get_password_hash());
-    };
-
-    this.generate_registration_code = function(email)
-    {
-        var code = '';
-        code += crypto.randomBytes(16).toString('base64');
-        code += ' ';
-        code += Buffer(email).toString('base64');
-        return code;
-    };
-    this.set_registered = function(registration_code)
-    {
-        if (registration_code === this.get_registration_code())
-        {
-            var email = registration_code.split(' ')[1];
-            this.set_email(email);
-            this.set_registration_code('');
-        }
-    }
 
     this.get_registered = function()
     {
@@ -15987,10 +15894,121 @@ sector8.ui.login = function(core)
         }
     };
 };
+goog.provide('sector8.ui.board');
+
+//var randomcolor = require('randomcolor');
+
+sector8.ui.board = function(core, match)
+{
+    goog.asserts.assertInstanceof(this, sector8.ui.board);
+    
+    var cell_els = [];
+    
+    var render = function()
+    {
+        var el = goog.dom.createDom('div', {'class': 'board'});
+        
+        var sx = match.get_map().get_size_x();
+        var sy = match.get_map().get_size_y();
+        var cells = match.get_map().get_cells();
+        var get_index = match.get_map().get_index;
+        
+        var y = 0;
+        while (y < sy)
+        {
+            var x = 0;
+            while (x < sx)
+            {
+                var i = get_index(x, y);
+                var cell = create_cell(x, y, cells[i]);
+                // make sectoid
+                goog.dom.append(el, cell);
+                cell_els[i] = cell;
+                x++;
+            }
+            y++;
+        }
+        
+        /*
+        var props = {
+            'map_id': 0,
+            'name': '',
+            'num_players': 0,
+            'size_x': 0,
+            'size_y': 0,
+            'cells': Uint16Array,
+            //'primes': [],
+            'symmetry_flip_x': false,
+            'symmetry_flip_y': false,
+            'symmetry_rot_90': false,
+            'symmetry_rot_180': false,
+            'creator_id': 0,
+            'creation_date': Date
+        };
+
+        // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
+        */
+        
+        var html = '<div class="move_input">Move: <input type="text" /><button>Move</button></div>';
+        goog.dom.append(el, goog.dom.htmlToDocumentFragment(html));
+
+        return el;
+    };
+
+    this.render = goog.functions.cacheReturnValue(render);
+    
+    var create_cell = function(x, y, cell)
+    {
+        // TODO: Common source with css
+        var cell_spacing = 75;
+        
+        var classes = 'cell';
+        if (cell.get_void())
+        {
+            classes += ' void';
+        }
+        else
+        {
+            classes += ' player_' + cell.get_territory();
+            if (cell.get_permanent())
+            {
+                classes += ' permanent';
+            }
+        }
+        
+        var style = 'left: ' + (x * cell_spacing) + 'px; top: ' + (y * cell_spacing) + 'px;';
+        return goog.dom.createDom('div', {'class': classes, 'style': style});
+    };
+};goog.provide('sector8.ui.match');
+
+goog.require('goog.dom');
+goog.require('goog.functions');
+goog.require('sector8.ui.board');
+
+sector8.ui.match = function(core, match)
+{
+    goog.asserts.assertInstanceof(this, sector8.ui.match);
+    
+    var board = new sector8.ui.board(core, match);
+    
+    var render = function()
+    {
+        var el = goog.dom.createDom('div', {'class': 'match'});
+        
+        goog.dom.append(el, board.render());
+        
+        return el;
+    };
+
+    this.render = goog.functions.cacheReturnValue(render);
+};
 goog.provide('sector8.ui.ui');
 
 goog.require('goog.functions');
 goog.require('sector8.ui.login');
+
+// Test
+goog.require('sector8.ui.match');
 
 sector8.ui.ui = function(core)
 {
@@ -16004,6 +16022,11 @@ sector8.ui.ui = function(core)
     {
         el = goog.dom.createDom('div', {'class': 'game'});
         goog.dom.append(el, login.render());
+        
+        // Start test
+        var match = new sector8.ui.match(core, {});
+        goog.dom.append(el, match.render());
+        // End test
 
         return el;
 

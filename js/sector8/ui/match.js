@@ -2,8 +2,7 @@ goog.provide('sector8.ui.match');
 
 goog.require('goog.dom');
 goog.require('goog.functions');
-goog.require('sector8.map');
-goog.require('sector8.sectoid');
+goog.require('sector8.ui.board');
 
 sector8.ui.match = function(core, match)
 {
@@ -13,7 +12,7 @@ sector8.ui.match = function(core, match)
     
     var render = function()
     {
-        var el = goog.dom.createDom('div', {'class': 'lobby'});
+        var el = goog.dom.createDom('div', {'class': 'match'});
         
         goog.dom.append(el, board.render());
         

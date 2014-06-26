@@ -4,6 +4,7 @@ goog.require('goog.asserts');
 goog.require('sector8.net');
 
 //var mailer = require('nodemailer');
+var bcrypt = require('bcrypt');
 
 // Really should inherit from sector8.net
 sector8.session = function(server, spark)
@@ -25,11 +26,11 @@ sector8.session = function(server, spark)
             var msg;
             if (data.password)
             {
-                if (tmp_user.check_login(data.username, data.password))
+                if (user_check_login(tmp_user, data.username, data.password))
                 {
                     if (data.register)
                     {
-                        tmp_user.set_registered(data.register);
+                        user_set_registered(tmp_user, data.register);
                         if (tmp_user.get_registered())
                         {
                             tmp_user.save();
@@ -110,7 +111,7 @@ sector8.session = function(server, spark)
         {
             if (sector8.user.validate_email(data.email))
             {
-                var code = user.generate_registration_code(data.email);
+                var code = user_generate_registration_code(user, data.email);
                 user.set_registration_code(code);
                 user.save();
                 var confirm_link = 'http://' + server.config.sector8.host + server.config.sector8.path + '?register=' + code;
@@ -195,4 +196,35 @@ sector8.session = function(server, spark)
 
         }
     });
+    
+    
+
+    var user_set_password = function(user, password)
+    {
+        var salt = bcrypt.genSaltSync(10);
+        var hash = bcrypt.hashSync(password, salt);
+        user.set_password_hash(hash);
+    };
+    var user_check_login = function(user, username, password)
+    {
+        return username === user.get_username() && bcrypt.compareSync(password, user.get_password_hash());
+    };
+
+    var user_generate_registration_code = function(user, email)
+    {
+        var code = '';
+        code += crypto.randomBytes(16).toString('base64');
+        code += ' ';
+        code += Buffer(email).toString('base64');
+        return code;
+    };
+    var user_set_registered = function(user, registration_code)
+    {
+        if (registration_code === user.get_registration_code())
+        {
+            var email = registration_code.split(' ')[1];
+            user.set_email(email);
+            user.set_registration_code('');
+        }
+    };
 };

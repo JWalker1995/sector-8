@@ -2,10 +2,6 @@ goog.provide('sector8.user');
 
 goog.require('util.make_getters_setters');
 
-var bcrypt = require('bcrypt');
-
-var user_table = 'test.users';
-
 sector8.user = function()
 {
     goog.asserts.assertInstanceof(this, sector8.user);
@@ -26,35 +22,6 @@ sector8.user = function()
 
 
     this.get_id = this.get_user_id;
-
-    this.set_password = function(password)
-    {
-        var salt = bcrypt.genSaltSync(10);
-        var hash = bcrypt.hashSync(password, salt);
-        this.set_password_hash(hash);
-    };
-    this.check_login = function(username, password)
-    {
-        return username === this.get_username() && bcrypt.compareSync(password, this.get_password_hash());
-    };
-
-    this.generate_registration_code = function(email)
-    {
-        var code = '';
-        code += crypto.randomBytes(16).toString('base64');
-        code += ' ';
-        code += Buffer(email).toString('base64');
-        return code;
-    };
-    this.set_registered = function(registration_code)
-    {
-        if (registration_code === this.get_registration_code())
-        {
-            var email = registration_code.split(' ')[1];
-            this.set_email(email);
-            this.set_registration_code('');
-        }
-    }
 
     this.get_registered = function()
     {

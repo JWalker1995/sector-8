@@ -3,6 +3,9 @@ goog.provide('sector8.ui.ui');
 goog.require('goog.functions');
 goog.require('sector8.ui.login');
 
+// Test
+goog.require('sector8.ui.match');
+
 sector8.ui.ui = function(core)
 {
     goog.asserts.assertInstanceof(this, sector8.ui.ui);
@@ -15,6 +18,11 @@ sector8.ui.ui = function(core)
     {
         el = goog.dom.createDom('div', {'class': 'game'});
         goog.dom.append(el, login.render());
+        
+        // Start test
+        var match = new sector8.ui.match(core, {});
+        goog.dom.append(el, match.render());
+        // End test
 
         return el;
 
