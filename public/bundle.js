@@ -3624,7 +3624,7 @@ util.make_getters_setters = function(obj, props)
                 type = props[prop];
                 obj['set_' + prop] = function(val)
                 {
-                    if (val instanceof type)
+                    if (val === null || val instanceof type)
                     {
                         props[prop] = val;
                     }
@@ -3674,7 +3674,39 @@ util.make_getters_setters = function(obj, props)
         }
     };
 };
-goog.provide('sector8.user');
+goog.provide('sector8.map');
+
+goog.require('util.make_getters_setters');
+
+sector8.map = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.map);
+
+    var props = {
+        'map_id': 0,
+        'name': '',
+        'num_players': 0,
+        'size_x': 0,
+        'size_y': 0,
+        'cells': Array,
+        //'primes': [],
+        'symmetry_flip_x': false,
+        'symmetry_flip_y': false,
+        'symmetry_rot_90': false,
+        'symmetry_rot_180': false,
+        'creator_id': 0,
+        'creation_date': Date
+    };
+    
+    // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
+
+    util.make_getters_setters(this, props);
+    
+    this.get_cell_index = function(x, y)
+    {
+        return y * this.get_size_x() + x;
+    };
+};goog.provide('sector8.user');
 
 goog.require('util.make_getters_setters');
 
@@ -15911,7 +15943,7 @@ sector8.ui.board = function(core, match)
         var sx = match.get_map().get_size_x();
         var sy = match.get_map().get_size_y();
         var cells = match.get_map().get_cells();
-        var get_index = match.get_map().get_index;
+        var get_index = match.get_map().get_cell_index;
         
         var y = 0;
         while (y < sy)
@@ -16002,12 +16034,176 @@ sector8.ui.match = function(core, match)
 
     this.render = goog.functions.cacheReturnValue(render);
 };
-goog.provide('sector8.ui.ui');
+goog.provide('sector8.match');
+
+sector8.match = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.match);
+
+    var props = {
+        'match_id': 0,
+        'name': '',
+        'players': Array,
+        'map': sector8.map,
+        'turn_type': 0,
+        'timer_type': 0,
+        'spectators': true,
+        'orders': Array,
+        'stakes': 1.0,
+        'start_date': Date,
+        'end_date': Date
+    };
+
+    util.make_getters_setters(this, props);
+
+    this.get_id = this.get_match_id;
+    
+    this.generate_colors = function()
+    {
+        var randomcolor = require('randomcolor');
+        
+        var c = this.get_players().length;
+        var colors = randomcolor({
+            'count': c
+        });
+        
+        var i = 0;
+        while (i < c)
+        {
+            var color = parseInt(colors[i].substr(1), 16);
+            this.get_players()[i].set_color(color)
+            i++;
+        }
+    };
+    
+    this.from_notation = function(str)
+    {
+        /*
+        var move = 0;
+        var num_players = this.get_players().length;
+        
+        var regex = /^\s*([A-Z])?\s*(?:\+(\d+)(?:-(\d+))?\s*)?:([a-z])(\d+)(?:\.(\d+))?\s*@(?:x|(\d+)(?:\*(\d+))?)\s*$/;
+        var exec;
+        while (exec = regex.exec(str))
+        {
+            if (exec[1])
+            {
+                var player = exec[1].charCodeAt(0) - 'A'.charCodeAt(0);
+                if (player !== move % num_players) {return false;}
+            }
+            
+            var order = new sector8.order();
+            order.set_min_turn(move + parseInt(exec[1]));
+        }
+        
+        if (match)
+        {
+            this.set_min_turn(turn + parseInt(match[1]));
+            this.set_max_turn(turn + parseInt(match[2]));
+            this.set_
+        }
+        {
+            match[1]
+            '2',
+  '4',
+  'b',
+  '5',
+  '01245',
+  '4',
+  '3',
+        }
+        // A +2-4 :b5.01245 @4*3
+        */
+    };
+};
+
+sector8.cell = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.cell);
+
+    var props = {
+        'void': false,
+        'territory': 0,
+        'permanent': false,
+        'sectoid': sector8.sectoid
+    };
+
+    util.make_getters_setters(this, props);
+};
+
+sector8.sectoid = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.sectoid);
+
+    var props = {
+        'x': 0,
+        'y': 0,
+        'prime': false,
+        'sectors': 0
+    };
+
+    util.make_getters_setters(this, props);
+};
+
+sector8.order = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.order);
+
+    var props = {
+        'player': 0,
+        'sectoid': sector8.sectoid,
+        'min_turn': 0,
+        'max_turn': 0,
+        'sectoids': 0,
+        'direction': 0,
+        'distance': 0
+    };
+
+    util.make_getters_setters(this, props);
+};
+    
+sector8.player = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.player);
+
+    var props = {
+        'id': 0,
+        'color': 0,
+        'time': 0
+    };
+
+    util.make_getters_setters(this, props);
+};
+
+/*
+
+// Move the N, NE, E, S, and SW sectors of the piece currently on b5 south in 2, 3, and 4 turns
++2-4:b5.01245:4
+
+// Cancel the orders of all sectors of the piece on b5
+:b5:
+
+Turns: 11
+Cell X: 25
+Cell Y: 25
+Sectors: 256
+Dir: 9
+
+
+Match creation options:
+    Map
+    Turn type (parallel, serial)
+    Timer type (hourglass, per-turn, per-game)
+    Shadow match (if yes, then a player can only see cells consecutive to his territory)
+    Spectators
+*/goog.provide('sector8.ui.ui');
 
 goog.require('goog.functions');
 goog.require('sector8.ui.login');
 
 // Test
+goog.require('sector8.map');
+goog.require('sector8.match');
 goog.require('sector8.ui.match');
 
 sector8.ui.ui = function(core)
@@ -16024,8 +16220,45 @@ sector8.ui.ui = function(core)
         goog.dom.append(el, login.render());
         
         // Start test
-        var match = new sector8.ui.match(core, {});
-        goog.dom.append(el, match.render());
+        var map = new sector8.map();
+        map.set_name('Awesome map!!!');
+        map.set_num_players(2);
+        map.set_size_x(3);
+        map.set_size_y(5);
+        
+        var cells = [];
+        var x = 0;
+        while (x < map.get_size_x())
+        {
+            var y = 0;
+            while (y < map.get_size_y())
+            {
+                var i = map.get_cell_index(x, y);
+                var c = cells[i] = new sector8.cell();
+                
+                var t_map = [1, 1, 0, 2, 2];
+                c.set_void(y === 1 && (x === 1 || x == 3));
+                c.set_territory(t_map[x]);
+                c.set_permanent((y === 0 || y === 1) && (x === 0 || x === 4));
+                c.set_sectoid(null);
+                
+                y++;
+            }
+            x++;
+        }
+        map.set_cells(cells);
+        
+        map.set_creator_id(1);
+        map.set_creation_date(new Date());
+        
+        var match = new sector8.match();
+        match.set_players([]);
+        match.set_map(map);
+        match.set_orders([]);
+        match.set_start_date(new Date());
+        
+        var ui_match = new sector8.ui.match(core, match);
+        goog.dom.append(el, ui_match.render());
         // End test
 
         return el;

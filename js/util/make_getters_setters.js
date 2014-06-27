@@ -18,7 +18,7 @@ util.make_getters_setters = function(obj, props)
                 type = props[prop];
                 obj['set_' + prop] = function(val)
                 {
-                    if (val instanceof type)
+                    if (val === null || val instanceof type)
                     {
                         props[prop] = val;
                     }

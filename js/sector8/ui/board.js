@@ -15,7 +15,7 @@ sector8.ui.board = function(core, match)
         var sx = match.get_map().get_size_x();
         var sy = match.get_map().get_size_y();
         var cells = match.get_map().get_cells();
-        var get_index = match.get_map().get_index;
+        var get_index = match.get_map().get_cell_index;
         
         var y = 0;
         while (y < sy)

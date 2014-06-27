@@ -20,7 +20,7 @@ goog.addDependency('../../../sector8/ui/challenge_list.js', ['sector8.ui.challen
 goog.addDependency('../../../sector8/ui/lobby.js', ['sector8.ui.lobby'], ['goog.dom', 'goog.functions']);
 goog.addDependency('../../../sector8/ui/login.js', ['sector8.ui.login'], ['goog.async.Throttle', 'goog.dom', 'goog.functions', 'sector8.user', 'util.make_children_obj']);
 goog.addDependency('../../../sector8/ui/match.js', ['sector8.ui.match'], ['goog.dom', 'goog.functions', 'sector8.ui.board']);
-goog.addDependency('../../../sector8/ui/ui.js', ['sector8.ui.ui'], ['goog.functions', 'sector8.ui.login', 'sector8.ui.match']);
+goog.addDependency('../../../sector8/ui/ui.js', ['sector8.ui.ui'], ['goog.functions', 'sector8.map', 'sector8.match', 'sector8.ui.login', 'sector8.ui.match']);
 goog.addDependency('../../../sector8/ui/user.js', ['sector8.ui.user'], ['goog.dom', 'goog.functions', 'util.make_children_obj']);
 goog.addDependency('../../../sector8/ui/user_list.js', ['sector8.ui.user_list'], ['goog.dom', 'goog.functions', 'util.make_children_obj']);
 goog.addDependency('../../../sector8/user.js', ['sector8.user'], ['util.make_getters_setters']);
