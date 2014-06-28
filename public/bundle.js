@@ -3686,8 +3686,8 @@ sector8.map = function()
         'map_id': 0,
         'name': '',
         'num_players': 0,
-        'size_x': 0,
-        'size_y': 0,
+        'rows': 0,
+        'cols': 0,
         'cells': Array,
         //'primes': [],
         'symmetry_flip_x': false,
@@ -3702,9 +3702,9 @@ sector8.map = function()
 
     util.make_getters_setters(this, props);
     
-    this.get_cell_index = function(x, y)
+    this.get_cell_index = function(row, col)
     {
-        return y * this.get_size_x() + x;
+        return row * this.get_cols() + col;
     };
 };goog.provide('sector8.user');
 
@@ -15940,25 +15940,25 @@ sector8.ui.board = function(core, match)
     {
         var el = goog.dom.createDom('div', {'class': 'board'});
         
-        var sx = match.get_map().get_size_x();
-        var sy = match.get_map().get_size_y();
-        var cells = match.get_map().get_cells();
-        var get_index = match.get_map().get_cell_index;
+        var map = match.get_map();
+        var rows = map.get_rows();
+        var cols = map.get_cols();
+        var cells = map.get_cells();
         
-        var y = 0;
-        while (y < sy)
+        var row = 0;
+        while (row < rows)
         {
-            var x = 0;
-            while (x < sx)
+            var col = 0;
+            while (col < cols)
             {
-                var i = get_index(x, y);
-                var cell = create_cell(x, y, cells[i]);
+                var i = map.get_cell_index(row, col);
+                var cell = create_cell(row, col, cells[i]);
                 // make sectoid
                 goog.dom.append(el, cell);
                 cell_els[i] = cell;
-                x++;
+                col++;
             }
-            y++;
+            row++;
         }
         
         /*
@@ -15981,18 +15981,21 @@ sector8.ui.board = function(core, match)
         // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
         */
         
-        var html = '<div class="move_input">Move: <input type="text" /><button>Move</button></div>';
+        var html = '<div style="padding-left: 600px;">Move: <input type="text" class="move_input" /><button class="move_button">Move</button></div>';
         goog.dom.append(el, goog.dom.htmlToDocumentFragment(html));
+        el.getElementsByClassName('move_button')[0].onclick = function()
+        {
+            var move = el.getElementsByClassName('move_input')[0].value;
+        };
 
         return el;
     };
 
     this.render = goog.functions.cacheReturnValue(render);
     
-    var create_cell = function(x, y, cell)
+    var create_cell = function(row, col, cell)
     {
-        // TODO: Common source with css
-        var cell_spacing = 75;
+        var cell_spacing = core.config.spacing.cell_size;
         
         var classes = 'cell';
         if (cell.get_void())
@@ -16008,7 +16011,7 @@ sector8.ui.board = function(core, match)
             }
         }
         
-        var style = 'left: ' + (x * cell_spacing) + 'px; top: ' + (y * cell_spacing) + 'px;';
+        var style = 'top: ' + (row * cell_spacing) + 'px; left: ' + (col * cell_spacing) + 'px;';
         return goog.dom.createDom('div', {'class': classes, 'style': style});
     };
 };goog.provide('sector8.ui.match');
@@ -16136,8 +16139,8 @@ sector8.sectoid = function()
     goog.asserts.assertInstanceof(this, sector8.sectoid);
 
     var props = {
-        'x': 0,
-        'y': 0,
+        'row': 0,
+        'col': 0,
         'prime': false,
         'sectors': 0
     };
@@ -16209,7 +16212,7 @@ goog.require('sector8.ui.match');
 sector8.ui.ui = function(core)
 {
     goog.asserts.assertInstanceof(this, sector8.ui.ui);
-    
+
     var el;
 
     var login = new sector8.ui.login(core);
@@ -16218,45 +16221,45 @@ sector8.ui.ui = function(core)
     {
         el = goog.dom.createDom('div', {'class': 'game'});
         goog.dom.append(el, login.render());
-        
+
         // Start test
         var map = new sector8.map();
         map.set_name('Awesome map!!!');
         map.set_num_players(2);
-        map.set_size_x(3);
-        map.set_size_y(5);
+        map.set_rows(3);
+        map.set_cols(5);
         
         var cells = [];
-        var x = 0;
-        while (x < map.get_size_x())
+        var row = 0;
+        while (row < map.get_rows())
         {
-            var y = 0;
-            while (y < map.get_size_y())
+            var col = 0;
+            while (col < map.get_cols())
             {
-                var i = map.get_cell_index(x, y);
+                var i = map.get_cell_index(row, col);
                 var c = cells[i] = new sector8.cell();
-                
+
                 var t_map = [1, 1, 0, 2, 2];
-                c.set_void(y === 1 && (x === 1 || x == 3));
-                c.set_territory(t_map[x]);
-                c.set_permanent((y === 0 || y === 1) && (x === 0 || x === 4));
+                c.set_void(row === 1 && (col === 1 || col == 3));
+                c.set_territory(t_map[col]);
+                c.set_permanent((row === 0 || row === 2) && (col === 0 || col === 4));
                 c.set_sectoid(null);
-                
-                y++;
+
+                col++;
             }
-            x++;
+            row++;
         }
         map.set_cells(cells);
-        
+
         map.set_creator_id(1);
         map.set_creation_date(new Date());
-        
+
         var match = new sector8.match();
         match.set_players([]);
         match.set_map(map);
         match.set_orders([]);
         match.set_start_date(new Date());
-        
+
         var ui_match = new sector8.ui.match(core, match);
         goog.dom.append(el, ui_match.render());
         // End test
@@ -16282,6 +16285,8 @@ sector8.ui.ui = function(core)
 
     this.render = goog.functions.cacheReturnValue(render);
 };
+// Autogenerated by js/sector8/server.js
+
 goog.provide('primus');
 
 (function (name, context, definition) {  context[name] = definition.call(context);  if (typeof module !== "undefined" && module.exports) {    module.exports = context[name];  } else if (typeof define == "function" && define.amd) {    define(function reference() { return context[name]; });  }})("Primus", this, function PRIMUS() {/*globals require, define */
@@ -17937,20 +17942,25 @@ if (
 sector8.config.common = function()
 {
     util.deepcopy(this, {
-        "sector8": {
-            "host": "localhost",
-            "path": "/sector8"
+        'sector8': {
+            'host': 'localhost',
+            'path': '/sector8'
         },
-        "primus": {
-            "host": "localhost",
-            "port": 7854,
-            "pathname": "/sector8/socket",
-            "parser": "JSON",
-            "transformer": "websockets",
-            "iknowhttpsisbetter": true
+        'primus': {
+            'host': 'localhost',
+            'port': 7854,
+            'pathname': '/sector8/socket',
+            'parser': 'JSON',
+            'transformer': 'websockets',
+            'iknowhttpsisbetter': true
         },
-        "bcrypt": {
-            "hash_rounds": 12
+        'bcrypt': {
+            'hash_rounds': 12
+        },
+        'spacing': {
+            'cell_size': 100,
+            'sectoid_size': 80,
+            'center_size': 40
         }
     });
 };goog.provide('util.deepcopy');

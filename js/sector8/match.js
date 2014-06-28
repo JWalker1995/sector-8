@@ -100,8 +100,8 @@ sector8.sectoid = function()
     goog.asserts.assertInstanceof(this, sector8.sectoid);
 
     var props = {
-        'x': 0,
-        'y': 0,
+        'row': 0,
+        'col': 0,
         'prime': false,
         'sectors': 0
     };

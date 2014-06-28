@@ -10,8 +10,8 @@ sector8.map = function()
         'map_id': 0,
         'name': '',
         'num_players': 0,
-        'size_x': 0,
-        'size_y': 0,
+        'rows': 0,
+        'cols': 0,
         'cells': Array,
         //'primes': [],
         'symmetry_flip_x': false,
@@ -26,8 +26,8 @@ sector8.map = function()
 
     util.make_getters_setters(this, props);
     
-    this.get_cell_index = function(x, y)
+    this.get_cell_index = function(row, col)
     {
-        return y * this.get_size_x() + x;
+        return row * this.get_cols() + col;
     };
 };

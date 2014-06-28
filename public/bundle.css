@@ -19,21 +19,21 @@ body
 
 .board .cell {
   position: absolute;
-  width: 75px;
-  height: 75px;
+  width: 100px;
+  height: 100px;
   background-color: silver; }
 
 .board .sectoid {
   position: absolute;
-  width: 70px;
-  height: 70px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   border-color: black; }
 
 .board .sector {
   position: absolute;
-  width: 70px;
-  height: 70px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   background: linear-gradient(-45deg, orange 50%, transparent 50%) 100% 0;
   background-repeat: no-repeat;
@@ -115,7 +115,22 @@ body
   position: absolute;
   width: 40px;
   height: 40px;
-  top: 15px;
-  left: 15px;
+  top: 20px;
+  left: 20px;
   border-radius: 50%;
   background-color: red; }
+
+.cell.void {
+  opacity: 0.5; }
+
+.cell.player_0 {
+  color: silver; }
+
+.cell.player_1 {
+  color: red; }
+
+.cell.player_2 {
+  color: green; }
+
+.cell.player_3 {
+  color: blue; }

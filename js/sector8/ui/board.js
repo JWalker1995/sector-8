@@ -12,25 +12,25 @@ sector8.ui.board = function(core, match)
     {
         var el = goog.dom.createDom('div', {'class': 'board'});
         
-        var sx = match.get_map().get_size_x();
-        var sy = match.get_map().get_size_y();
-        var cells = match.get_map().get_cells();
-        var get_index = match.get_map().get_cell_index;
+        var map = match.get_map();
+        var rows = map.get_rows();
+        var cols = map.get_cols();
+        var cells = map.get_cells();
         
-        var y = 0;
-        while (y < sy)
+        var row = 0;
+        while (row < rows)
         {
-            var x = 0;
-            while (x < sx)
+            var col = 0;
+            while (col < cols)
             {
-                var i = get_index(x, y);
-                var cell = create_cell(x, y, cells[i]);
+                var i = map.get_cell_index(row, col);
+                var cell = create_cell(row, col, cells[i]);
                 // make sectoid
                 goog.dom.append(el, cell);
                 cell_els[i] = cell;
-                x++;
+                col++;
             }
-            y++;
+            row++;
         }
         
         /*
@@ -53,18 +53,21 @@ sector8.ui.board = function(core, match)
         // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
         */
         
-        var html = '<div class="move_input">Move: <input type="text" /><button>Move</button></div>';
+        var html = '<div style="padding-left: 600px;">Move: <input type="text" class="move_input" /><button class="move_button">Move</button></div>';
         goog.dom.append(el, goog.dom.htmlToDocumentFragment(html));
+        el.getElementsByClassName('move_button')[0].onclick = function()
+        {
+            var move = el.getElementsByClassName('move_input')[0].value;
+        };
 
         return el;
     };
 
     this.render = goog.functions.cacheReturnValue(render);
     
-    var create_cell = function(x, y, cell)
+    var create_cell = function(row, col, cell)
     {
-        // TODO: Common source with css
-        var cell_spacing = 75;
+        var cell_spacing = core.config.spacing.cell_size;
         
         var classes = 'cell';
         if (cell.get_void())
@@ -80,7 +83,7 @@ sector8.ui.board = function(core, match)
             }
         }
         
-        var style = 'left: ' + (x * cell_spacing) + 'px; top: ' + (y * cell_spacing) + 'px;';
+        var style = 'top: ' + (row * cell_spacing) + 'px; left: ' + (col * cell_spacing) + 'px;';
         return goog.dom.createDom('div', {'class': classes, 'style': style});
     };
 };
