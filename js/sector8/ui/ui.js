@@ -37,12 +37,20 @@ sector8.ui.ui = function(core)
             {
                 var i = map.get_cell_index(row, col);
                 var c = cells[i] = new sector8.cell();
+                
+                var sectoid = null;
+                if (row === 1 && (col === 0 || col === 4))
+                {
+                    sectoid = new sector8.sectoid();
+                    sectoid.set_prime(false);
+                    sectoid.set_sectors(Math.floor(Math.random() * 256));
+                }
 
                 var t_map = [1, 1, 0, 2, 2];
                 c.set_void(row === 1 && (col === 1 || col == 3));
                 c.set_territory(t_map[col]);
                 c.set_permanent((row === 0 || row === 2) && (col === 0 || col === 4));
-                c.set_sectoid(null);
+                c.set_sectoid(sectoid);
 
                 col++;
             }

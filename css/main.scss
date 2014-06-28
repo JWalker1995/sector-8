@@ -41,18 +41,32 @@ body
     position: absolute;
     width: $cell_size;
     height: $cell_size;
-    background-color: silver;
 }
 
 .board .sectoid
 {
     position: absolute;
-    width: $sectoid_size;
-    height: $sectoid_size;
-    border-radius: 50%;
-    border-color: black;
 }
 
+.board .sector
+{
+    position: absolute;
+    top: ($cell_size - $sectoid_size) / 2;
+    left: ($cell_size - $sectoid_size) / 2;
+    width: $sectoid_size;
+    height: $sectoid_size;
+    background-size: 100%;
+}
+
+@for $i from 0 to 8
+{
+    .board .sector_#{$i}
+    {
+        background-image: url(/image/sector#{$i}.png);
+    }
+}
+
+/*
 .board .sector
 {
     position: absolute;
@@ -66,11 +80,11 @@ body
 
 @for $i from 0 to 8
 {
-    .board .sector_#{$i}
+    .board .sector_#{\$i}
     {
-        @include rotate($i * 45deg - 67.5deg);
-        top : -2px * cos($i * 45deg);
-        left:  2px * sin($i * 45deg);
+        @include rotate(\$i * 45deg - 67.5deg);
+        top : -2px * cos(\$i * 45deg);
+        left:  2px * sin(\$i * 45deg);
     }
 }
 
@@ -84,6 +98,7 @@ body
     border-radius: 50%;
     background-color: red;
 }
+*/
 
 .cell.void
 {
@@ -96,17 +111,17 @@ body
 
 .cell.player_0
 {
-    color: silver;
+    background-color: silver;
 }
 .cell.player_1
 {
-    color: red;
+    background-color: red;
 }
 .cell.player_2
 {
-    color: green;
+    background-color: green;
 }
 .cell.player_3
 {
-    color: blue;
+    background-color: blue;
 }

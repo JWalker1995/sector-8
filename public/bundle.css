@@ -20,117 +20,87 @@ body
 .board .cell {
   position: absolute;
   width: 100px;
-  height: 100px;
-  background-color: silver; }
+  height: 100px; }
 
 .board .sectoid {
-  position: absolute;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  border-color: black; }
+  position: absolute; }
 
 .board .sector {
   position: absolute;
+  top: 10px;
+  left: 10px;
   width: 80px;
   height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(-45deg, orange 50%, transparent 50%) 100% 0;
-  background-repeat: no-repeat;
-  background-size: 50% 50%; }
+  background-size: 100%; }
 
 .board .sector_0 {
-  -webkit-transform: rotate(-67.5deg);
-  -moz-transform: rotate(-67.5deg);
-  -ms-transform: rotate(-67.5deg);
-  -o-transform: rotate(-67.5deg);
-  transform: rotate(-67.5deg);
-  top: -2px;
-  left: 0px; }
+  background-image: url(/image/sector0.png); }
 
 .board .sector_1 {
-  -webkit-transform: rotate(-22.5deg);
-  -moz-transform: rotate(-22.5deg);
-  -ms-transform: rotate(-22.5deg);
-  -o-transform: rotate(-22.5deg);
-  transform: rotate(-22.5deg);
-  top: -1.41421px;
-  left: 1.41421px; }
+  background-image: url(/image/sector1.png); }
 
 .board .sector_2 {
-  -webkit-transform: rotate(22.5deg);
-  -moz-transform: rotate(22.5deg);
-  -ms-transform: rotate(22.5deg);
-  -o-transform: rotate(22.5deg);
-  transform: rotate(22.5deg);
-  top: 0.0px;
-  left: 2.0px; }
+  background-image: url(/image/sector2.png); }
 
 .board .sector_3 {
-  -webkit-transform: rotate(67.5deg);
-  -moz-transform: rotate(67.5deg);
-  -ms-transform: rotate(67.5deg);
-  -o-transform: rotate(67.5deg);
-  transform: rotate(67.5deg);
-  top: 1.41421px;
-  left: 1.41421px; }
+  background-image: url(/image/sector3.png); }
 
 .board .sector_4 {
-  -webkit-transform: rotate(112.5deg);
-  -moz-transform: rotate(112.5deg);
-  -ms-transform: rotate(112.5deg);
-  -o-transform: rotate(112.5deg);
-  transform: rotate(112.5deg);
-  top: 2.0px;
-  left: 0.0px; }
+  background-image: url(/image/sector4.png); }
 
 .board .sector_5 {
-  -webkit-transform: rotate(157.5deg);
-  -moz-transform: rotate(157.5deg);
-  -ms-transform: rotate(157.5deg);
-  -o-transform: rotate(157.5deg);
-  transform: rotate(157.5deg);
-  top: 1.41421px;
-  left: -1.41421px; }
+  background-image: url(/image/sector5.png); }
 
 .board .sector_6 {
-  -webkit-transform: rotate(202.5deg);
-  -moz-transform: rotate(202.5deg);
-  -ms-transform: rotate(202.5deg);
-  -o-transform: rotate(202.5deg);
-  transform: rotate(202.5deg);
-  top: 0.0px;
-  left: -2.0px; }
+  background-image: url(/image/sector6.png); }
 
 .board .sector_7 {
-  -webkit-transform: rotate(247.5deg);
-  -moz-transform: rotate(247.5deg);
-  -ms-transform: rotate(247.5deg);
-  -o-transform: rotate(247.5deg);
-  transform: rotate(247.5deg);
-  top: -1.41421px;
-  left: -1.41421px; }
+  background-image: url(/image/sector7.png); }
 
-.board .center {
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  top: 20px;
-  left: 20px;
-  border-radius: 50%;
-  background-color: red; }
+/*
+.board .sector
+{
+    position: absolute;
+    width: $sectoid_size;
+    height: $sectoid_size;
+    border-radius: 50%;
+    background: linear-gradient(-45deg, orange 50%, transparent 50%) 100% 0;
+    background-repeat: no-repeat;
+    background-size: 50% 50%;
+}
 
+@for $i from 0 to 8
+{
+    .board .sector_\$i
+    {
+        @include rotate(\$i * 45deg - 67.5deg);
+        top : -2px * cos(\$i * 45deg);
+        left:  2px * sin(\$i * 45deg);
+    }
+}
+
+.board .center
+{
+    position: absolute;
+    width: $center_size;
+    height: $center_size;
+    top: ($sectoid_size - $center_size) / 2;
+    left: ($sectoid_size - $center_size) / 2;
+    border-radius: 50%;
+    background-color: red;
+}
+*/
 .cell.void {
   opacity: 0.5; }
 
 .cell.player_0 {
-  color: silver; }
+  background-color: silver; }
 
 .cell.player_1 {
-  color: red; }
+  background-color: red; }
 
 .cell.player_2 {
-  color: green; }
+  background-color: green; }
 
 .cell.player_3 {
-  color: blue; }
+  background-color: blue; }

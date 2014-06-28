@@ -15952,9 +15952,16 @@ sector8.ui.board = function(core, match)
             while (col < cols)
             {
                 var i = map.get_cell_index(row, col);
+                
                 var cell = create_cell(row, col, cells[i]);
-                // make sectoid
                 goog.dom.append(el, cell);
+                
+                var sectoid = cells[i].get_sectoid();
+                if (sectoid)
+                {
+                    goog.dom.append(el, create_sectoid(row, col, sectoid));
+                }
+                
                 cell_els[i] = cell;
                 col++;
             }
@@ -15981,22 +15988,23 @@ sector8.ui.board = function(core, match)
         // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
         */
         
+        // Start test
         var html = '<div style="padding-left: 600px;">Move: <input type="text" class="move_input" /><button class="move_button">Move</button></div>';
         goog.dom.append(el, goog.dom.htmlToDocumentFragment(html));
         el.getElementsByClassName('move_button')[0].onclick = function()
         {
             var move = el.getElementsByClassName('move_input')[0].value;
         };
+        // End test
 
         return el;
     };
 
     this.render = goog.functions.cacheReturnValue(render);
     
+    
     var create_cell = function(row, col, cell)
     {
-        var cell_spacing = core.config.spacing.cell_size;
-        
         var classes = 'cell';
         if (cell.get_void())
         {
@@ -16011,8 +16019,40 @@ sector8.ui.board = function(core, match)
             }
         }
         
-        var style = 'top: ' + (row * cell_spacing) + 'px; left: ' + (col * cell_spacing) + 'px;';
+        var style = get_positioning(row, col, 0, 0);
         return goog.dom.createDom('div', {'class': classes, 'style': style});
+    };
+    
+    var create_sectoid = function(row, col, sectoid)
+    {
+        sectoid.get_prime();
+        sectoid.get_sectors();
+        
+        var style = get_positioning(row, col, 0, 0);
+        var sectoid_el = goog.dom.createDom('div', {'class': 'sectoid', 'style': style});
+        
+        var sectors = '';
+        var sec_bits = sectoid.get_sectors();
+        var sec_i = 0;
+        while (sec_bits)
+        {
+            if (sec_bits & 1)
+            {
+                var sector_el = goog.dom.createDom('span', {'class': 'sector sector_' + sec_i});
+                goog.dom.append(sectoid_el, sector_el);
+            }
+            sec_bits >>= 1;
+            sec_i++;
+        }
+        
+        return sectoid_el;
+    };
+    
+    
+    var cell_spacing = core.config.spacing.cell_size;
+    var get_positioning = function(row, col, row_off, col_off)
+    {
+        return 'top: ' + (row * cell_spacing + row_off) + 'px; left: ' + (col * cell_spacing + col_off) + 'px; ';
     };
 };goog.provide('sector8.ui.match');
 
@@ -16139,8 +16179,6 @@ sector8.sectoid = function()
     goog.asserts.assertInstanceof(this, sector8.sectoid);
 
     var props = {
-        'row': 0,
-        'col': 0,
         'prime': false,
         'sectors': 0
     };
@@ -16238,12 +16276,20 @@ sector8.ui.ui = function(core)
             {
                 var i = map.get_cell_index(row, col);
                 var c = cells[i] = new sector8.cell();
+                
+                var sectoid = null;
+                if (row === 1 && (col === 0 || col === 4))
+                {
+                    sectoid = new sector8.sectoid();
+                    sectoid.set_prime(false);
+                    sectoid.set_sectors(Math.floor(Math.random() * 256));
+                }
 
                 var t_map = [1, 1, 0, 2, 2];
                 c.set_void(row === 1 && (col === 1 || col == 3));
                 c.set_territory(t_map[col]);
                 c.set_permanent((row === 0 || row === 2) && (col === 0 || col === 4));
-                c.set_sectoid(null);
+                c.set_sectoid(sectoid);
 
                 col++;
             }
