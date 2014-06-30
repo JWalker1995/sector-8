@@ -93,12 +93,34 @@ $sectoid_offset: ($cell_size - $sectoid_size) / 2;
     width: $sectoid_size;
     height: $sectoid_size;
     background-size: 100%;
+    z-index: 10;
     transition: top 0.5s ease, left 0.5s ease;
+}
+@for $i from 0 to 8
+{
+    .board .sector_#{$i}
+    {
+        background-image: url(/images/sector_#{$i}.png);
+    }
 }
 .board .sector.floating
 {
     top: $sectoid_offset - $float_offset;
     left: $sectoid_offset - $float_offset;
+    z-index: 20;
+}
+
+$center_offset: ($cell_size - $center_size) / 2;
+.board .center
+{
+    position: absolute;
+    top: $center_offset;
+    left: $center_offset;
+    width: $center_size;
+    height: $center_size;
+    background-image: url(/images/center.png);
+    background-size: 100%;
+    z-index: 15;
 }
 
 .board .overlay
@@ -108,14 +130,7 @@ $sectoid_offset: ($cell_size - $sectoid_size) / 2;
     left: $sectoid_offset;
     width: $sectoid_size;
     height: $sectoid_size;
-}
-
-@for $i from 0 to 8
-{
-    .board .sector_#{$i}
-    {
-        background-image: url(/images/sector_#{$i}.png);
-    }
+    z-index: 100;
 }
 
 /*

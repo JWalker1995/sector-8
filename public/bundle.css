@@ -63,18 +63,8 @@ h1 {
   width: 80px;
   height: 80px;
   background-size: 100%;
+  z-index: 10;
   transition: top 0.5s ease, left 0.5s ease; }
-
-.board .sector.floating {
-  top: 0px;
-  left: 0px; }
-
-.board .overlay {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 80px;
-  height: 80px; }
 
 .board .sector_0 {
   background-image: url(/images/sector_0.png); }
@@ -99,6 +89,29 @@ h1 {
 
 .board .sector_7 {
   background-image: url(/images/sector_7.png); }
+
+.board .sector.floating {
+  top: 0px;
+  left: 0px;
+  z-index: 20; }
+
+.board .center {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  width: 40px;
+  height: 40px;
+  background-image: url(/images/center.png);
+  background-size: 100%;
+  z-index: 15; }
+
+.board .overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 80px;
+  height: 80px;
+  z-index: 100; }
 
 /*
 .board .sector

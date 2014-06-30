@@ -122,6 +122,9 @@ sector8.ui.board = function(core, match)
             i++;
         }
         
+        var center = goog.dom.createDom('span', {'class': 'center'});
+        goog.dom.append(sectoid_el, center);
+        
         var overlay = goog.dom.createDom('img', {
             'class': 'overlay',
             'usemap': '#sectoid',
