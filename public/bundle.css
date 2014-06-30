@@ -20,8 +20,39 @@ body
 .board .cell {
   position: absolute;
   width: 100px;
-  height: 100px; }
+  height: 100px;
+  transition: opacity 1s ease; }
 
+/*
+.board .cell:hover
+{
+    opacity: 0.2;
+}
+*/
+/*
+.rise
+{
+    animation-duration: 1s;
+    animation-name: rise;
+}
+
+h1 {
+  animation-duration: 3s;
+  animation-name: slidein;
+}
+
+@keyframes slidein {
+  from {
+    margin-left: 100%;
+    width: 300%; 
+  }
+
+  to {
+    margin-left: 0%;
+    width: 100%;
+  }
+}
+*/
 .board .sectoid {
   position: absolute; }
 
@@ -31,31 +62,43 @@ body
   left: 10px;
   width: 80px;
   height: 80px;
-  background-size: 100%; }
+  background-size: 100%;
+  transition: top 0.5s ease, left 0.5s ease; }
+
+.board .sector.floating {
+  top: 0px;
+  left: 0px; }
+
+.board .overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 80px;
+  height: 80px; }
 
 .board .sector_0 {
-  background-image: url(/image/sector0.png); }
+  background-image: url(/images/sector_0.png); }
 
 .board .sector_1 {
-  background-image: url(/image/sector1.png); }
+  background-image: url(/images/sector_1.png); }
 
 .board .sector_2 {
-  background-image: url(/image/sector2.png); }
+  background-image: url(/images/sector_2.png); }
 
 .board .sector_3 {
-  background-image: url(/image/sector3.png); }
+  background-image: url(/images/sector_3.png); }
 
 .board .sector_4 {
-  background-image: url(/image/sector4.png); }
+  background-image: url(/images/sector_4.png); }
 
 .board .sector_5 {
-  background-image: url(/image/sector5.png); }
+  background-image: url(/images/sector_5.png); }
 
 .board .sector_6 {
-  background-image: url(/image/sector6.png); }
+  background-image: url(/images/sector_6.png); }
 
 .board .sector_7 {
-  background-image: url(/image/sector7.png); }
+  background-image: url(/images/sector_7.png); }
 
 /*
 .board .sector

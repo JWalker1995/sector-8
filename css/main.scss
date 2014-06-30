@@ -41,28 +41,80 @@ body
     position: absolute;
     width: $cell_size;
     height: $cell_size;
+    transition: opacity 1s ease;
 }
+/*
+.board .cell:hover
+{
+    opacity: 0.2;
+}
+*/
+
+/*
+.rise
+{
+    animation-duration: 1s;
+    animation-name: rise;
+}
+
+h1 {
+  animation-duration: 3s;
+  animation-name: slidein;
+}
+
+@keyframes slidein {
+  from {
+    margin-left: 100%;
+    width: 300%; 
+  }
+
+  to {
+    margin-left: 0%;
+    width: 100%;
+  }
+}
+*/
+
+
+
+
 
 .board .sectoid
 {
     position: absolute;
 }
 
+$sectoid_offset: ($cell_size - $sectoid_size) / 2;
 .board .sector
 {
     position: absolute;
-    top: ($cell_size - $sectoid_size) / 2;
-    left: ($cell_size - $sectoid_size) / 2;
+    top: $sectoid_offset;
+    left: $sectoid_offset;
     width: $sectoid_size;
     height: $sectoid_size;
     background-size: 100%;
+    transition: top 0.5s ease, left 0.5s ease;
+}
+.board .sector.floating
+{
+    top: $sectoid_offset - $float_offset;
+    left: $sectoid_offset - $float_offset;
+}
+
+.board .overlay
+{
+    position: absolute;
+    top: $sectoid_offset;
+    left: $sectoid_offset;
+    width: $sectoid_size;
+    height: $sectoid_size;
 }
 
 @for $i from 0 to 8
 {
     .board .sector_#{$i}
     {
-        background-image: url(/image/sector#{$i}.png);
+        background-image: url(/images/sector_#{$i}.png);
     }
 }
 
