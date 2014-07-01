@@ -100,7 +100,7 @@ $sectoid_offset: ($cell_size - $sectoid_size) / 2;
 {
     .board .sector_#{$i}
     {
-        background-image: url(/images/sector_#{$i}.png);
+        background-image: url(#{$image_path}/sector_#{$i}.png);
     }
 }
 .board .sector.floating
@@ -118,7 +118,7 @@ $center_offset: ($cell_size - $center_size) / 2;
     left: $center_offset;
     width: $center_size;
     height: $center_size;
-    background-image: url(/images/center.png);
+    background-image: url(#{$image_path}/center.png);
     background-size: 100%;
     z-index: 15;
 }

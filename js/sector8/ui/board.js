@@ -135,6 +135,10 @@ sector8.ui.board = function(core, match)
             hover_sectoid = sectoid;
             hover_sectoid_el = this.parentNode;
         };
+        overlay.onmouseout = function(e)
+        {
+            hover_sectoid_el = undefined;
+        };
         goog.dom.append(sectoid_el, overlay);
         
         return sectoid_el;
@@ -169,6 +173,8 @@ sector8.ui.board = function(core, match)
             });
             area.onclick = (function(i, e)
             {
+                if (typeof hover_sectoid_el === 'undefined') {return;}
+
                 var sector = hover_sectoid_el.getElementsByClassName('sector_' + i)[0];
                 if (typeof sector === 'undefined') {return;}
                 
