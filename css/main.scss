@@ -41,7 +41,7 @@ body
     position: absolute;
     width: $cell_size;
     height: $cell_size;
-    transition: opacity 1s ease;
+    //transition: opacity 1s ease;
 }
 /*
 .board .cell:hover
@@ -84,52 +84,62 @@ h1 {
     position: absolute;
 }
 
-$sectoid_offset: ($cell_size - $sectoid_size) / 2;
+$sectoid_offset: ($cell_size - $sector_img_size) / 2;
 .board .sector
 {
     position: absolute;
     top: $sectoid_offset;
     left: $sectoid_offset;
-    width: $sectoid_size;
-    height: $sectoid_size;
+    width: $sector_img_size;
+    height: $sector_img_size;
     background-size: 100%;
     z-index: 10;
-    transition: top 0.5s ease, left 0.5s ease;
+    transition: background-image 0.5s ease;
+    
+    // used with .floating
+    //transition: top 0.5s ease, left 0.5s ease;
 }
 @for $i from 0 to 8
 {
     .board .sector_#{$i}
     {
-        background-image: url(#{$image_path}/sector_#{$i}.png);
+        background-image: url(#{$image_path}sector_#{$i}.png);
+    }
+    .board .sector_#{$i}.lit
+    {
+        background-image: url(#{$image_path}sector_#{$i}_lit.png);
     }
 }
+/*
 .board .sector.floating
 {
     top: $sectoid_offset - $float_offset;
     left: $sectoid_offset - $float_offset;
     z-index: 20;
 }
+*/
 
-$center_offset: ($cell_size - $center_size) / 2;
+$center_offset: ($cell_size - $center_img_size) / 2;
 .board .center
 {
     position: absolute;
     top: $center_offset;
     left: $center_offset;
-    width: $center_size;
-    height: $center_size;
-    background-image: url(#{$image_path}/center.png);
+    width: $center_img_size;
+    height: $center_img_size;
+    background-image: url(#{$image_path}center.png);
     background-size: 100%;
     z-index: 15;
 }
 
+$overlay_offset: ($cell_size - $overlay_img_size) / 2;
 .board .overlay
 {
     position: absolute;
-    top: $sectoid_offset;
-    left: $sectoid_offset;
-    width: $sectoid_size;
-    height: $sectoid_size;
+    top: $overlay_offset;
+    left: $overlay_offset;
+    width: $overlay_img_size;
+    height: $overlay_img_size;
     z-index: 100;
 }
 
@@ -169,11 +179,9 @@ $center_offset: ($cell_size - $center_size) / 2;
 
 .cell.void
 {
-    opacity: 0.5;
 }
 .cell.permanent
 {
-    
 }
 
 .cell.player_0
@@ -186,9 +194,9 @@ $center_offset: ($cell_size - $center_size) / 2;
 }
 .cell.player_2
 {
-    background-color: green;
+    background-color: orange;
 }
 .cell.player_3
 {
-    background-color: blue;
+    background-color: yellow;
 }

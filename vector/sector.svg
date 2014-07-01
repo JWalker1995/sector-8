@@ -15,7 +15,7 @@
    version="1.1"
    inkscape:version="0.48.4 r9939"
    sodipodi:docname="sector.svg"
-   inkscape:export-filename="/home/joel/projects/sector-8/public/image/sector7.png"
+   inkscape:export-filename="/home/joel/projects/sector-8/public/images/sector_5_lit.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <defs
@@ -27,18 +27,24 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1"
-     inkscape:cx="-20.640215"
-     inkscape:cy="161.94491"
+     inkscape:zoom="5.6568542"
+     inkscape:cx="2.1368527"
+     inkscape:cy="38.409804"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
-     showgrid="false"
+     showgrid="true"
      inkscape:snap-page="true"
      inkscape:window-width="1855"
      inkscape:window-height="1056"
      inkscape:window-x="65"
      inkscape:window-y="24"
-     inkscape:window-maximized="1" />
+     inkscape:window-maximized="1"
+     inkscape:snap-grids="true"
+     inkscape:snap-bbox="true">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3080" />
+  </sodipodi:namedview>
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -58,18 +64,15 @@
      transform="translate(0,-952.36218)">
     <path
        sodipodi:type="arc"
-       style="fill:#808080;stroke:#000000;stroke-opacity:1"
-       id="path3765"
+       style="fill:#00ff00;stroke:#000000;stroke-opacity:1"
+       id="path3084"
        sodipodi:cx="50"
        sodipodi:cy="50"
-       sodipodi:rx="50"
-       sodipodi:ry="50"
-       d="M 50.000001,0 A 50,50 0 0 1 85.355338,14.644659 L 50,50 z"
+       sodipodi:rx="40"
+       sodipodi:ry="40"
+       d="M 34.692663,86.955181 A 40,40 0 0 1 13.044818,65.307336 L 50,50 z"
        transform="translate(0,952.36218)"
-       sodipodi:start="4.712389"
-       sodipodi:end="5.4977871"
-       inkscape:export-filename="/home/joel/projects/sector-8/public/image/path3.png"
-       inkscape:export-xdpi="90"
-       inkscape:export-ydpi="90" />
+       sodipodi:start="1.9634954"
+       sodipodi:end="2.7488936" />
   </g>
 </svg>

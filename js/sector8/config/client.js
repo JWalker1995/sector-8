@@ -13,9 +13,12 @@ sector8.config.client = function()
     	},
         'geometry': {
             'cell_size': 100,
+            'sector_img_size': 100,
             'sectoid_size': 80,
+            'center_img_size': 40,
             'center_size': 40,
-            'float_offset': 10
+            'overlay_img_size': 100,
+            //'float_offset': 20
         }
     });
 };

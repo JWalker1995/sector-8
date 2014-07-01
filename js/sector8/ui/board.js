@@ -106,17 +106,14 @@ sector8.ui.board = function(core, match)
         
         var style = get_positioning(row, col, 0, 0);
         var sectoid_el = goog.dom.createDom('div', {'class': 'sectoid', 'style': style});
-        
-        var order = [7, 0, 6, 1, 5, 2, 4, 3];
-        
+                
         var sec_bits = sectoid.get_sectors();
         var i = 0;
         while (i < 8)
         {
-            var sec = order[i];
-            if ((sec_bits >> sec) & 1)
+            if ((sec_bits >> i) & 1)
             {
-                var sector_el = goog.dom.createDom('span', {'class': 'sector sector_' + sec});
+                var sector_el = goog.dom.createDom('span', {'class': 'sector sector_' + i});
                 goog.dom.append(sectoid_el, sector_el);
             }
             i++;
@@ -137,6 +134,9 @@ sector8.ui.board = function(core, match)
         };
         overlay.onmouseout = function(e)
         {
+            var t = e.toElement || e.relatedTarget;
+            if (t.tagName === 'MAP' || t.tagName === 'AREA') {return;}
+            
             hover_sectoid_el = undefined;
         };
         goog.dom.append(sectoid_el, overlay);
@@ -144,6 +144,7 @@ sector8.ui.board = function(core, match)
         return sectoid_el;
     };
     
+    var sector_center = core.config.geometry.sector_img_size / 2.0;
     var sector_rad = core.config.geometry.sectoid_size / 2.0;
     var create_areas = function()
     {
@@ -165,7 +166,7 @@ sector8.ui.board = function(core, match)
                 -Math.cos(ang + step)
             ];
             
-            coords = coords.map(function(c) {return c * sector_rad + sector_rad;});
+            coords = coords.map(function(c) {return c * sector_rad + sector_center;});
             
             var area = goog.dom.createDom('area', {
                 'shape': 'poly',
@@ -178,13 +179,13 @@ sector8.ui.board = function(core, match)
                 var sector = hover_sectoid_el.getElementsByClassName('sector_' + i)[0];
                 if (typeof sector === 'undefined') {return;}
                 
-                if (sector.className.indexOf(' floating') === -1)
+                if (sector.className.indexOf(' lit') === -1)
                 {
-                    sector.className += ' floating';
+                    sector.className += ' lit';
                 }
                 else
                 {
-                    sector.className = sector.className.replace(' floating', '');
+                    sector.className = sector.className.replace(' lit', '');
                 }
             }).bind(area, i);
             goog.dom.append(map, area);
