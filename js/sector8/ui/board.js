@@ -144,8 +144,9 @@ sector8.ui.board = function(core, match)
         return sectoid_el;
     };
     
-    var sector_center = core.config.geometry.sector_img_size / 2.0;
-    var sector_rad = core.config.geometry.sectoid_size / 2.0;
+    var overlay_center = core.config.geometry.overlay_img_size / 2.0;
+    var sector_rad = core.config.geometry.sector_rad;
+    var center_rad = core.config.geometry.center_rad;
     var create_areas = function()
     {
         var map = goog.dom.createDom('map', {'name': 'sectoid'});
@@ -166,7 +167,7 @@ sector8.ui.board = function(core, match)
                 -Math.cos(ang + step)
             ];
             
-            coords = coords.map(function(c) {return c * sector_rad + sector_center;});
+            coords = coords.map(function(c) {return c * sector_rad + overlay_center;});
             
             var area = goog.dom.createDom('area', {
                 'shape': 'poly',
@@ -193,6 +194,29 @@ sector8.ui.board = function(core, match)
             ang += step * 2.0;
             i++;
         }
+        
+        var center = goog.dom.createDom('area', {
+            'shape': 'circle',
+            'coords': overlay_center + ',' + overlay_center + ',' + center_rad
+        });
+        center.onclick = function(e)
+        {
+            if (typeof hover_sectoid_el === 'undefined') {return;}
+
+            var sector = hover_sectoid_el.getElementsByClassName('sector_' + i)[0];
+            if (typeof sector === 'undefined') {return;}
+
+            if (sector.className.indexOf(' lit') === -1)
+            {
+                sector.className += ' lit';
+            }
+            else
+            {
+                sector.className = sector.className.replace(' lit', '');
+            }
+        };
+        goog.dom.append(map, center);
+
         
         return map;
     };

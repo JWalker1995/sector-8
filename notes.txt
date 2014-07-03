@@ -1,0 +1,164 @@
+Login box
+    Username, password, and login button
+    Messages display as a colored box with the left border a triangle pointing at the appliccable input
+    If username empty:
+        Disable password/login
+    If username invalid:
+        Username msg "Username invalid"
+        Disable password/login
+    If username is in use by a guest:
+        Username msg "Username in use by a guest"
+        Disable password/login
+    If username is taken:
+        Enable password/login
+    If username is available:
+        Username msg "Username available"
+        Disable password, Enable login as guest
+    Click login:
+        If login correct:
+            Fade out login box and fade in profile box
+        Else:
+            Password msg "Login incorrect"
+    Click login as guest:
+        Fade out login box and fade in profile box
+
+Profile box
+    Username heading [guest ? " Guest"]
+        Guest tooltip: "You are currently logged in as a guest. This means if you leave, your entire account will be lost."
+    Flag
+    ---
+    Rating = [formula]
+    Legendary wins, Dishonorable losses
+    Wins, Ties, Losses
+    [hover any number to see graph]
+    ---
+    Last matches
+
+
+var ratings = [10.0, 10.0];
+var c = ratings.length;
+var i = 0;
+while (i < 100)
+{
+    var j = 0;
+    while (j < c)
+    {
+        var opp = Math.floor(Math.random() * (c - 1.0));
+        if (opp >= j) {opp++;}
+
+        var win = Math.random() < 0.5;
+        if (i < 50)
+        {
+            if (opp === 0) {win = true;}
+            if (j === 0) {win = false;}
+        }
+
+        var ea = 1.0 / (1.0 + Math.exp((ratings[opp] - ratings[j]) / 10.0));
+        var eb = 1.0 / (1.0 + Math.exp((ratings[j] - ratings[opp]) / 10.0));
+        ratings[j] += 2.0 * (win - ea);
+        ratings[opp] += 2.0 * (1 - win - eb);
+
+        j++;
+    }
+
+    console.log(ratings);
+
+    i++;
+}
+
+
+
+Each user has:
+    A primary color for centers / territory
+    Sector color
+    Sector edge style ?
+    No flag
+
+Inherit pieces between games? No
+
+When sectors from all 8 directions implode into one full sectoid on a single turn, it becomes prime. Having multiple primes allows a player to send more than one order each turn.
+
+When a opposing sectoids collide, the territory is claimed by the player with more sectoids, or unclaimed if equal.
+
+---All pieces should move at the same time. Otherwise, when a piece changes territory, it's move schedule changes.
+Nope, actually having schedules change produces some very interesting behavior. It is possible to create "fast lanes" with alternating territories in a line. Fast lanes only work if territory does not change if a piece is not powered.
+
+Move options:
+1. Players order at the same time, then pieces move
+    Almost impossible to capture
+2. Players alternate ordering, and all pieces move each order
+    Problematic for many-player games
+3. Players alternate ordering, and after a player orders, all pieces on his territory move
+    Not very realistic or elegant
+    Makes it easy to stop prime sector creation
+
+Can pieces swap positions, passing through each other?
+    Yes. Resolving this would add complexity.
+
+1. Red orders
+2. Blue orders
+3. Pieces move
+
+1. Red orders
+2. Pieces move
+3. Blue orders
+4. Pieces move
+
+1. Red orders
+2. Red pieces move
+3. Blue orders
+4. Blue pieces move
+
+
+Force game ending?
+
+
+Hover center:
+    Same as hovering every sector
+Click center:
+    If no sectors are selected, select all sectors, including ghost sectors
+    If sectors are selected, deselect all sectors
+Drag center:
+    Gives an order to move the selected sectors, or if none are selected, order all sectors including ghost sectors
+Hover sector:
+    If the sector bit is on, show a faint glowing border.
+    If the sector bit is off, show a faint ghost sector border.
+Click sector:
+    Toggles if the selectedness of the sector.
+Drag sector:
+    Can only drag in line. Dropping the sector on another cell gives an order to move just that sector. Also works with ghost sectors.
+
+
+Maps:
+    red, blue permanent, red permanent, blue
+        To win, you must create a prime sectoid on your opponent's half
+
+701
+6 2
+543
+
+ABC
+
+0: B0, B4
+1: B1, B5
+2: C6
+3: C4, C7
+4: A3, A0
+5: A4, A1
+6: A2
+7: B7, B3
+
+A strategy contains either:
+    The position offset (which piece to move)
+    The time offset (when to start moving)
+    A 8-bit mask of sectors to move
+    The direction to move
+    The distance to move
+Or:
+    A list of other strategies
+
+Each move, you may:
+    Create or select a strategy and immediately move it
+    Create or select a strategy and add it to another strategy
+
+Don't allow saving strategies, because this would allow creating an implosion strategy or another complex strategy, and executing it whenever. There's no opportunity for the opponent to disrupt things when he sees you not doing anything visibly.
