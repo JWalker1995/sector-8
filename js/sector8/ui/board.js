@@ -151,6 +151,45 @@ sector8.ui.board = function(core, match)
     {
         var map = goog.dom.createDom('map', {'name': 'sectoid'});
         
+        var center = goog.dom.createDom('area', {
+            'shape': 'circle',
+            'coords': overlay_center + ',' + overlay_center + ',' + center_rad
+        });
+        center.onclick = function(e)
+        {
+            if (typeof hover_sectoid_el === 'undefined') {return;}
+
+            var sectors = hover_sectoid_el.getElementsByClassName('sector');
+            
+            var light = true;
+            var i = 0;
+            while (i < sectors.length)
+            {
+                if (sectors[i].className.indexOf(' lit') !== -1)
+                {
+                    light = false;
+                    break;
+                }
+                i++;
+            }
+            
+            i = 0;
+            while (i < sectors.length)
+            {
+                var is_lit = sectors[i].className.indexOf(' lit') !== -1;
+                if (light && !is_lit)
+                {
+                    sectors[i].className += ' lit';
+                }
+                else if (!light && is_lit)
+                {
+                    sectors[i].className = sectors[i].className.replace(' lit', '');
+                }
+                i++;
+            }
+        };
+        goog.dom.append(map, center);
+        
         var i = 0;
         var ang = 0.0;
         var step = Math.PI / 8.0;
@@ -194,31 +233,16 @@ sector8.ui.board = function(core, match)
             ang += step * 2.0;
             i++;
         }
-        
-        var center = goog.dom.createDom('area', {
-            'shape': 'circle',
-            'coords': overlay_center + ',' + overlay_center + ',' + center_rad
-        });
-        center.onclick = function(e)
-        {
-            if (typeof hover_sectoid_el === 'undefined') {return;}
 
-            var sector = hover_sectoid_el.getElementsByClassName('sector_' + i)[0];
-            if (typeof sector === 'undefined') {return;}
-
-            if (sector.className.indexOf(' lit') === -1)
-            {
-                sector.className += ' lit';
-            }
-            else
-            {
-                sector.className = sector.className.replace(' lit', '');
-            }
-        };
-        goog.dom.append(map, center);
-
-        
         return map;
+    };
+    
+    var send_order = function(order)
+    {
+        core.net.request('order', order.to_notation(), function()
+        {
+            // Order received
+        });
     };
     
     

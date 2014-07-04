@@ -1,5 +1,5 @@
 require('../js/closure-library/closure/goog/bootstrap/nodejs.js');
-require('../js/deps.js');
+require('../public/deps.js');
 
 var assert = require('assert');
 /*
@@ -16,9 +16,6 @@ var assert = require('assert');
   ifError: [Function]
 */
 
-goog.require('util.gate');
-
-
 var rand_unbounded = function(decay)
 {
     var i = 0;
@@ -26,6 +23,7 @@ var rand_unbounded = function(decay)
     return i;
 };
 
+goog.require('util.gate');
 suite('util.gate', function()
 {
     setup(function()

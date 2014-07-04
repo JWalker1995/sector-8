@@ -1,0 +1,38 @@
+{
+    "name": "sector-8",
+    "version": "0.0.1",
+    "description": "A fast-paced mutiplayer turn-based online strategy board game",
+    "author": "Joel Walker <joel@walker9.net>",
+    "contributors": [],
+    "bin": {},
+    "script": {
+        "start": "node server.js",
+        "test": "./node_modules/.bin/mocha --ui tdd --reporter spec --watch",
+        "sector8-dev-js": "sh watch_js.sh",
+        "sector8-dev-css": "sh watch_css.sh",
+        "sector8-compile": "sh compile.sh",
+        "sector8-server": "node server.js",
+        "sector8-test": "mocha test/test.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/JWalker1995/sector-8"
+    },
+    "bugs": {
+        "url": "https://github.com/JWalker1995/sector-8/issues"
+    },
+    "keywords": [],
+    "dependencies": {
+        "bcrypt": "*",
+        "primus": "*",
+        "ws": "*",
+        "mysql": "*"
+    },
+    "devDependencies": {
+        "mocha": "*"
+    },
+    "preferGlobal": false,
+    "private": true,
+    "publishConfig": {},
+    "license": "MIT"
+}

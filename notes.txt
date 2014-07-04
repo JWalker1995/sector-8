@@ -93,7 +93,7 @@ Move options:
     Makes it easy to stop prime sector creation
 
 Can pieces swap positions, passing through each other?
-    Yes. Resolving this would add complexity.
+    Yes. Trying to resolve this would add complexity.
 
 1. Red orders
 2. Blue orders

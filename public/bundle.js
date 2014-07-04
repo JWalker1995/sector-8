@@ -16072,11 +16072,51 @@ sector8.ui.board = function(core, match)
         return sectoid_el;
     };
     
-    var sector_center = core.config.geometry.sector_img_size / 2.0;
-    var sector_rad = core.config.geometry.sectoid_size / 2.0;
+    var overlay_center = core.config.geometry.overlay_img_size / 2.0;
+    var sector_rad = core.config.geometry.sector_rad;
+    var center_rad = core.config.geometry.center_rad;
     var create_areas = function()
     {
         var map = goog.dom.createDom('map', {'name': 'sectoid'});
+        
+        var center = goog.dom.createDom('area', {
+            'shape': 'circle',
+            'coords': overlay_center + ',' + overlay_center + ',' + center_rad
+        });
+        center.onclick = function(e)
+        {
+            if (typeof hover_sectoid_el === 'undefined') {return;}
+
+            var sectors = hover_sectoid_el.getElementsByClassName('sector');
+            
+            var light = true;
+            var i = 0;
+            while (i < sectors.length)
+            {
+                if (sectors[i].className.indexOf(' lit') !== -1)
+                {
+                    light = false;
+                    break;
+                }
+                i++;
+            }
+            
+            i = 0;
+            while (i < sectors.length)
+            {
+                var is_lit = sectors[i].className.indexOf(' lit') !== -1;
+                if (light && !is_lit)
+                {
+                    sectors[i].className += ' lit';
+                }
+                else if (!light && is_lit)
+                {
+                    sectors[i].className = sectors[i].className.replace(' lit', '');
+                }
+                i++;
+            }
+        };
+        goog.dom.append(map, center);
         
         var i = 0;
         var ang = 0.0;
@@ -16094,7 +16134,7 @@ sector8.ui.board = function(core, match)
                 -Math.cos(ang + step)
             ];
             
-            coords = coords.map(function(c) {return c * sector_rad + sector_center;});
+            coords = coords.map(function(c) {return c * sector_rad + overlay_center;});
             
             var area = goog.dom.createDom('area', {
                 'shape': 'poly',
@@ -16121,8 +16161,16 @@ sector8.ui.board = function(core, match)
             ang += step * 2.0;
             i++;
         }
-        
+
         return map;
+    };
+    
+    var send_order = function(order)
+    {
+        core.net.request('order', order.to_notation(), function()
+        {
+            // Order received
+        });
     };
     
     
@@ -16258,23 +16306,6 @@ sector8.sectoid = function()
     var props = {
         'prime': false,
         'sectors': 0
-    };
-
-    util.make_getters_setters(this, props);
-};
-
-sector8.order = function()
-{
-    goog.asserts.assertInstanceof(this, sector8.order);
-
-    var props = {
-        'player': 0,
-        'sectoid': sector8.sectoid,
-        'min_turn': 0,
-        'max_turn': 0,
-        'sectoids': 0,
-        'direction': 0,
-        'distance': 0
     };
 
     util.make_getters_setters(this, props);
@@ -18112,9 +18143,9 @@ sector8.config.client = function()
         'geometry': {
             'cell_size': 100,
             'sector_img_size': 100,
-            'sectoid_size': 80,
+            'sector_rad': 40,
             'center_img_size': 40,
-            'center_size': 40,
+            'center_rad': 20,
             'overlay_img_size': 100,
             //'float_offset': 20
         }

@@ -106,23 +106,6 @@ sector8.sectoid = function()
 
     util.make_getters_setters(this, props);
 };
-
-sector8.order = function()
-{
-    goog.asserts.assertInstanceof(this, sector8.order);
-
-    var props = {
-        'player': 0,
-        'sectoid': sector8.sectoid,
-        'min_turn': 0,
-        'max_turn': 0,
-        'sectoids': 0,
-        'direction': 0,
-        'distance': 0
-    };
-
-    util.make_getters_setters(this, props);
-};
     
 sector8.player = function()
 {
