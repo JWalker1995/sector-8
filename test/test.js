@@ -94,3 +94,64 @@ suite('util.gate', function()
         inst.open();
     });
 });
+
+goog.require('sector8.order');
+suite('sector8.order', function()
+{
+    setup(function()
+    {
+    });
+
+    var inst;
+    test('instantiation', function()
+    {
+        inst = new sector8.order();
+    });
+    
+    var parse_tests = {
+        'D :20+2-4 #f5 .012457 @4*3': [4, 20, 2, 4, 6, 5, parseInt('10110111', 2), 4, 3],
+        'Z:15+7-2#a2.6@6*1': [26, 15, 7, 2, 1, 2, parseInt('01000000', 2), 6, 1]
+    };
+
+    for (var str in parse_tests)
+    {
+        test('parse "' + str + '"', (function(str)
+        {
+            inst.from_notation(str);
+
+            assert.equal(inst.get_player(), parse_tests[str][0]);
+            assert.equal(inst.get_turn(), parse_tests[str][1]);
+            assert.equal(inst.get_wait(), parse_tests[str][2]);
+            assert.equal(inst.get_duration(), parse_tests[str][3]);
+            assert.equal(inst.get_col(), parse_tests[str][4]);
+            assert.equal(inst.get_row(), parse_tests[str][5]);
+            assert.equal(inst.get_sectors(), parse_tests[str][6]);
+            assert.equal(inst.get_direction(), parse_tests[str][7]);
+            assert.equal(inst.get_distance(), parse_tests[str][8]);
+        }).bind(null, str));
+    }
+    
+    var stringify_tests = {
+        'D :20+2-4 #f5 .012457 @4*3': [4, 20, 2, 4, 5, 4, parseInt('10110111', 2), 4, 3, true],
+        'D:20+2-4#f5.012457@4*3': [4, 20, 2, 4, 5, 4, parseInt('10110111', 2), 4, 3, false]
+    };
+    
+    for (var str in stringify_tests)
+    {
+        test('stringify "' + str + '"', (function(str)
+        {
+            inst.set_player(stringify_tests[str][0]);
+            inst.set_turn(stringify_tests[str][1]);
+            inst.set_wait(stringify_tests[str][2]);
+            inst.set_duration(stringify_tests[str][3]);
+            inst.set_col(stringify_tests[str][4]);
+            inst.set_row(stringify_tests[str][5]);
+            inst.set_sectors(stringify_tests[str][6]);
+            inst.set_direction(stringify_tests[str][7]);
+            inst.set_distance(stringify_tests[str][8]);
+            
+            var pretty = stringify_tests[str][9];
+            assert.equal(inst.to_notation(pretty), str);
+        }).bind(null, str));
+    }
+});

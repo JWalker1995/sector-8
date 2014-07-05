@@ -1,7 +1,11 @@
 goog.provide('sector8.order');
+debugger;
+goog.require('goog.asserts');
+goog.require('util.make_getters_setters');
 
 sector8.order = function()
 {
+    debugger;
     goog.asserts.assertInstanceof(this, sector8.order);
 
     var props = {
@@ -9,8 +13,8 @@ sector8.order = function()
         'turn': 0,
         'wait': 0,
         'duration': 0,
-        'row': 0,
         'col': 0,
+        'row': 0,
         'sectors': 0,
         'direction': 0,
         'distance': 0
@@ -19,11 +23,15 @@ sector8.order = function()
 
     util.make_getters_setters(this, props);
     
+    var char_0 = '0'.charCodeAt(0);
+    var char_a = 'a'.charCodeAt(0);
+    var char_A = 'A'.charCodeAt(0);
+    
     this.to_notation = function(pretty)
     {
-        var player = String.fromCharCode(64 + this.get_player());
-        var turns = ':' + this.get_turn() + '+' + this.get_min_turn() + '-' + this.get_max_turn();
-        var sectoid = '#' + String.fromCharCode(97 + this.get_col()) + this.get_row();
+        var player = String.fromCharCode(char_A + this.get_player() - 1);
+        var turns = ':' + this.get_turn() + '+' + this.get_wait() + '-' + this.get_duration();
+        var sectoid = '#' + String.fromCharCode(char_a + this.get_col()) + (this.get_row() + 1);
         var trans = '@' + this.get_direction() + '*' + this.get_distance();
         
         var sectors = '.';
@@ -44,28 +52,33 @@ sector8.order = function()
     {
         var regex = /^\s*([A-Z])?\s*(?:\:(\d+))?(?:\+(\d+))?(?:-(\d+))?\s*#([a-z])(\d+)\s*(?:\.(\d+))?\s*@(?:x|(\d+)(?:\*(\d+))?)\s*$/;
         var exec;
-        while (exec = regex.exec(str))
+        if (exec = regex.exec(str))
         {
-            console.log(exec);
-            /*
-            if (exec[1])
+            var sectors = 0;
+            var i = 0;
+            while (i < exec[7].length)
             {
-                var player = exec[1].charCodeAt(0) - 'A'.charCodeAt(0);
-                if (player !== move % num_players) {return false;}
+                var sector = exec[7].charCodeAt(i) - char_0;
+                if (sector >= 8) {return false;}
+                sectors += 1 << sector;
+                i++;
             }
             
-            var order = new sector8.order();
-            order.set_min_turn(move + parseInt(exec[1]));
-            */
+            this.set_player(exec[1].charCodeAt(0) - char_A + 1);
+            this.set_turn(parseInt(exec[2], 10));
+            this.set_wait(parseInt(exec[3], 10));
+            this.set_duration(parseInt(exec[4], 10));
+            this.set_col(exec[5].charCodeAt(0) - char_a + 1);
+            this.set_row(parseInt(exec[6], 10));
+            this.set_sectors(sectors);
+            this.set_direction(parseInt(exec[8], 10));
+            this.set_distance(parseInt(exec[9], 10));
+            
+            return true;
         }
-        
-        /*
-        if (match)
+        else
         {
-            this.set_min_turn(turn + parseInt(match[1]));
-            this.set_max_turn(turn + parseInt(match[2]));
-            this.set_
+            return false;
         }
-        */
     };
 };

@@ -3676,6 +3676,7 @@ util.make_getters_setters = function(obj, props)
 };
 goog.provide('sector8.map');
 
+goog.require('goog.asserts');
 goog.require('util.make_getters_setters');
 
 sector8.map = function()
@@ -16203,6 +16204,9 @@ sector8.ui.match = function(core, match)
     this.render = goog.functions.cacheReturnValue(render);
 };
 goog.provide('sector8.match');
+
+goog.require('goog.asserts');
+goog.require('util.make_getters_setters');
 
 sector8.match = function()
 {

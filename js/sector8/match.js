@@ -1,5 +1,8 @@
 goog.provide('sector8.match');
 
+goog.require('goog.asserts');
+goog.require('util.make_getters_setters');
+
 sector8.match = function()
 {
     goog.asserts.assertInstanceof(this, sector8.match);
