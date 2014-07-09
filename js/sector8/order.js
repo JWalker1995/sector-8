@@ -23,15 +23,15 @@ sector8.order = function()
 
     util.make_getters_setters(this, props);
     
-    var char_0 = '0'.charCodeAt(0);
-    var char_a = 'a'.charCodeAt(0);
-    var char_A = 'A'.charCodeAt(0);
+    var char_number = '1'.charCodeAt(0) - 1;
+    var char_lower = 'a'.charCodeAt(0) - 1;
+    var char_upper = 'A'.charCodeAt(0) - 1;
     
     this.to_notation = function(pretty)
     {
-        var player = String.fromCharCode(char_A + this.get_player() - 1);
+        var player = String.fromCharCode(char_upper + this.get_player());
         var turns = ':' + this.get_turn() + '+' + this.get_wait() + '-' + this.get_duration();
-        var sectoid = '#' + String.fromCharCode(char_a + this.get_col()) + (this.get_row() + 1);
+        var sectoid = '#' + String.fromCharCode(char_lower + this.get_col() + 1) + (this.get_row() + 1);
         var trans = '@' + this.get_direction() + '*' + this.get_distance();
         
         var sectors = '.';
@@ -54,21 +54,28 @@ sector8.order = function()
         var exec;
         if (exec = regex.exec(str))
         {
+            if (!exec[1]) {exec[1] = '';}
+            if (!exec[2]) {exec[2] = '';}
+            if (!exec[3]) {exec[3] = '0';}
+            if (!exec[4]) {exec[4] = '1';}
+            if (!exec[7]) {exec[7] = '01234567';}
+            if (!exec[9]) {exec[9] = '1';}
+            
             var sectors = 0;
             var i = 0;
             while (i < exec[7].length)
             {
-                var sector = exec[7].charCodeAt(i) - char_0;
+                var sector = exec[7].charCodeAt(i) - char_number;
                 if (sector >= 8) {return false;}
                 sectors += 1 << sector;
                 i++;
             }
             
-            this.set_player(exec[1].charCodeAt(0) - char_A + 1);
+            this.set_player(exec[1].charCodeAt(0) - char_upper);
             this.set_turn(parseInt(exec[2], 10));
             this.set_wait(parseInt(exec[3], 10));
             this.set_duration(parseInt(exec[4], 10));
-            this.set_col(exec[5].charCodeAt(0) - char_a + 1);
+            this.set_col(exec[5].charCodeAt(0) - char_lower);
             this.set_row(parseInt(exec[6], 10));
             this.set_sectors(sectors);
             this.set_direction(parseInt(exec[8], 10));

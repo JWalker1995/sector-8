@@ -245,6 +245,11 @@ sector8.ui.board = function(core, match)
         });
     };
     
+    var on_order = function(order)
+    {
+        
+    };
+    
     
     var cell_spacing = core.config.geometry.cell_size;
     var get_positioning = function(row, col, row_off, col_off)
