@@ -262,6 +262,11 @@ sector8.ui.board = function(core, match)
         var sectoid_el = sectoid_els[source_i];
         var dest_i = map.get_cell_index(col, row);
     };
+    var on_order = function(order)
+    {
+        
+    };
+    
     
     
     var cell_spacing = core.config.geometry.cell_size;

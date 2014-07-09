@@ -16174,6 +16174,11 @@ sector8.ui.board = function(core, match)
         });
     };
     
+    var on_order = function(order)
+    {
+        
+    };
+    
     
     var cell_spacing = core.config.geometry.cell_size;
     var get_positioning = function(row, col, row_off, col_off)
@@ -16248,44 +16253,43 @@ sector8.match = function()
         }
     };
     
-    this.from_notation = function(str)
+    var orders = [];
+    this.load_orders = function(str)
     {
-        /*
-        var move = 0;
-        var num_players = this.get_players().length;
+        var tmp_order = new sector8.order();
         
-        var regex = /^\s*([A-Z])?\s*(?:\+(\d+)(?:-(\d+))?\s*)?:([a-z])(\d+)(?:\.(\d+))?\s*@(?:x|(\d+)(?:\*(\d+))?)\s*$/;
-        var exec;
-        while (exec = regex.exec(str))
+        var lines = str.split(/,|\r|\n/);
+        var i = 0;
+        while (i < lines)
         {
-            if (exec[1])
+            if (tmp_order.from_notation(lines[i]))
             {
-                var player = exec[1].charCodeAt(0) - 'A'.charCodeAt(0);
-                if (player !== move % num_players) {return false;}
+                var turn = tmp_order.get_turn();
+                while (typeof orders[turn] === 'undefined') {orders.push([]);}
+                orders[turn].push(tmp_order);
+                tmp_order = new sector8.order();
             }
-            
-            var order = new sector8.order();
-            order.set_min_turn(move + parseInt(exec[1]));
+            i++;
         }
+    };
+    
+    var board_states = [];
+    this.load_board_states = function()
+    {
+        board_states[0] = this.get_map().get_cells();
         
-        if (match)
+        var i = 0;
+        while (i < orders.length)
         {
-            this.set_min_turn(turn + parseInt(match[1]));
-            this.set_max_turn(turn + parseInt(match[2]));
-            this.set_
+            var j = 0;
+            var d = orders[i].length;
+            while (j < d)
+            {
+                orders[i][j];
+                j++;
+            }
+            i++;
         }
-        {
-            match[1]
-            '2',
-  '4',
-  'b',
-  '5',
-  '01245',
-  '4',
-  '3',
-        }
-        // A +2-4 :b5.01245 @4*3
-        */
     };
 };
 
