@@ -109,8 +109,8 @@ suite('sector8.order', function()
     });
     
     var parse_tests = {
-        'D :20+2-4 #f5 .012457 @4*3': [4, 20, 2, 4, 6, 5, parseInt('10110111', 2), 4, 3],
-        'Z:15+7-2#a2.6@6*1': [26, 15, 7, 2, 1, 2, parseInt('01000000', 2), 6, 1]
+        'D :20+2-4 #f5 .012457 @4': [4, 20, 2, 4, 6, 5, parseInt('10110111', 2), 4],
+        'Z:15+7-2#a2.6@6': [26, 15, 7, 2, 1, 2, parseInt('01000000', 2), 6]
     };
 
     for (var str in parse_tests)
@@ -127,13 +127,12 @@ suite('sector8.order', function()
             assert.equal(inst.get_row(), parse_tests[str][5]);
             assert.equal(inst.get_sectors(), parse_tests[str][6]);
             assert.equal(inst.get_direction(), parse_tests[str][7]);
-            assert.equal(inst.get_distance(), parse_tests[str][8]);
         }).bind(null, str));
     }
     
     var stringify_tests = {
-        'D :20+2-4 #f5 .012457 @4*3': [4, 20, 2, 4, 5, 4, parseInt('10110111', 2), 4, 3, true],
-        'D:20+2-4#f5.012457@4*3': [4, 20, 2, 4, 5, 4, parseInt('10110111', 2), 4, 3, false]
+        'D :20+2-4 #f5 .012457 @4': [4, 20, 2, 4, 5, 4, parseInt('10110111', 2), 4, true],
+        'D:20+2-4#f5.012457@4': [4, 20, 2, 4, 5, 4, parseInt('10110111', 2), 4, false]
     };
     
     for (var str in stringify_tests)
@@ -148,9 +147,8 @@ suite('sector8.order', function()
             inst.set_row(stringify_tests[str][5]);
             inst.set_sectors(stringify_tests[str][6]);
             inst.set_direction(stringify_tests[str][7]);
-            inst.set_distance(stringify_tests[str][8]);
             
-            var pretty = stringify_tests[str][9];
+            var pretty = stringify_tests[str][8];
             assert.equal(inst.to_notation(pretty), str);
         }).bind(null, str));
     }

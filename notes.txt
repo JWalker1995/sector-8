@@ -78,9 +78,9 @@ Inherit pieces between games? No
 
 When sectors from all 8 directions implode into one full sectoid on a single turn, it becomes prime. Having multiple primes allows a player to send more than one order each turn.
 
-When a opposing sectoids collide, the territory is claimed by the player with more sectoids, or unclaimed if equal.
+When a multiple sectoids combine, the territory is claimed by the player with more sectoids, or unclaimed if equal.
 
----All pieces should move at the same time. Otherwise, when a piece changes territory, it's move schedule changes.
+---All pieces should move at the same time. Otherwise, when a piece changes territory, its move schedule changes.
 Nope, actually having schedules change produces some very interesting behavior. It is possible to create "fast lanes" with alternating territories in a line. Fast lanes only work if territory does not change if a piece is not powered.
 
 Move options:
@@ -123,15 +123,39 @@ Drag center:
 Hover sector:
     If the sector bit is on, show a faint glowing border.
     If the sector bit is off, show a faint ghost sector border.
-Click sector:
-    Toggles if the selectedness of the sector.
-Drag sector:
-    Can only drag in line. Dropping the sector on another cell gives an order to move just that sector. Also works with ghost sectors.
+Mousedown sector (including ghost sectors):
+    Add move event listener
+Mousemove sector > 10px:
+    If no sectors are selected, select this and drag it, locked in its direction.
+    If sectors are selected, drag them, locked in their directions.
+Mouseup sector:
+    If sector was dragged, snap to nearest cell.
+    If sector was not dragged, toggle the selectedness of the sector.
+
+Sending an order:
+    Starting at the prime sectoid, flood fill consecutive territories:
+        Light and then gradually fade them to their original color
+Receiving an order:
+    Sectoid center lights then gradually fades to its original color
+Moving:
+    If the sectors can move without passing through the remaining sectors, move them. Otherwise, float up and move.
+
+http://stackoverflow.com/questions/9334084/moveable-draggable-div
 
 
 Maps:
     red, blue permanent, red permanent, blue
-        To win, you must create a prime sectoid on your opponent's half
+        To win, you must create a prime sectoid on your opponents half
+
+Gameplay matrix:
+    When:
+        Move after all players have ordered
+        Move after each player orders
+        Move after any player calls it
+    Which:
+        Execute all orders
+        Execute orders created by the current player
+        Execute orders on sectoids on the current players territory
 
 701
 6 2
@@ -161,4 +185,4 @@ Each move, you may:
     Create or select a strategy and immediately move it
     Create or select a strategy and add it to another strategy
 
-Don't allow saving strategies, because this would allow creating an implosion strategy or another complex strategy, and executing it whenever. There's no opportunity for the opponent to disrupt things when he sees you not doing anything visibly.
+Dont allow saving strategies, because this would allow creating an implosion strategy or another complex strategy, and executing it whenever. There's no opportunity for the opponent to disrupt things when he sees you not doing anything visibly.

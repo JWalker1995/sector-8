@@ -197,6 +197,22 @@ sector8.session = function(server, spark)
         }
     });
     
+    net.await('order', function(data, reply)
+    {
+        server.load_match(data.match, function(match)
+        {
+            if (match)
+            {
+                match.order(data.order);
+            }
+        });
+    });
+    
+    this.send_order = function(str)
+    {
+        net.request('order', {'str': str});
+    };
+    
     
 
     var user_set_password = function(user, password)
