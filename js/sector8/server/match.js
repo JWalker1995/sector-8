@@ -2,7 +2,7 @@ goog.provide('sector8.server.match');
 
 goog.require('goog.asserts');
 
-sector8.server.match = function(core, match, sessions)
+sector8.server.match = function(core, match)
 {
     var _this = this;
     

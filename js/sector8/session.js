@@ -107,7 +107,9 @@ sector8.session = function(server, spark)
 
     net.await('register', function(data, reply)
     {
-        if (user instanceof sector8.user && !user.get_registered() && data.password && data.email)
+        if (error_else_login(reply)) {return;}
+
+        if (!user.get_registered() && data.password && data.email)
         {
             if (sector8.user.validate_email(data.email))
             {
@@ -155,62 +157,71 @@ sector8.session = function(server, spark)
 
     net.await('logout', function(data, reply)
     {
-        var msg;
-        if (user instanceof sector8.user)
-        {
-            user.set_last_login(new Date());
-            user.save();
-            user = undefined;
+        if (error_else_login(reply)) {return;}
 
-            msg = 'logged out';
-        }
-        else
-        {
-            msg = 'not logged in';
-        }
+        user.set_last_login(new Date());
+        user.save();
+        user = undefined;
 
-        reply({'msg': msg});
-    });
-    
-    net.await('matches', function(data, reply)
-    {
-        switch (data.type)
-        {
-        case 'challenge':
-            break;
-        }
+        reply({'msg': 'logged out'});
     });
 
     net.await('create_match', function(data, reply)
     {
-        if (user instanceof sector8.user)
-        {
-
-        }
+        if (error_else_login(reply)) {return;}
     });
 
     net.await('enter_match', function(data, reply)
     {
-        if (user instanceof sector8.user)
-        {
-
-        }
+        if (error_else_login(reply)) {return;}
     });
     
     net.await('order', function(data, reply)
     {
-        server.load_match(data.match, function(match)
+        if (error_else_login(reply)) {return;}
+
+        get_match(function(match)
         {
-            if (match)
-            {
-                match.order(data.order);
-            }
+            match.order(data.order);
         });
     });
-    
-    this.send_order = function(str)
+
+    net.on_close(function()
     {
-        net.request('order', {'str': str});
+        if (error_else_login(reply)) {return;}
+
+        get_match(function(match)
+        {
+            match.exit(this);
+        });
+    });
+
+
+    var error_else_login = function(reply)
+    {
+        return error_else(user instanceof sector8.user, reply, 'You are not logged in');
+    };
+    var error_else = function(cond, reply, error)
+    {
+        if (cond)
+        {
+            reply({'error': error});
+            // TODO: log
+        }
+        return cond;
+    };
+
+    var get_match = function(reply, callback)
+    {
+
+        var match_id = user.get_match_id();
+        if (error_else(match_id, reply, 'You are not currently in a match')) {return;}
+
+        server.load_match(match_id, function(match)
+        {
+            if (error_else(match, reply, 'Match with id ' + match_id + ' does not exist')) {return;}
+            callback(match);
+        });
     };
     
     

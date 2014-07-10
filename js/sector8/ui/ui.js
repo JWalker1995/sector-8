@@ -32,11 +32,12 @@ sector8.ui.ui = function(core)
         var row = 0;
         while (row < map.get_rows())
         {
+            cells[row] = [];
+            
             var col = 0;
             while (col < map.get_cols())
             {
-                var i = map.get_cell_index(row, col);
-                var c = cells[i] = new sector8.cell();
+                var c = cells[row][col] = new sector8.cell();
                 
                 var sectoid = null;
                 if (row === 1 && (col === 0 || col === 4))

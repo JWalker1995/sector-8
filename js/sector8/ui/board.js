@@ -17,35 +17,38 @@ sector8.ui.board = function(core, match)
     {
         var el = goog.dom.createDom('div', {'class': 'board'});
         
-        var cols = map.get_cols();
         var rows = map.get_rows();
+        var cols = map.get_cols();
         var cells = map.get_cells();
         
-        cell_els = goog.array.repeat(undefined, rows * cols);
-        sectoid_els = goog.array.repeat(undefined, rows * cols);
+        cell_els = [];
+        sectoid_els = [];
         
-        var col = 0;
-        while (col < cols)
+        var row = 0;
+        while (row < rows)
         {
-            var row = 0;
-            while (row < rows)
+            cell_els[row] = [];
+            sectoid_els[row] = [];
+            
+            var col = 0;
+            while (col < cols)
             {
-                var i = map.get_cell_index(col, row);
-                var cell_el = create_cell(col, row, cells[i]);
+                var cell = cells[row][col];
+                var cell_el = create_cell(row, col, cell);
                 goog.dom.append(el, cell_el);
-                cell_els[i] = cell_el;
+                cell_els[row][col] = cell_el;
                 
-                var sectoid = cells[i].get_sectoid();
+                var sectoid = cell.get_sectoid();
                 if (sectoid)
                 {
                     var sectoid_el = create_sectoid(col, row, sectoid);
                     goog.dom.append(el, sectoid_el);
-                    sectoid_els[i] = sectoid_el;
+                    sectoid_els[row][col] = sectoid_el;
                 }
                 
-                row++;
+                col++;
             }
-            col++;
+            row++;
         }
         
         goog.dom.append(el, create_areas());
@@ -85,7 +88,7 @@ sector8.ui.board = function(core, match)
     this.render = goog.functions.cacheReturnValue(render);
     
     
-    var create_cell = function(col, row, cell)
+    var create_cell = function(row, col, cell)
     {
         var classes = 'cell';
         if (cell.get_void())
@@ -101,18 +104,18 @@ sector8.ui.board = function(core, match)
             }
         }
         
-        var style = get_positioning(col, row, 0, 0);
+        var style = get_positioning(row, col, 0, 0);
         return goog.dom.createDom('div', {'class': classes, 'style': style});
     };
     
     var hover_sectoid;
     var hover_sectoid_el;
     
-    var create_sectoid = function(col, row, sectoid)
+    var create_sectoid = function(row, col, sectoid)
     {
         // sectoid.get_prime();
         
-        var style = get_positioning(col, row, 0, 0);
+        var style = get_positioning(row, col, 0, 0);
         var sectoid_el = goog.dom.createDom('div', {'class': 'sectoid', 'style': style});
                 
         var sec_bits = sectoid.get_sectors();
@@ -253,14 +256,10 @@ sector8.ui.board = function(core, match)
         });
     };
     
-    var move_sectors = function(col, row, sectors, direction, distance)
+    var move_sectors = function(row, col, sectors, direction, distance)
     {
-        var tx = [ 0, 1, 1, 1, 0,-1,-1,-1];
-        var ty = [-1,-1, 0, 1, 1, 1, 0,-1];
-        
-        var source_i = map.get_cell_index(col, row);
-        var sectoid_el = sectoid_els[source_i];
-        var dest_i = map.get_cell_index(col, row);
+        var trans_row = [-1,-1, 0, 1, 1, 1, 0,-1];
+        var trans_col = [ 0, 1, 1, 1, 0,-1,-1,-1];
     };
     var on_order = function(order)
     {
@@ -270,7 +269,7 @@ sector8.ui.board = function(core, match)
     
     
     var cell_spacing = core.config.geometry.cell_size;
-    var get_positioning = function(col, row, col_off, row_off)
+    var get_positioning = function(row, col, row_off, col_off)
     {
         return 'left: ' + (col * cell_spacing + col_off) + 'px; top: ' + (row * cell_spacing + row_off) + 'px; ';
     };

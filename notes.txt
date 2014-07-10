@@ -186,3 +186,32 @@ Each move, you may:
     Create or select a strategy and add it to another strategy
 
 Dont allow saving strategies, because this would allow creating an implosion strategy or another complex strategy, and executing it whenever. There's no opportunity for the opponent to disrupt things when he sees you not doing anything visibly.
+
+
+Current matches ranking:
+    1
+    * (A.rating + B.rating)
+    * (captures + 1)
+    / (time - start_time)
+
+
+Main:
+    Login
+        Check username availability
+        Check username/password combination
+    Registration
+        Send registration email
+        Confirm registration
+Lobby:
+    Create challenge
+    List challenges
+    Enter challenge
+Match:
+    Order (finishes turn)
+    Chat
+    Change game option
+        Allow spectators
+        Increase stakes
+Spec:
+Misc:
+    Move public includes to public/include

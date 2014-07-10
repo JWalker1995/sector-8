@@ -178,6 +178,7 @@ sector8.server = function(cd)
         
         _this.logger.log(_this.logger.trace, 'Registering facade types...');
         _this.facade.register_type(sector8.user, 'users');
+        _this.facade.register_type(sector8.match, 'matches');
         _this.logger.log(_this.logger.trace, 'Registered facade types');
     };
     

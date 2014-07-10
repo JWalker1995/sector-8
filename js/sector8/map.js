@@ -26,9 +26,4 @@ sector8.map = function()
     // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
 
     util.make_getters_setters(this, props);
-    
-    this.get_cell_index = function(row, col)
-    {
-        return row * this.get_cols() + col;
-    };
 };
