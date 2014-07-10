@@ -13,8 +13,8 @@ sector8.order = function()
         'turn': 0,
         'wait': 0,
         'duration': 0,
-        'col': 0,
         'row': 0,
+        'col': 0,
         'sectors': 0,
         'direction': 0
     };

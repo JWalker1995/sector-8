@@ -66,80 +66,14 @@ sector8.match = function()
     var board_states = [];
     this.load_board_states = function()
     {
-        var clone_board = function(board)
-        {
-            var res = [];
-            
-            var row = 0;
-            while (row < board.length)
-            {
-                res[row] = [];
-                var col = 0;
-                while (col < board[i].length)
-                {
-                    res[i][col] = board[i][col];
-                    col++;
-                }
-                row++;
-            }
-            
-            return res;
-        };
-        
-        var make_powered_map = function(board)
-        {
-            var edges = [];
-            var res = [];
-            
-            var row = 0;
-            while (row < board.length)
-            {
-                res[row] = [];
-                var col = 0;
-                while (col < board[row].length)
-                {
-                    var cell = board[row][col];
-                    if (cell.get_sectoid() && cell.get_sectoid().get_prime())
-                    {
-                        edges.push([row, col, cell.get_territory()]);
-                    }
-                    
-                    res[row][col] = false;
-                    col++;
-                }
-                row++;
-            }
-            
-            var i = 0;
-            while (i < edges.length)
-            {
-                var row = edges[i][0];
-                var col = edges[i][1];
-                var terr = edges[i][2];
-                
-                if (board[row][col].get_territory() === terr)
-                {
-                    edges.push([col-1, row, terr]);
-                    edges.push([col+1, row, terr]);
-                    edges.push([col, row-1, terr]);
-                    edges.push([col, row+1, terr]);
-                    
-                    res[row][col] = true;
-                }
-                
-                i++;
-            }
-            
-            return res;
-        };
-        
-        var cur_board = this.get_map().get_cells();
+        var cur_board = this.get_map().get_board();
+        var powered_map = cur_board.make_powered_map();
         
         var i = 0;
         while (i < orders.length)
         {
             var prev_board = cur_board;
-            cur_board = board_states[i] = clone_board(cur_board);
+            cur_board = board_states[i] = cur_board.clone();
             
             var j = 0;
             var d = orders[i].length;

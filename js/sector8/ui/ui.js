@@ -22,11 +22,9 @@ sector8.ui.ui = function(core)
         goog.dom.append(el, login.render());
 
         // Start test
-        var map = new sector8.map();
-        map.set_name('Awesome map!!!');
-        map.set_num_players(2);
-        map.set_rows(3);
-        map.set_cols(5);
+        var board = new sector8.board();
+        board.set_rows(3);
+        board.set_cols(5);
         
         var cells = [];
         var row = 0;
@@ -57,8 +55,12 @@ sector8.ui.ui = function(core)
             }
             row++;
         }
-        map.set_cells(cells);
-
+        board.set_cells(cells);
+        
+        var map = new sector8.map();
+        map.set_name('Awesome map!!!');
+        map.set_num_players(2);
+        map.set_board(board);
         map.set_creator_id(1);
         map.set_creation_date(new Date());
 
