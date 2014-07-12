@@ -1,11 +1,10 @@
 goog.provide('sector8.order');
-debugger;
+
 goog.require('goog.asserts');
 goog.require('util.make_getters_setters');
 
 sector8.order = function()
 {
-    debugger;
     goog.asserts.assertInstanceof(this, sector8.order);
 
     var props = {
@@ -37,7 +36,7 @@ sector8.order = function()
         var i = 0;
         while (i < 8)
         {
-            if ((this.get_sectors() >> i) & 1)
+            if ((this.get_sectors() >>> i) & 1)
             {
                 sectors += i;
             }
@@ -65,7 +64,7 @@ sector8.order = function()
             {
                 var sector = exec[7].charCodeAt(i) - char_number;
                 if (sector >= 8) {return false;}
-                sectors += 1 << sector;
+                sectors |= 1 <<< sector;
                 i++;
             }
             
@@ -84,5 +83,25 @@ sector8.order = function()
         {
             return false;
         }
+    };
+
+    this.error_msg = function(config)
+    {
+        if (this.get_player() < 0) {return 'Player cannot be negative';}
+        if (this.get_player() > config.sector8.max_players) {return 'Player cannot be greater than ' + config.sector8.max_players;}
+        if (this.get_turn() < 1) {return 'Turn must be at least 1';}
+        if (this.get_wait() < 0) {return 'Wait cannot be negative';}
+        if (this.get_wait() > config.sector8.max_wait) {return 'Wait cannot be greater than ' + config.sector8.max_wait;}
+        if (this.get_duration() < 1) {return 'Duration must be at least 1';}
+        if (this.get_duration() > config.sector8.max_duration) {return 'Duration cannot be greater than ' + config.sector8.max_duration;}
+        if (this.get_row() < 0) {return 'Row must be at least 1';}
+        if (this.get_row() >= config.sector8.max_rows) {return 'Row cannot be greater than ' + config.sector8.max_rows;}
+        if (this.get_col() < 0) {return 'Col must be at least 1';}
+        if (this.get_col() >= config.sector8.max_cols) {return 'Col cannot be greater than ' + config.sector8.max_cols;}
+        if (this.get_sectors() === 0) {return 'Sectors cannot be zero';}
+        if (this.get_sectors() & (~0xFF)) {return 'Sectors must be a 8-bit unsigned int';}
+        if (this.get_direction() < 0) {return 'Direction cannot be negative';}
+        if (this.get_direction() >= 8) {return 'Direction must be less than 8';}
+        return false;
     };
 };

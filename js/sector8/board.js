@@ -2,6 +2,7 @@ goog.provide('sector8.board');
 
 goog.require('goog.asserts');
 goog.require('util.make_getters_setters');
+goog.require('util.crc32');
 
 sector8.board = function()
 {
@@ -57,6 +58,30 @@ sector8.board = function()
         
         return res;
     };
+
+    this.checksum = function()
+    {
+        var str = '';
+
+        str += String.fromCharCode(this.get_rows());
+        str += String.fromCharCode(this.get_cols());
+
+        this.foreach_cell(function(row, col, cell)
+        {
+            var i = 0;
+            i |= cell.get_void() <<< 0;
+            i |= cell.get_territory() <<< 1;
+            i |= cell.get_permanent() <<< 6;
+            if (cell.get_sectoid())
+            {
+                i |= cell.get_sectoid().get_prime() <<< 7;
+                i |= cell.get_sectoid().get_sectors() <<< 8;
+            }
+            str += String.fromCharCode(i);
+        });
+
+        return util.crc32(str);
+    };
     
     this.make_powered_map = function()
     {
@@ -87,10 +112,10 @@ sector8.board = function()
 
             if (board[row][col].get_territory() === terr)
             {
-                edges.push([col-1, row, terr]);
-                edges.push([col+1, row, terr]);
-                edges.push([col, row-1, terr]);
-                edges.push([col, row+1, terr]);
+                edges.push([row-1, col, terr]);
+                edges.push([row+1, col, terr]);
+                edges.push([row, col-1, terr]);
+                edges.push([row, col+1, terr]);
 
                 res[row][col] = true;
             }

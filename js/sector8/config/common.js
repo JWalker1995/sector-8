@@ -5,7 +5,12 @@ sector8.config.common = function()
     util.deepcopy(this, {
         'sector8': {
             'host': 'localhost',
-            'path': '/sector8'
+            'path': '/sector8',
+            'max_players': 26,
+            'max_wait': 100,
+            'max_duration': 100,
+            'max_rows': 25,
+            'max_cols': 25
         },
         'primus': {
             'host': 'localhost',

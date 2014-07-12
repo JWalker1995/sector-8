@@ -23,6 +23,7 @@ sector8.match = function()
 
     util.make_getters_setters(this, props);
 
+    /*
     this.get_id = this.get_match_id;
     
     this.generate_colors = function()
@@ -42,8 +43,14 @@ sector8.match = function()
             i++;
         }
     };
+    */
+
     
     var orders = [];
+    var boards = [];
+    var sectoids = [];
+    var moves = [];
+
     this.load_orders = function(str)
     {
         var tmp_order = new sector8.order();
@@ -63,40 +70,113 @@ sector8.match = function()
         }
     };
     
-    var board_states = [];
-    this.load_board_states = function()
+    this.load_boards = function()
     {
-        var cur_board = this.get_map().get_board();
-        var powered_map = cur_board.make_powered_map();
+        goog.asserts.assert(orders[0].length === 0);
+
+        var board = this.get_map().get_board();
         
-        var i = 0;
-        while (i < orders.length)
+        var turn = 0;
+        while (turn < orders.length)
         {
-            var prev_board = cur_board;
-            cur_board = board_states[i] = cur_board.clone();
-            
-            var j = 0;
-            var d = orders[i].length;
-            while (j < d)
+            board = boards[turn] = board.clone();
+            apply_orders(turn, board);
+            apply_moves(turn, board);
+
+            turn++;
+        }
+    };
+
+    var apply_orders = function(turn, board)
+    {
+        var powered_map = cur_board.make_powered_map();
+
+        var i = 0;
+        while (i < orders[turn].length)
+        {
+            var order = orders[turn][i];
+            i++;
+
+            var order_error = order.error_msg(/*config*/);
+            if (order_error)
             {
-                var order = orders[i][j];
-                
-                /*
-                'player': 0,
-                'turn': 0,
-                'wait': 0,
-                'duration': 0,
-                'col': 0,
-                'row': 0,
-                'sectors': 0,
-                'direction': 0
-                */
-                
-                var source = cur_board[order.get_col()][order.get_row()];
-                
-                j++;
+                // There's a problem with the order
+                // Log order_error
+                continue;
             }
+
+            var row = order.get_row();
+            var col = order.get_col();
+            var cell = board[row][col];
+            var sectoid = cell.get_sectoid();
+
+            if (!sectoid)
+            {
+                // Tried to order an empty cell
+                // Log error
+                continue;
+            }
+
+            if (order.get_player() !== cell.get_territory())
+            {
+                // Tried to order a sectoid on another player's territory
+                // Log error
+                continue;
+            }
+
+            if (!powered_map[row][col])
+            {
+                // Tried to order a sectoid on an unpowered cell
+                // Log error
+                continue;
+            }
+
+            var min_turn = turn + order.get_wait();
+            var max_turn = min_turn + order.get_duration();
+            while (moves.length < max_turn) {moves.push([]);}
+
+            var move = {
+                'sectoids': [sectoid],
+                'sectors': order.get_sectors(),
+                'direction': order.get_direction()
+            };
+
+            while (min_turn < max_turn)
+            {
+                moves[min_turn].push(move);
+                min_turn++;
+            }
+        }
+    };
+
+    var apply_moves = function(turn, board)
+    {
+        while (typeof moves[turn] === 'undefined') {moves.push([]);}
+
+        var i = 0;
+        while (i < moves[turn].length)
+        {
+            var move = moves[turn][i];
+
+            sectors[]
+
+
+
+            var move_turn = turn + order.get_wait();
+
+            /*
+            'player': 0,
+            'turn': 0,
+            'wait': 0,
+            'duration': 0,
+            'col': 0,
+            'row': 0,
+            'sectors': 0,
+            'direction': 0
+            */
             
+            var source = cur_board[order.get_col()][order.get_row()];
+
             i++;
         }
     };
