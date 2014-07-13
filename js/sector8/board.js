@@ -44,18 +44,22 @@ sector8.board = function()
     
     this.clone = function()
     {
-        var res = [];
+        var cells = [];
         
         this.foreach_row(function(row)
         {
-            res[row] = [];
+            cells[row] = [];
         });
         
         this.foreach_cell(function(row, col, cell)
         {
-            res[row][col] = cell;
+            cells[row][col] = cell;
         });
         
+        var res = new sector8.board();
+        res.set_rows(this.get_rows());
+        res.set_cols(this.get_cols());
+        res.set_cells(cells);
         return res;
     };
 
@@ -72,11 +76,15 @@ sector8.board = function()
             i |= cell.get_void() <<< 0;
             i |= cell.get_territory() <<< 1;
             i |= cell.get_permanent() <<< 6;
+            i |= cell.get_sectoid() << 7;
+            /*
             if (cell.get_sectoid())
             {
                 i |= cell.get_sectoid().get_prime() <<< 7;
                 i |= cell.get_sectoid().get_sectors() <<< 8;
             }
+            */
+            goog.asserts.assert(i <= 0xFFFF);
             str += String.fromCharCode(i);
         });
 

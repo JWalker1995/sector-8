@@ -3689,7 +3689,7 @@ sector8.map = function()
         'num_players': 0,
         'rows': 0,
         'cols': 0,
-        'cells': Array,
+        'board': sector8.board,
         //'primes': [],
         'symmetry_flip_x': false,
         'symmetry_flip_y': false,
@@ -3702,11 +3702,6 @@ sector8.map = function()
     // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
 
     util.make_getters_setters(this, props);
-    
-    this.get_cell_index = function(row, col)
-    {
-        return row * this.get_cols() + col;
-    };
 };goog.provide('sector8.user');
 
 goog.require('util.make_getters_setters');
@@ -15929,6 +15924,8 @@ sector8.ui.login = function(core)
 };
 goog.provide('sector8.ui.board');
 
+goog.require('goog.array');
+
 //var randomcolor = require('randomcolor');
 
 sector8.ui.board = function(core, match)
@@ -15937,7 +15934,8 @@ sector8.ui.board = function(core, match)
     
     var map = match.get_map();
     
-    var cell_els = [];
+    var cell_els;
+    var sectoid_els;
     
     var render = function()
     {
@@ -15947,21 +15945,29 @@ sector8.ui.board = function(core, match)
         var cols = map.get_cols();
         var cells = map.get_cells();
         
+        cell_els = [];
+        sectoid_els = [];
+        
         var row = 0;
         while (row < rows)
         {
+            cell_els[row] = [];
+            sectoid_els[row] = [];
+            
             var col = 0;
             while (col < cols)
             {
-                var i = map.get_cell_index(row, col);
-                var cell = create_cell(row, col, cells[i]);
-                goog.dom.append(el, cell);
-                cell_els[i] = cell;
+                var cell = cells[row][col];
+                var cell_el = create_cell(row, col, cell);
+                goog.dom.append(el, cell_el);
+                cell_els[row][col] = cell_el;
                 
-                var sectoid = cells[i].get_sectoid();
+                var sectoid = cell.get_sectoid();
                 if (sectoid)
                 {
-                    goog.dom.append(el, create_sectoid(row, col, sectoid));
+                    var sectoid_el = create_sectoid(col, row, sectoid);
+                    goog.dom.append(el, sectoid_el);
+                    sectoid_els[row][col] = sectoid_el;
                 }
                 
                 col++;
@@ -16174,18 +16180,25 @@ sector8.ui.board = function(core, match)
         });
     };
     
+    var move_sectors = function(row, col, sectors, direction, distance)
+    {
+        var trans_row = [-1,-1, 0, 1, 1, 1, 0,-1];
+        var trans_col = [ 0, 1, 1, 1, 0,-1,-1,-1];
+    };
     var on_order = function(order)
     {
         
     };
     
     
+    
     var cell_spacing = core.config.geometry.cell_size;
     var get_positioning = function(row, col, row_off, col_off)
     {
-        return 'top: ' + (row * cell_spacing + row_off) + 'px; left: ' + (col * cell_spacing + col_off) + 'px; ';
+        return 'left: ' + (col * cell_spacing + col_off) + 'px; top: ' + (row * cell_spacing + row_off) + 'px; ';
     };
-};goog.provide('sector8.ui.match');
+};
+goog.provide('sector8.ui.match');
 
 goog.require('goog.dom');
 goog.require('goog.functions');
@@ -16222,7 +16235,8 @@ sector8.match = function()
         'name': '',
         'players': Array,
         'map': sector8.map,
-        'turn_type': 0,
+        'move_after': 0,
+        'move_where': 0,
         'timer_type': 0,
         'spectators': true,
         'orders': Array,
@@ -16232,9 +16246,18 @@ sector8.match = function()
     };
 
     util.make_getters_setters(this, props);
-
-    this.get_id = this.get_match_id;
     
+    // move_after:
+    this.MOVE_AFTER_ALL = 1; // Move after all players have ordered
+    this.MOVE_AFTER_EACH = 2; // Move after each player orders
+    this.MOVE_AFTER_CALL = 3; // Move after any player calls it
+    
+    // move_where:
+    this.MOVE_WHERE_ALL = 1; // Execute all orders
+    this.MOVE_WHERE_PLAYER = 2; // Execute orders created by the current player
+    this.MOVE_WHERE_TERRITORY = 3; // Execute orders on sectoids on the current players territory
+
+    /*
     this.generate_colors = function()
     {
         var randomcolor = require('randomcolor');
@@ -16252,42 +16275,162 @@ sector8.match = function()
             i++;
         }
     };
+    */
+    
+    // 0: Initial board state
+    // 1: A orders, move?
+    // 2: B orders, move?
+    // 3: C orders, move?
+    // 4: GRAY orders, move?
+    // 5: A orders, move?
+    // ...
+
     
     var orders = [];
+    var boards = [];
+    var sectoids = [];
+    var moves = [];
+
     this.load_orders = function(str)
     {
-        var tmp_order = new sector8.order();
-        
         var lines = str.split(/,|\r|\n/);
+        var time_per_turn = this.get_map().get_num_players() + 1;
+        
+        var tmp_order = new sector8.order();
         var i = 0;
         while (i < lines)
         {
             if (tmp_order.from_notation(lines[i]))
             {
-                var turn = tmp_order.get_turn();
-                while (typeof orders[turn] === 'undefined') {orders.push([]);}
-                orders[turn].push(tmp_order);
+                var time = tmp_order.get_turn() * time_per_turn + tmp_order.get_player();
+                while (typeof orders[time] === 'undefined') {orders.push([]);}
+                orders[time].push(tmp_order);
                 tmp_order = new sector8.order();
+            }
+            else
+            {
+                // Bad notation
             }
             i++;
         }
     };
     
-    var board_states = [];
-    this.load_board_states = function()
+    this.load_boards = function()
     {
-        board_states[0] = this.get_map().get_cells();
+        goog.asserts.assert(orders[0].length === 0);
+
+        var board = this.get_map().get_board();
         
-        var i = 0;
-        while (i < orders.length)
+        var turn = 0;
+        while (turn < orders.length)
         {
-            var j = 0;
-            var d = orders[i].length;
-            while (j < d)
+            board = boards[turn] = board.clone();
+            apply_orders(turn, board);
+            apply_moves(turn, board);
+
+            turn++;
+        }
+    };
+
+    var apply_orders = function(turn, board)
+    {
+        var powered_map = cur_board.make_powered_map();
+
+        var i = 0;
+        while (i < orders[turn].length)
+        {
+            var order = orders[turn][i];
+            i++;
+
+            var order_error = order.error_msg(/*config*/);
+            if (order_error)
             {
-                orders[i][j];
-                j++;
+                // There's a problem with the order
+                // Log order_error
+                continue;
             }
+
+            var row = order.get_row();
+            var col = order.get_col();
+            
+            if (row >= board.get_rows())
+            {
+                continue;
+            }
+            if (col >= board.get_cols())
+            {
+                continue;
+            }
+            
+            var cell = board.get_cells()[row][col];
+            
+            if (!cell.get_sectoid())
+            {
+                // Tried to order an empty cell
+                // Log error
+                continue;
+            }
+
+            if (order.get_player() !== cell.get_territory())
+            {
+                // Tried to order a sectoid on another player's territory
+                // Log error
+                continue;
+            }
+
+            if (!powered_map[row][col])
+            {
+                // Tried to order a sectoid on an unpowered cell
+                // Log error
+                continue;
+            }
+
+            var min_turn = turn + order.get_wait();
+            var max_turn = min_turn + order.get_duration();
+            while (moves.length < max_turn) {moves.push([]);}
+
+            var move = {
+                'sectoids': [sectoid],
+                'sectors': order.get_sectors(),
+                'direction': order.get_direction()
+            };
+
+            while (min_turn < max_turn)
+            {
+                moves[min_turn].push(move);
+                min_turn++;
+            }
+        }
+    };
+
+    var apply_moves = function(turn, board)
+    {
+        while (typeof moves[turn] === 'undefined') {moves.push([]);}
+
+        var i = 0;
+        while (i < moves[turn].length)
+        {
+            var move = moves[turn][i];
+
+            
+
+
+
+            var move_turn = turn + order.get_wait();
+
+            /*
+            'player': 0,
+            'turn': 0,
+            'wait': 0,
+            'duration': 0,
+            'col': 0,
+            'row': 0,
+            'sectors': 0,
+            'direction': 0
+            */
+            
+            var source = cur_board[order.get_col()][order.get_row()];
+
             i++;
         }
     };
@@ -16301,7 +16444,7 @@ sector8.cell = function()
         'void': false,
         'territory': 0,
         'permanent': false,
-        'sectoid': sector8.sectoid
+        'sectoid': 0
     };
 
     util.make_getters_setters(this, props);
@@ -16317,6 +16460,11 @@ sector8.sectoid = function()
     };
 
     util.make_getters_setters(this, props);
+    
+    this.clone = function()
+    {
+        
+    };
 };
     
 sector8.player = function()
@@ -16377,21 +16525,20 @@ sector8.ui.ui = function(core)
         goog.dom.append(el, login.render());
 
         // Start test
-        var map = new sector8.map();
-        map.set_name('Awesome map!!!');
-        map.set_num_players(2);
-        map.set_rows(3);
-        map.set_cols(5);
+        var board = new sector8.board();
+        board.set_rows(3);
+        board.set_cols(5);
         
         var cells = [];
         var row = 0;
         while (row < map.get_rows())
         {
+            cells[row] = [];
+            
             var col = 0;
             while (col < map.get_cols())
             {
-                var i = map.get_cell_index(row, col);
-                var c = cells[i] = new sector8.cell();
+                var c = cells[row][col] = new sector8.cell();
                 
                 var sectoid = null;
                 if (row === 1 && (col === 0 || col === 4))
@@ -16411,8 +16558,12 @@ sector8.ui.ui = function(core)
             }
             row++;
         }
-        map.set_cells(cells);
-
+        board.set_cells(cells);
+        
+        var map = new sector8.map();
+        map.set_name('Awesome map!!!');
+        map.set_num_players(2);
+        map.set_board(board);
         map.set_creator_id(1);
         map.set_creation_date(new Date());
 
@@ -18106,7 +18257,12 @@ sector8.config.common = function()
     util.deepcopy(this, {
         'sector8': {
             'host': 'localhost',
-            'path': '/sector8'
+            'path': '/sector8',
+            'max_players': 26,
+            'max_wait': 100,
+            'max_duration': 100,
+            'max_rows': 25,
+            'max_cols': 25
         },
         'primus': {
             'host': 'localhost',

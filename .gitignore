@@ -1,7 +1,8 @@
-.sass-cache/
+/.sass-cache/
 
-local/
-log/
+/local/
+/log/
 
-node_modules/
+/node_modules/
 
+/.todo

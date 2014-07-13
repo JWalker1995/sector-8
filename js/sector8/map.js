@@ -11,6 +11,8 @@ sector8.map = function()
         'map_id': 0,
         'name': '',
         'num_players': 0,
+        'rows': 0,
+        'cols': 0,
         'board': sector8.board,
         //'primes': [],
         'symmetry_flip_x': false,
