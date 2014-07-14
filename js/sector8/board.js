@@ -16,6 +16,49 @@ sector8.board = function()
 
     util.make_getters_setters(this, props);
     
+    this.from_notation = function(str)
+    {
+        var rows = str.trim().split(/[\r\n]+/);
+        
+        var num_cols = 0;
+        var cells = [];
+        
+        var row = 0;
+        while (row < rows.length)
+        {
+            var cols = rows[row].trim().split(/[\s]+/);
+            
+            if (!num_cols) {num_cols = cols.length;}
+            
+            if (num_cols !== cols.length)
+            {
+                return false;
+            }
+            
+            cells[row] = [];
+            
+            var col = 0;
+            while (col < cols.length)
+            {
+                var cell = cells[row][col] = new sector8.cell();
+                if (!cell.from_notation(cols[col]))
+                {
+                    return false;
+                }
+                
+                col++;
+            }
+            
+            row++;
+        }
+        
+        this.set_rows(rows.length);
+        this.set_cols(num_cols);
+        this.set_cells(cells);
+        
+        return true;
+    };
+    
     this.foreach_row = function(callback)
     {
         var cells = this.get_cells();
@@ -76,14 +119,12 @@ sector8.board = function()
             i |= cell.get_void() <<< 0;
             i |= cell.get_territory() <<< 1;
             i |= cell.get_permanent() <<< 6;
-            i |= cell.get_sectoid() << 7;
-            /*
+            //i |= cell.get_sectoid() << 7;
             if (cell.get_sectoid())
             {
                 i |= cell.get_sectoid().get_prime() <<< 7;
                 i |= cell.get_sectoid().get_sectors() <<< 8;
             }
-            */
             goog.asserts.assert(i <= 0xFFFF);
             str += String.fromCharCode(i);
         });

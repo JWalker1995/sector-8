@@ -15,9 +15,10 @@ sector8.order = function()
         'row': 0,
         'col': 0,
         'sectors': 0,
-        'direction': 0
+        'direction': 0,
+        'call_move': false
     };
-    // A :20+2-4 #b5 .01245 @4
+    // A :20+2-4 #b5 .01245 @4 !
 
     util.make_getters_setters(this, props);
     
@@ -31,6 +32,7 @@ sector8.order = function()
         var turns = ':' + this.get_turn() + '+' + this.get_wait() + '-' + this.get_duration();
         var sectoid = '#' + String.fromCharCode(char_lower + this.get_col() + 1) + (this.get_row() + 1);
         var trans = '@' + this.get_direction();
+        var call_move = this.get_call_move() ? '!' : '';
         
         var sectors = '.';
         var i = 0;
@@ -43,12 +45,12 @@ sector8.order = function()
             i++;
         }
         
-        return [player, turns, sectoid, sectors, trans].join(pretty ? ' ' : '');
+        return [player, turns, sectoid, sectors, trans, call_move].join(pretty ? ' ' : '');
     };
     
     this.from_notation = function(str)
     {
-        var regex = /^\s*([A-Z])?\s*(?:\:(\d+))?(?:\+(\d+))?(?:-(\d+))?\s*#([a-z])(\d+)\s*(?:\.(\d+))?\s*@(?:x|(\d+))\s*$/;
+        var regex = /^\s*([A-Z])?\s*(?:\:(\d+))?(?:\+(\d+))?(?:-(\d+))?\s*#([a-z])(\d+)\s*(?:\.(\d+))?\s*@(?:x|(\d+))\s*(!?)\s*$/;
         var exec;
         if (exec = regex.exec(str))
         {
@@ -76,6 +78,7 @@ sector8.order = function()
             this.set_row(parseInt(exec[6], 10));
             this.set_sectors(sectors);
             this.set_direction(parseInt(exec[8], 10));
+            this.set_call_move(!!exec[9]);
             
             return true;
         }
