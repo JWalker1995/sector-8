@@ -41,7 +41,7 @@ sector8.board = function()
             while (col < cols.length)
             {
                 var cell = cells[row][col] = new sector8.cell();
-                if (!cell.from_notation(cols[col]))
+                if (!cell.from_notation(row, col, cols[col]))
                 {
                     return false;
                 }
@@ -51,6 +51,9 @@ sector8.board = function()
             
             row++;
         }
+
+        // TODO: Add non-inline sectoids
+        // #a3 01234567!
         
         this.set_rows(rows.length);
         this.set_cols(num_cols);

@@ -20,9 +20,9 @@ sector8.cell = function()
     var char_lower = 'a'.charCodeAt(0) - 1;
     var char_upper = 'A'.charCodeAt(0) - 1;
     
-    this.from_notation = function(str)
+    this.from_notation = function(row, col, str)
     {
-        var regex = /^\s*([a-zA-Z:\-=])(?:(\d+)(!)?)?\s*$/;
+        var regex = /^\s*([a-zA-Z:\-=])(?:(\d+)\s*(!)?)?\s*$/;
         var exec;
         if (exec = regex.exec(str))
         {
@@ -59,6 +59,7 @@ sector8.cell = function()
                     }
             }
             
+            // TODO: Move sectoid notation to sector8.sectoid
             if (exec[2])
             {
                 // TODO: Combine with order sector parsing code
@@ -73,6 +74,8 @@ sector8.cell = function()
                 }
 
                 var sectoid = new sector8.sectoid();
+                sectoid.set_row(row);
+                sectoid.set_col(rol);
                 sectoid.set_sectors(sectors);
                 sectoid.set_prime(!!exec[3]);
                 
