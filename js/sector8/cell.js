@@ -11,7 +11,7 @@ sector8.cell = function()
         'void': false,
         'territory': 0,
         'permanent': false,
-        'sectoid': sector8.sectoid
+        'sectoid': 0
     };
 
     util.make_getters_setters(this, props);
@@ -22,7 +22,7 @@ sector8.cell = function()
     
     this.from_notation = function(row, col, str)
     {
-        var regex = /^\s*([a-zA-Z:\-=])(?:(\d+)\s*(!)?)?\s*$/;
+        var regex = /^\s*([a-zA-Z:\-=])\/?(?:(\d+)\s*(!)?)?\s*$/;
         var exec;
         if (exec = regex.exec(str))
         {
@@ -59,7 +59,6 @@ sector8.cell = function()
                     }
             }
             
-            // TODO: Move sectoid notation to sector8.sectoid
             if (exec[2])
             {
                 // TODO: Combine with order sector parsing code
@@ -72,7 +71,11 @@ sector8.cell = function()
                     sectors |= 1 <<< sector;
                     i++;
                 }
+                
+                var prime = !!exec[3];
+                this.set_sectoid(sectors | (prime <<< 8));
 
+                /*
                 var sectoid = new sector8.sectoid();
                 sectoid.set_row(row);
                 sectoid.set_col(rol);
@@ -80,6 +83,7 @@ sector8.cell = function()
                 sectoid.set_prime(!!exec[3]);
                 
                 this.set_sectoid(sectoid);
+                */
             }
             
             return true;
