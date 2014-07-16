@@ -139,6 +139,10 @@ sector8.board = function()
     
     this.make_powered_map = function()
     {
+        var rows = this.get_rows();
+        var cols = this.get_cols();
+        var cells = this.get_cells();
+        
         var edges = [];
         var res = [];
 
@@ -165,7 +169,12 @@ sector8.board = function()
             var col = edges[i][1];
             var terr = edges[i][2];
 
-            if (board[row][col].get_territory() === terr)
+            if (
+                row >= 0 && row < rows &&
+                col >= 0 && col < cols &&
+                !res[row][col] &&
+                cells[row][col].get_territory() === terr
+            )
             {
                 edges.push([row-1, col, terr]);
                 edges.push([row+1, col, terr]);

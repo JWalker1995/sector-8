@@ -40,9 +40,10 @@ sector8.ui.ui = function(core)
                 var c = cells[row][col] = new sector8.cell();
                 
                 var sectoid = 0;
-                if (row === 1 && (col === 0 || col === 4))
+                if ((row === 0 || row === 2) && (col === 0 || col === 4))
                 {
                     sectoid = Math.floor(Math.random() * 256);
+                    sectoid |= (row === 0) << 8;
                 }
 
                 var t_map = [1, 1, 0, 2, 2];

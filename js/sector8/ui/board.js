@@ -1,12 +1,20 @@
 goog.provide('sector8.ui.board');
 
 goog.require('goog.array');
+goog.require('goog.dom');
+goog.require('goog.dom.classes');
+goog.require('sector8.order');
 
 //var randomcolor = require('randomcolor');
 
 sector8.ui.board = function(core, match)
 {
     goog.asserts.assertInstanceof(this, sector8.ui.board);
+    
+    var cell_spacing = core.config.geometry.cell_size;
+    var overlay_center = core.config.geometry.overlay_img_size / 2.0;
+    var sector_rad = core.config.geometry.sector_rad;
+    var center_rad = core.config.geometry.center_rad;
     
     var board = match.get_map().get_board();
     
@@ -74,19 +82,38 @@ sector8.ui.board = function(core, match)
         */
         
         // Start test
+        match.load_orders('');
+        
         var html = '<div style="padding-left: 600px;"><input type="text" class="order_input" /><button class="order_button">Order</button><button class="move_button">Move</button></div>';
         goog.dom.append(el, goog.dom.htmlToDocumentFragment(html));
         el.getElementsByClassName('order_button')[0].onclick = function()
         {
             var order_str = el.getElementsByClassName('order_input')[0].value;
             var order = new sector8.order();
-            order.from_notation(order_str);
-            
-            match.apply_order(order);
+            if (order.from_notation(order_str))
+            {
+                var order_error = order.error_msg(core.config);
+                if (order_error)
+                {
+                    alert(order_error);
+                }
+                else
+                {
+                    var apply_error = match.apply_order(order);
+                    if (apply_error)
+                    {
+                        alert(apply_error);
+                    }
+                }
+            }
+            else
+            {
+                alert('invalid order syntax');
+            }
         };
         el.getElementsByClassName('move_button')[0].onclick = function()
         {
-            match.apply_move(function(order, src_row, src_col, sectoid)
+            match.apply_moves(function(order, src_row, src_col, sectoid)
             {
                 var sectoid_el = sectoid_els[src_row][src_col];
                 
@@ -98,7 +125,14 @@ sector8.ui.board = function(core, match)
                         var sector = sectoid_el.getElementsByClassName('sector_' + i)[0];
                         if (typeof sector !== 'undefined')
                         {
-                            sectoid_el.removeChild(sector);
+                            //sectoid_el.removeChild(sector);
+                            var dx = cell_spacing * order.get_move_col();
+                            var dy = cell_spacing * order.get_move_row();
+                            sector.setAttribute('style', 'margin-left: ' + dx + 'px; margin-top: ' + dy + 'px;');
+                        }
+                        else
+                        {
+                            // TODO: Log error
                         }
                     }
                     i++;
@@ -180,9 +214,6 @@ sector8.ui.board = function(core, match)
         return sectoid_el;
     };
     
-    var overlay_center = core.config.geometry.overlay_img_size / 2.0;
-    var sector_rad = core.config.geometry.sector_rad;
-    var center_rad = core.config.geometry.center_rad;
     var create_areas = function()
     {
         var map = goog.dom.createDom('map', {'name': 'sectoid'});
@@ -281,19 +312,6 @@ sector8.ui.board = function(core, match)
         });
     };
     
-    var move_sectors = function(row, col, sectors, direction, distance)
-    {
-        var trans_row = [-1,-1, 0, 1, 1, 1, 0,-1];
-        var trans_col = [ 0, 1, 1, 1, 0,-1,-1,-1];
-    };
-    var on_order = function(order)
-    {
-        
-    };
-    
-    
-    
-    var cell_spacing = core.config.geometry.cell_size;
     var get_positioning = function(row, col, row_off, col_off)
     {
         return 'left: ' + (col * cell_spacing + col_off) + 'px; top: ' + (row * cell_spacing + row_off) + 'px; ';

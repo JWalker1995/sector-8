@@ -15930,6 +15930,12 @@ sector8.match = function()
     this.MOVE_WHERE_ALL = 1; // Execute all orders
     this.MOVE_WHERE_PLAYER = 2; // Execute orders created by the current player
     this.MOVE_WHERE_TERRITORY = 3; // Execute orders on sectoids on the current players territory
+    
+    var move_where_funcs = {};
+    move_where_funcs[this.MOVE_WHERE_ALL] = function(order)
+    {
+        return true;
+    };
 
     /*
     this.generate_colors = function()
@@ -15991,10 +15997,11 @@ sector8.match = function()
         });
         
         this.set_board(this.get_map().get_board());
-        clone_board();
+        clone_board.call(this);
         
         var move_after = this.get_move_after();
-        var move_where = this.get_move_where();
+        // TODO: move_where
+        //var move_where = move_where_funcs[this.get_move_where()];
         
         var prev_turn;
         
@@ -16011,7 +16018,6 @@ sector8.match = function()
                 (move_after === this.MOVE_AFTER_TURN && prev_turn !== order.get_turn() && (prev_turn = order.get_turn()))
             )
             {
-                // TODO: move_where
                 apply_moves(function() {});
             }
 
@@ -16023,53 +16029,43 @@ sector8.match = function()
         
     var moves = {};
     
-    var apply_order = function(order)
+    this.apply_order = function(order)
     {
         var board = this.get_board();
         var powered_map = board.make_powered_map();
 
-        var order_error = order.error_msg(/*config*/);
-        if (order_error)
-        {
-            // There's a problem with the order
-            // TODO: Log order_error
-            return;
-        }
-
         var row = order.get_row();
         var col = order.get_col();
 
-        if (row >= board.get_rows())
+        if (row > board.get_rows())
         {
-            return;
+            return 'Order target row ' + row + ' is too high';
         }
-        if (col >= board.get_cols())
+        if (col > board.get_cols())
         {
-            return;
+            return 'Order target column ' + col + ' is too high';
         }
+        
+        row--;
+        col--;
 
         var cell = board.get_cells()[row][col];
         var sectoid = cell.get_sectoid();
 
         if (!sectoid)
         {
-            // Tried to order an empty cell
-            // TODO: Log error
-            return;
+            console.log(row, col);
+            return 'There is no sectoid on that cell';
         }
 
         if (order.get_player() !== cell.get_territory())
         {
-            // Tried to order a sectoid on another player's territory
-            // TODO: Log error
-            return;
+            return 'That cell is not on the player\'s territory';
         }
 
         if (!powered_map[row][col])
         {
-            // Tried to order a sectoid on an unpowered cell
-            // TODO: Log error
-            return;
+            return 'That cell is not powered';
         }
         
         var key = row + ',' + col;
@@ -16082,10 +16078,10 @@ sector8.match = function()
         ]);
     };
 
-    var apply_moves = function(callback)
+    this.apply_moves = function(callback)
     {
         // TODO: Move this out of apply_moves if possible
-        var board = clone_board();
+        var board = clone_board.call(this).get_cells();
         
         var add_moves = [];
         
@@ -16098,7 +16094,7 @@ sector8.match = function()
             {
                 i--;
                 var move = moves[key][i];
-
+                
                 if (move[0])
                 {
                     // Decrease wait counter
@@ -16130,7 +16126,7 @@ sector8.match = function()
                         add_moves.push(move.concat(dst_row + ',' + dst_col));
                     }
                     
-                    callback(order, res[1]);
+                    callback(move[2], src_row, src_col, res[1]);
                 }
             }
         }
@@ -16507,6 +16503,10 @@ sector8.board = function()
     
     this.make_powered_map = function()
     {
+        var rows = this.get_rows();
+        var cols = this.get_cols();
+        var cells = this.get_cells();
+        
         var edges = [];
         var res = [];
 
@@ -16533,7 +16533,12 @@ sector8.board = function()
             var col = edges[i][1];
             var terr = edges[i][2];
 
-            if (board[row][col].get_territory() === terr)
+            if (
+                row >= 0 && row < rows &&
+                col >= 0 && col < cols &&
+                !res[row][col] &&
+                cells[row][col].get_territory() === terr
+            )
             {
                 edges.push([row-1, col, terr]);
                 edges.push([row+1, col, terr]);
@@ -16549,15 +16554,145 @@ sector8.board = function()
         return res;
     };
 };
+goog.provide('sector8.order');
+
+goog.require('goog.asserts');
+goog.require('util.make_getters_setters');
+
+sector8.order = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.order);
+
+    var props = {
+        'player': 0,
+        'turn': 0,
+        'wait': 0,
+        'duration': 0,
+        'row': 0,
+        'col': 0,
+        'sectors': 0,
+        'direction': 0,
+        'call_move': false
+    };
+    // A :20+2-4 #b5 .01245 @4 !
+
+    util.make_getters_setters(this, props);
+    
+    var moves_row = [ 0,-1,-1, 0, 1, 1, 1, 0,-1];
+    var moves_col = [ 0, 0, 1, 1, 1, 0,-1,-1,-1];
+    this.get_move_row = function()
+    {
+        return moves_row[this.get_direction() + 1];
+    };
+    this.get_move_col = function()
+    {
+        return moves_col[this.get_direction() + 1];
+    };
+    
+    var char_number = '1'.charCodeAt(0) - 1;
+    var char_lower = 'a'.charCodeAt(0) - 1;
+    var char_upper = 'A'.charCodeAt(0) - 1;
+    
+    this.to_notation = function(pretty)
+    {
+        var player = String.fromCharCode(char_upper + this.get_player());
+        var turns = ':' + this.get_turn() + '+' + this.get_wait() + '-' + this.get_duration();
+        var sectoid = '#' + String.fromCharCode(char_lower + this.get_col() + 1) + (this.get_row() + 1);
+        var trans = '@' + (this.get_direction() !== -1 ? this.get_direction() : 'x');
+        var call_move = this.get_call_move() ? '!' : '';
+        
+        var sectors = '.';
+        var i = 0;
+        while (i < 8)
+        {
+            if ((this.get_sectors() >>> i) & 1)
+            {
+                sectors += i;
+            }
+            i++;
+        }
+        
+        return [player, turns, sectoid, sectors, trans, call_move].join(pretty ? ' ' : '');
+    };
+    
+    this.from_notation = function(str)
+    {
+        var regex = /^\s*([A-Z])?\s*(?:\:(\d+))?(?:\+(\d+))?(?:-(\d+))?\s*#([a-z])(\d+)\s*(?:\.(\d+))?\s*@(\d+|x)\s*(!?)\s*$/;
+        var exec;
+        if (exec = regex.exec(str))
+        {
+            if (!exec[1]) {exec[1] = '';}
+            if (!exec[2]) {exec[2] = '';}
+            if (!exec[3]) {exec[3] = '0';}
+            if (!exec[4]) {exec[4] = '1';}
+            if (!exec[7]) {exec[7] = '01234567';}
+            if (exec[8] === 'x') {exec[8] = -1;}
+            
+            var sectors = 0;
+            var i = 0;
+            while (i < exec[7].length)
+            {
+                var sector = exec[7].charCodeAt(i) - char_number;
+                if (sector >= 8) {return false;}
+                sectors |= 1 << sector;
+                i++;
+            }
+            
+            this.set_player(exec[1].charCodeAt(0) - char_upper);
+            this.set_turn(parseInt(exec[2], 10));
+            this.set_wait(parseInt(exec[3], 10));
+            this.set_duration(parseInt(exec[4], 10));
+            this.set_col(exec[5].charCodeAt(0) - char_lower);
+            this.set_row(parseInt(exec[6], 10));
+            this.set_sectors(sectors);
+            this.set_direction(parseInt(exec[8], 10));
+            this.set_call_move(!!exec[9]);
+            
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    };
+
+    this.error_msg = function(config)
+    {
+        if (this.get_player() < 0) {return 'Player cannot be negative';}
+        if (this.get_player() > config.sector8.max_players) {return 'Player cannot be greater than ' + config.sector8.max_players;}
+        if (this.get_turn() < 1) {return 'Turn must be at least 1';}
+        if (this.get_wait() < 0) {return 'Wait cannot be negative';}
+        if (this.get_wait() > config.sector8.max_wait) {return 'Wait cannot be greater than ' + config.sector8.max_wait;}
+        if (this.get_duration() < 1) {return 'Duration must be at least 1';}
+        if (this.get_duration() > config.sector8.max_duration) {return 'Duration cannot be greater than ' + config.sector8.max_duration;}
+        if (this.get_row() < 0) {return 'Row must be at least 1';}
+        if (this.get_row() >= config.sector8.max_rows) {return 'Row cannot be greater than ' + config.sector8.max_rows;}
+        if (this.get_col() < 0) {return 'Col must be at least 1';}
+        if (this.get_col() >= config.sector8.max_cols) {return 'Col cannot be greater than ' + config.sector8.max_cols;}
+        if (this.get_sectors() === 0) {return 'Sectors cannot be zero';}
+        if (this.get_sectors() & (~0xFF)) {return 'Sectors must be a 8-bit unsigned int';}
+        if (this.get_direction() < 0) {return 'Direction cannot be negative';}
+        if (this.get_direction() >= 8) {return 'Direction must be less than 8';}
+        return false;
+    };
+};
 goog.provide('sector8.ui.board');
 
 goog.require('goog.array');
+goog.require('goog.dom');
+goog.require('goog.dom.classes');
+goog.require('sector8.order');
 
 //var randomcolor = require('randomcolor');
 
 sector8.ui.board = function(core, match)
 {
     goog.asserts.assertInstanceof(this, sector8.ui.board);
+    
+    var cell_spacing = core.config.geometry.cell_size;
+    var overlay_center = core.config.geometry.overlay_img_size / 2.0;
+    var sector_rad = core.config.geometry.sector_rad;
+    var center_rad = core.config.geometry.center_rad;
     
     var board = match.get_map().get_board();
     
@@ -16625,19 +16760,38 @@ sector8.ui.board = function(core, match)
         */
         
         // Start test
+        match.load_orders('');
+        
         var html = '<div style="padding-left: 600px;"><input type="text" class="order_input" /><button class="order_button">Order</button><button class="move_button">Move</button></div>';
         goog.dom.append(el, goog.dom.htmlToDocumentFragment(html));
         el.getElementsByClassName('order_button')[0].onclick = function()
         {
             var order_str = el.getElementsByClassName('order_input')[0].value;
             var order = new sector8.order();
-            order.from_notation(order_str);
-            
-            match.apply_order(order);
+            if (order.from_notation(order_str))
+            {
+                var order_error = order.error_msg(core.config);
+                if (order_error)
+                {
+                    alert(order_error);
+                }
+                else
+                {
+                    var apply_error = match.apply_order(order);
+                    if (apply_error)
+                    {
+                        alert(apply_error);
+                    }
+                }
+            }
+            else
+            {
+                alert('invalid order syntax');
+            }
         };
         el.getElementsByClassName('move_button')[0].onclick = function()
         {
-            match.apply_move(function(order, src_row, src_col, sectoid)
+            match.apply_moves(function(order, src_row, src_col, sectoid)
             {
                 var sectoid_el = sectoid_els[src_row][src_col];
                 
@@ -16649,7 +16803,14 @@ sector8.ui.board = function(core, match)
                         var sector = sectoid_el.getElementsByClassName('sector_' + i)[0];
                         if (typeof sector !== 'undefined')
                         {
-                            sectoid_el.removeChild(sector);
+                            //sectoid_el.removeChild(sector);
+                            var dx = cell_spacing * order.get_move_col();
+                            var dy = cell_spacing * order.get_move_row();
+                            sector.setAttribute('style', 'margin-left: ' + dx + 'px; margin-top: ' + dy + 'px;');
+                        }
+                        else
+                        {
+                            // TODO: Log error
                         }
                     }
                     i++;
@@ -16731,9 +16892,6 @@ sector8.ui.board = function(core, match)
         return sectoid_el;
     };
     
-    var overlay_center = core.config.geometry.overlay_img_size / 2.0;
-    var sector_rad = core.config.geometry.sector_rad;
-    var center_rad = core.config.geometry.center_rad;
     var create_areas = function()
     {
         var map = goog.dom.createDom('map', {'name': 'sectoid'});
@@ -16832,19 +16990,6 @@ sector8.ui.board = function(core, match)
         });
     };
     
-    var move_sectors = function(row, col, sectors, direction, distance)
-    {
-        var trans_row = [-1,-1, 0, 1, 1, 1, 0,-1];
-        var trans_col = [ 0, 1, 1, 1, 0,-1,-1,-1];
-    };
-    var on_order = function(order)
-    {
-        
-    };
-    
-    
-    
-    var cell_spacing = core.config.geometry.cell_size;
     var get_positioning = function(row, col, row_off, col_off)
     {
         return 'left: ' + (col * cell_spacing + col_off) + 'px; top: ' + (row * cell_spacing + row_off) + 'px; ';
@@ -16941,9 +17086,10 @@ sector8.ui.ui = function(core)
                 var c = cells[row][col] = new sector8.cell();
                 
                 var sectoid = 0;
-                if (row === 1 && (col === 0 || col === 4))
+                if ((row === 0 || row === 2) && (col === 0 || col === 4))
                 {
                     sectoid = Math.floor(Math.random() * 256);
+                    sectoid |= (row === 0) << 8;
                 }
 
                 var t_map = [1, 1, 0, 2, 2];

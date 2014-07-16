@@ -34,6 +34,12 @@ sector8.match = function()
     this.MOVE_WHERE_ALL = 1; // Execute all orders
     this.MOVE_WHERE_PLAYER = 2; // Execute orders created by the current player
     this.MOVE_WHERE_TERRITORY = 3; // Execute orders on sectoids on the current players territory
+    
+    var move_where_funcs = {};
+    move_where_funcs[this.MOVE_WHERE_ALL] = function(order)
+    {
+        return true;
+    };
 
     /*
     this.generate_colors = function()
@@ -95,10 +101,11 @@ sector8.match = function()
         });
         
         this.set_board(this.get_map().get_board());
-        clone_board();
+        clone_board.call(this);
         
         var move_after = this.get_move_after();
-        var move_where = this.get_move_where();
+        // TODO: move_where
+        //var move_where = move_where_funcs[this.get_move_where()];
         
         var prev_turn;
         
@@ -115,7 +122,6 @@ sector8.match = function()
                 (move_after === this.MOVE_AFTER_TURN && prev_turn !== order.get_turn() && (prev_turn = order.get_turn()))
             )
             {
-                // TODO: move_where
                 apply_moves(function() {});
             }
 
@@ -127,53 +133,43 @@ sector8.match = function()
         
     var moves = {};
     
-    var apply_order = function(order)
+    this.apply_order = function(order)
     {
         var board = this.get_board();
         var powered_map = board.make_powered_map();
 
-        var order_error = order.error_msg(/*config*/);
-        if (order_error)
-        {
-            // There's a problem with the order
-            // TODO: Log order_error
-            return;
-        }
-
         var row = order.get_row();
         var col = order.get_col();
 
-        if (row >= board.get_rows())
+        if (row > board.get_rows())
         {
-            return;
+            return 'Order target row ' + row + ' is too high';
         }
-        if (col >= board.get_cols())
+        if (col > board.get_cols())
         {
-            return;
+            return 'Order target column ' + col + ' is too high';
         }
+        
+        row--;
+        col--;
 
         var cell = board.get_cells()[row][col];
         var sectoid = cell.get_sectoid();
 
         if (!sectoid)
         {
-            // Tried to order an empty cell
-            // TODO: Log error
-            return;
+            console.log(row, col);
+            return 'There is no sectoid on that cell';
         }
 
         if (order.get_player() !== cell.get_territory())
         {
-            // Tried to order a sectoid on another player's territory
-            // TODO: Log error
-            return;
+            return 'That cell is not on the player\'s territory';
         }
 
         if (!powered_map[row][col])
         {
-            // Tried to order a sectoid on an unpowered cell
-            // TODO: Log error
-            return;
+            return 'That cell is not powered';
         }
         
         var key = row + ',' + col;
@@ -186,10 +182,10 @@ sector8.match = function()
         ]);
     };
 
-    var apply_moves = function(callback)
+    this.apply_moves = function(callback)
     {
         // TODO: Move this out of apply_moves if possible
-        var board = clone_board();
+        var board = clone_board.call(this).get_cells();
         
         var add_moves = [];
         
@@ -202,7 +198,7 @@ sector8.match = function()
             {
                 i--;
                 var move = moves[key][i];
-
+                
                 if (move[0])
                 {
                     // Decrease wait counter
@@ -234,7 +230,7 @@ sector8.match = function()
                         add_moves.push(move.concat(dst_row + ',' + dst_col));
                     }
                     
-                    callback(order, res[1]);
+                    callback(move[2], src_row, src_col, res[1]);
                 }
             }
         }
