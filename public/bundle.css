@@ -55,7 +55,7 @@ h1 {
 .board .sectoid {
   position: absolute; }
 
-.board .sector {
+.board .sectoid .sector {
   position: absolute;
   top: 0px;
   left: 0px;
@@ -63,65 +63,66 @@ h1 {
   height: 100px;
   background-size: 100%;
   z-index: 10;
-  transition: background-image 0.5s ease; }
+  transition: background-image 0.5s ease;
+  transition: margin-left 0.5s ease, margin-top 0.5s ease; }
 
-.board .sector_0 {
+.board .sectoid .sector_0 {
   background-image: url(images/sector_0.png); }
 
-.board .sector_0.lit {
+.board .sectoid .sector_0.lit {
   background-image: url(images/sector_0_lit.png); }
 
-.board .sector_1 {
+.board .sectoid .sector_1 {
   background-image: url(images/sector_1.png); }
 
-.board .sector_1.lit {
+.board .sectoid .sector_1.lit {
   background-image: url(images/sector_1_lit.png); }
 
-.board .sector_2 {
+.board .sectoid .sector_2 {
   background-image: url(images/sector_2.png); }
 
-.board .sector_2.lit {
+.board .sectoid .sector_2.lit {
   background-image: url(images/sector_2_lit.png); }
 
-.board .sector_3 {
+.board .sectoid .sector_3 {
   background-image: url(images/sector_3.png); }
 
-.board .sector_3.lit {
+.board .sectoid .sector_3.lit {
   background-image: url(images/sector_3_lit.png); }
 
-.board .sector_4 {
+.board .sectoid .sector_4 {
   background-image: url(images/sector_4.png); }
 
-.board .sector_4.lit {
+.board .sectoid .sector_4.lit {
   background-image: url(images/sector_4_lit.png); }
 
-.board .sector_5 {
+.board .sectoid .sector_5 {
   background-image: url(images/sector_5.png); }
 
-.board .sector_5.lit {
+.board .sectoid .sector_5.lit {
   background-image: url(images/sector_5_lit.png); }
 
-.board .sector_6 {
+.board .sectoid .sector_6 {
   background-image: url(images/sector_6.png); }
 
-.board .sector_6.lit {
+.board .sectoid .sector_6.lit {
   background-image: url(images/sector_6_lit.png); }
 
-.board .sector_7 {
+.board .sectoid .sector_7 {
   background-image: url(images/sector_7.png); }
 
-.board .sector_7.lit {
+.board .sectoid .sector_7.lit {
   background-image: url(images/sector_7_lit.png); }
 
 /*
-.board .sector.floating
+.board .sectoid .sector.floating
 {
     top: $sectoid_offset - $float_offset;
     left: $sectoid_offset - $float_offset;
     z-index: 20;
 }
 */
-.board .center {
+.board .sectoid .center {
   position: absolute;
   top: 30px;
   left: 30px;
@@ -129,9 +130,13 @@ h1 {
   height: 40px;
   background-image: url(images/center.png);
   background-size: 100%;
-  z-index: 15; }
+  z-index: 15;
+  transition: opacity 0.5s ease; }
 
-.board .overlay {
+.board .sectoid.prime .center {
+  background-image: url(images/center_prime.png); }
+
+.board .sectoid .overlay {
   position: absolute;
   top: 0px;
   left: 0px;

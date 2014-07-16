@@ -53,6 +53,10 @@ sector8.ui.board = function(core, match)
                     goog.dom.append(el, sectoid_el);
                     sectoid_els[row][col] = sectoid_el;
                 }
+                else
+                {
+                    sectoid_els[row][col] = null;
+                }
                 
                 col++;
             }
@@ -86,6 +90,7 @@ sector8.ui.board = function(core, match)
         
         var html = '<div style="padding-left: 600px;"><input type="text" class="order_input" /><button class="order_button">Order</button><button class="move_button">Move</button></div>';
         goog.dom.append(el, goog.dom.htmlToDocumentFragment(html));
+        
         el.getElementsByClassName('order_button')[0].onclick = function()
         {
             var order_str = el.getElementsByClassName('order_input')[0].value;
@@ -111,29 +116,48 @@ sector8.ui.board = function(core, match)
                 alert('invalid order syntax');
             }
         };
+        
         el.getElementsByClassName('move_button')[0].onclick = function()
         {
-            match.apply_moves(function(order, src_row, src_col, sectoid)
+            match.apply_moves(function(order, sectoid, src_row, src_col, dst_row, dst_col)
             {
-                var sectoid_el = sectoid_els[src_row][src_col];
+                var src_el = sectoid_els[src_row][src_col];
+                var dst_el = sectoid_els[dst_row][dst_col];
+                
+                if (!dst_el)
+                {
+                    dst_el = create_sectoid(dst_row, dst_col, 0);
+                    goog.dom.append(el, dst_el);
+                    sectoid_els[dst_row][dst_col] = dst_el;
+                    
+                    var center = dst_el.getElementsByClassName('center')[0];
+                    center.style.opacity = 0;
+                    setTimeout(function()
+                    {
+                        center.style.opacity = 1;
+                    }, 0);
+                }
                 
                 var i = 0;
                 while (i < 8)
                 {
                     if ((sectoid >>> i) & 1)
                     {
-                        var sector = sectoid_el.getElementsByClassName('sector_' + i)[0];
-                        if (typeof sector !== 'undefined')
+                        src_el.removeChild(src_el.getElementsByClassName('sector_' + i)[0]);
+                        var sector_el = create_sector(i);
+                        
+                        var dx = -cell_spacing * order.get_move_col();
+                        var dy = -cell_spacing * order.get_move_row();
+                        sector_el.style.marginLeft = dx + 'px';
+                        sector_el.style.marginRight = dy + 'px';
+                        
+                        goog.dom.append(dst_el, sector_el);
+                        
+                        setTimeout((function(sector_el)
                         {
-                            //sectoid_el.removeChild(sector);
-                            var dx = cell_spacing * order.get_move_col();
-                            var dy = cell_spacing * order.get_move_row();
-                            sector.setAttribute('style', 'margin-left: ' + dx + 'px; margin-top: ' + dy + 'px;');
-                        }
-                        else
-                        {
-                            // TODO: Log error
-                        }
+                            sector_el.style.marginLeft = '';
+                            sector_el.style.marginRight = '';
+                        }).bind(null, sector_el), 0);
                     }
                     i++;
                 }
@@ -173,18 +197,17 @@ sector8.ui.board = function(core, match)
     
     var create_sectoid = function(row, col, sectoid)
     {
-        // sectoid.get_prime();
+        var prime = sectoid & (1 << 8);
         
         var style = get_positioning(row, col, 0, 0);
-        var sectoid_el = goog.dom.createDom('div', {'class': 'sectoid', 'style': style});
+        var sectoid_el = goog.dom.createDom('div', {'class': 'sectoid' + (prime ? ' prime' : ''), 'style': style});
         
         var i = 0;
         while (i < 8)
         {
             if ((sectoid >>> i) & 1)
             {
-                var sector_el = goog.dom.createDom('span', {'class': 'sector sector_' + i});
-                goog.dom.append(sectoid_el, sector_el);
+                goog.dom.append(sectoid_el, create_sector(i));
             }
             i++;
         }
@@ -212,6 +235,12 @@ sector8.ui.board = function(core, match)
         goog.dom.append(sectoid_el, overlay);
         
         return sectoid_el;
+    };
+    
+    var create_sector = function(sector_i)
+    {
+        var sector_el = goog.dom.createDom('span', {'class': 'sector sector_' + sector_i});
+        return sector_el;
     };
     
     var create_areas = function()

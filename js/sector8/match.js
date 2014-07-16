@@ -230,7 +230,7 @@ sector8.match = function()
                         add_moves.push(move.concat(dst_row + ',' + dst_col));
                     }
                     
-                    callback(move[2], src_row, src_col, res[1]);
+                    callback(move[2], res[1], src_row, src_col, dst_row, dst_col);
                 }
             }
         }

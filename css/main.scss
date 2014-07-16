@@ -85,7 +85,7 @@ h1 {
 }
 
 $sectoid_offset: ($cell_size - $sector_img_size) / 2;
-.board .sector
+.board .sectoid .sector
 {
     position: absolute;
     top: $sectoid_offset;
@@ -94,24 +94,26 @@ $sectoid_offset: ($cell_size - $sector_img_size) / 2;
     height: $sector_img_size;
     background-size: 100%;
     z-index: 10;
+    
     transition: background-image 0.5s ease;
+    transition: margin-left 0.5s ease, margin-top 0.5s ease; 
     
     // used with .floating
-    //transition: top 0.5s ease, left 0.5s ease;
+    //transition: left 0.5s ease, top 0.5s ease;
 }
 @for $i from 0 to 8
 {
-    .board .sector_#{$i}
+    .board .sectoid .sector_#{$i}
     {
         background-image: url(#{$image_path}sector_#{$i}.png);
     }
-    .board .sector_#{$i}.lit
+    .board .sectoid .sector_#{$i}.lit
     {
         background-image: url(#{$image_path}sector_#{$i}_lit.png);
     }
 }
 /*
-.board .sector.floating
+.board .sectoid .sector.floating
 {
     top: $sectoid_offset - $float_offset;
     left: $sectoid_offset - $float_offset;
@@ -120,7 +122,7 @@ $sectoid_offset: ($cell_size - $sector_img_size) / 2;
 */
 
 $center_offset: ($cell_size - $center_img_size) / 2;
-.board .center
+.board .sectoid .center
 {
     position: absolute;
     top: $center_offset;
@@ -130,10 +132,16 @@ $center_offset: ($cell_size - $center_img_size) / 2;
     background-image: url(#{$image_path}center.png);
     background-size: 100%;
     z-index: 15;
+    
+    transition: opacity 0.5s ease;
+}
+.board .sectoid.prime .center
+{
+    background-image: url(#{$image_path}center_prime.png);
 }
 
 $overlay_offset: ($cell_size - $overlay_img_size) / 2;
-.board .overlay
+.board .sectoid .overlay
 {
     position: absolute;
     top: $overlay_offset;
