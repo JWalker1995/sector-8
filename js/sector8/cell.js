@@ -68,12 +68,12 @@ sector8.cell = function()
                 {
                     var sector = exec[2].charCodeAt(i) - char_number;
                     if (sector >= 8) {return false;}
-                    sectors |= 1 <<< sector;
+                    sectors |= 1 << sector;
                     i++;
                 }
                 
                 var prime = !!exec[3];
-                this.set_sectoid(sectors | (prime <<< 8));
+                this.set_sectoid(sectors | (prime << 8));
 
                 /*
                 var sectoid = new sector8.sectoid();

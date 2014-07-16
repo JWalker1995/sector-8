@@ -3674,35 +3674,7 @@ util.make_getters_setters = function(obj, props)
         }
     };
 };
-goog.provide('sector8.map');
-
-goog.require('goog.asserts');
-goog.require('util.make_getters_setters');
-
-sector8.map = function()
-{
-    goog.asserts.assertInstanceof(this, sector8.map);
-
-    var props = {
-        'map_id': 0,
-        'name': '',
-        'num_players': 0,
-        'rows': 0,
-        'cols': 0,
-        'board': sector8.board,
-        //'primes': [],
-        'symmetry_flip_x': false,
-        'symmetry_flip_y': false,
-        'symmetry_rot_90': false,
-        'symmetry_rot_180': false,
-        'creator_id': 0,
-        'creation_date': Date
-    };
-    
-    // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
-
-    util.make_getters_setters(this, props);
-};goog.provide('sector8.user');
+goog.provide('sector8.user');
 
 goog.require('util.make_getters_setters');
 
@@ -15922,6 +15894,661 @@ sector8.ui.login = function(core)
         }
     };
 };
+goog.provide('sector8.match');
+
+goog.require('goog.asserts');
+goog.require('util.make_getters_setters');
+
+sector8.match = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.match);
+
+    var props = {
+        'match_id': 0,
+        'name': '',
+        'start_date': Date,
+        'end_date': Date,
+        'players': Array,
+        'map': sector8.map,
+        'orders': Array,
+        'board': sector8.board,
+        'move_after': 0,
+        'move_where': 0,
+        'timer_type': 0,
+        'spectators': true,
+        'stakes': 1.0
+    };
+
+    util.make_getters_setters(this, props);
+    
+    // move_after:
+    this.MOVE_AFTER_ORDER = 1; // Move after each player orders
+    this.MOVE_AFTER_CALL = 2; // Move after any player calls it
+    this.MOVE_AFTER_TURN = 3; // Move after all players have ordered
+    
+    // move_where:
+    this.MOVE_WHERE_ALL = 1; // Execute all orders
+    this.MOVE_WHERE_PLAYER = 2; // Execute orders created by the current player
+    this.MOVE_WHERE_TERRITORY = 3; // Execute orders on sectoids on the current players territory
+
+    /*
+    this.generate_colors = function()
+    {
+        var randomcolor = require('randomcolor');
+        
+        var c = this.get_players().length;
+        var colors = randomcolor({
+            'count': c
+        });
+        
+        var i = 0;
+        while (i < c)
+        {
+            var color = parseInt(colors[i].substr(1), 16);
+            this.get_players()[i].set_color(color)
+            i++;
+        }
+    };
+    */
+    
+    var boards = [];
+    var clone_board = function()
+    {
+        var board = this.get_board().clone();
+        boards[boards.length] = board;
+        this.set_board(board);
+        return board;
+    };
+    
+    this.load_orders = function(str)
+    {
+        var orders = [];
+        
+        // Split str into lines
+        var lines = str.split(/,|\r|\n/);
+        
+        // Parse each line into a sector8.order
+        var tmp_order = new sector8.order();
+        var i = 0;
+        while (i < lines.length)
+        {
+            if (tmp_order.from_notation(lines[i]))
+            {
+                orders.push(tmp_order);
+                tmp_order = new sector8.order();
+            }
+            i++;
+        }
+        
+        // Sort orders, by turn then player
+        orders.sort(function(a, b)
+        {
+            if (a.get_turn() !== b.get_turn())
+                {return a.get_turn() - b.get_turn();}
+            if (a.get_player() !== b.get_player())
+                {return a.get_player() - b.get_player();}
+            return 0;
+        });
+        
+        this.set_board(this.get_map().get_board());
+        clone_board();
+        
+        var move_after = this.get_move_after();
+        var move_where = this.get_move_where();
+        
+        var prev_turn;
+        
+        var i = 0;
+        while (i < orders.length)
+        {
+            var order = orders[i];
+            
+            apply_order(order);
+            
+            if (
+                (move_after === this.MOVE_AFTER_ORDER) ||
+                (move_after === this.MOVE_AFTER_CALL && order.get_call_move()) ||
+                (move_after === this.MOVE_AFTER_TURN && prev_turn !== order.get_turn() && (prev_turn = order.get_turn()))
+            )
+            {
+                // TODO: move_where
+                apply_moves(function() {});
+            }
+
+            i++;
+        }
+        
+        return boards;
+    };
+        
+    var moves = {};
+    
+    var apply_order = function(order)
+    {
+        var board = this.get_board();
+        var powered_map = board.make_powered_map();
+
+        var order_error = order.error_msg(/*config*/);
+        if (order_error)
+        {
+            // There's a problem with the order
+            // TODO: Log order_error
+            return;
+        }
+
+        var row = order.get_row();
+        var col = order.get_col();
+
+        if (row >= board.get_rows())
+        {
+            return;
+        }
+        if (col >= board.get_cols())
+        {
+            return;
+        }
+
+        var cell = board.get_cells()[row][col];
+        var sectoid = cell.get_sectoid();
+
+        if (!sectoid)
+        {
+            // Tried to order an empty cell
+            // TODO: Log error
+            return;
+        }
+
+        if (order.get_player() !== cell.get_territory())
+        {
+            // Tried to order a sectoid on another player's territory
+            // TODO: Log error
+            return;
+        }
+
+        if (!powered_map[row][col])
+        {
+            // Tried to order a sectoid on an unpowered cell
+            // TODO: Log error
+            return;
+        }
+        
+        var key = row + ',' + col;
+        if (typeof moves[key] === 'undefined') {moves[key] = [];}
+        
+        moves[key].push([
+            order.get_wait(),
+            order.get_duration(),
+            order
+        ]);
+    };
+
+    var apply_moves = function(callback)
+    {
+        // TODO: Move this out of apply_moves if possible
+        var board = clone_board();
+        
+        var add_moves = [];
+        
+        for (var key in moves)
+        {
+            var row_col;
+            
+            var i = moves[key].length;
+            while (i > 0)
+            {
+                i--;
+                var move = moves[key][i];
+
+                if (move[0])
+                {
+                    // Decrease wait counter
+                    move[0]--;
+                }
+                else
+                {
+                    // Decrease duration counter
+                    move[1]--;
+                    
+                    if (typeof row_col === 'undefined') {row_col = key.split(',');}
+                    
+                    var src_row = parseInt(row_col[0]);
+                    var src_col = parseInt(row_col[1]);
+                    var dst_row = src_row + move[2].get_move_row();
+                    var dst_col = src_col + move[2].get_move_col();
+                    
+                    var src_cell = board[src_row][src_col];
+                    var dst_cell = board[dst_row][dst_col];
+                    
+                    var res = apply_move(src_cell, dst_cell, move[2].get_sectors());
+                    
+                    if (!res[0] || move[1] === 0)
+                    {
+                        moves[key].splice(i, 1);
+                    }
+                    if (res[1] && move[1] !== 0)
+                    {
+                        add_moves.push(move.concat(dst_row + ',' + dst_col));
+                    }
+                    
+                    callback(order, res[1]);
+                }
+            }
+        }
+        
+        var i = 0;
+        while (i < add_moves.length)
+        {
+            var key = add_moves[i].pop();
+            if (typeof moves[key] === 'undefined') {moves[key] = [];}
+            
+            moves[key].push(add_moves[i]);
+            
+            i++;
+        }
+    };
+
+    var apply_move = function(src_cell, dst_cell, sectors)
+    {
+        var src = src_cell.get_sectoid();
+        var dst = dst_cell.get_sectoid();
+        
+        sectors &= src;
+        dst |= sectors;
+        src &= ~sectors;
+        
+        if (sectors)
+        {
+            src_cell.set_sectoid(src);
+            dst_cell.set_sectoid(dst);
+            dst_cell.set_territory(src_cell.get_territory());
+        }
+        
+        return [src, sectors, dst];
+    };
+};
+
+/*
+sector8.sectoid = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.sectoid);
+
+    var props = {
+        'row': 0,
+        'col': 0,
+        'sectors': 0,
+        'prime': false
+    };
+
+    util.make_getters_setters(this, props);
+};
+    
+sector8.player = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.player);
+
+    var props = {
+        'id': 0,
+        'color': 0,
+        'time': 0
+    };
+
+    util.make_getters_setters(this, props);
+};
+*/
+
+/*
+
+// Move the N, NE, E, S, and SW sectors of the piece currently on b5 south in 2, 3, and 4 turns
++2-4:b5.01245:4
+
+// Cancel the orders of all sectors of the piece on b5
+:b5:
+
+Turns: 11
+Cell X: 25
+Cell Y: 25
+Sectors: 256
+Dir: 9
+
+
+Match creation options:
+    Map
+    Turn type (parallel, serial)
+    Timer type (hourglass, per-turn, per-game)
+    Shadow match (if yes, then a player can only see cells consecutive to his territory)
+    Spectators
+*/
+goog.provide('sector8.sectoid');
+
+goog.require('util.make_getters_setters');
+
+sector8.sectoid = function()
+{
+    if (!(this instanceof sector8.sectoid))
+    {
+        throw new Error('sector8.sectoid must be created with the new keyword');
+    }
+
+    var props = {
+        'is_king': false,
+        'sectors': 0
+    };
+
+    util.make_getters_setters(this, props);
+};
+goog.provide('sector8.cell');
+
+goog.require('goog.asserts');
+goog.require('sector8.sectoid');
+
+sector8.cell = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.cell);
+
+    var props = {
+        'void': false,
+        'territory': 0,
+        'permanent': false,
+        'sectoid': 0
+    };
+
+    util.make_getters_setters(this, props);
+    
+    var char_number = '1'.charCodeAt(0) - 1;
+    var char_lower = 'a'.charCodeAt(0) - 1;
+    var char_upper = 'A'.charCodeAt(0) - 1;
+    
+    this.from_notation = function(row, col, str)
+    {
+        var regex = /^\s*([a-zA-Z:\-=])\/?(?:(\d+)\s*(!)?)?\s*$/;
+        var exec;
+        if (exec = regex.exec(str))
+        {
+            this.set_void(false);
+            
+            switch (exec[1])
+            {
+                case ':':
+                    this.set_void(true);
+                    break;
+                
+                case '-':
+                    this.set_territory(0);
+                    this.set_permanent(false);
+                    break;
+                
+                case '=':
+                    this.set_territory(0);
+                    this.set_permanent(true);
+                    break;
+                
+                default:
+                    var is_lower = exec[1] >= 'a' && exec[1] <= 'z';
+                    var is_upper = exec[1] >= 'A' && exec[1] <= 'Z';
+                    if (is_lower === is_upper)
+                    {
+                        // TODO: Log error (shouldn't happen)
+                    }
+                    else
+                    {
+                        var territory = exec[1].charCodeAt(0) - (is_upper ? char_upper : char_lower);
+                        this.set_territory(territory);
+                        this.set_permanent(is_upper);
+                    }
+            }
+            
+            if (exec[2])
+            {
+                // TODO: Combine with order sector parsing code
+                var sectors = 0;
+                var i = 0;
+                while (i < exec[2].length)
+                {
+                    var sector = exec[2].charCodeAt(i) - char_number;
+                    if (sector >= 8) {return false;}
+                    sectors |= 1 << sector;
+                    i++;
+                }
+                
+                var prime = !!exec[3];
+                this.set_sectoid(sectors | (prime << 8));
+
+                /*
+                var sectoid = new sector8.sectoid();
+                sectoid.set_row(row);
+                sectoid.set_col(rol);
+                sectoid.set_sectors(sectors);
+                sectoid.set_prime(!!exec[3]);
+                
+                this.set_sectoid(sectoid);
+                */
+            }
+            
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    };
+};
+goog.provide('util.crc32');
+
+util.crc32 = (function()
+{
+    var table;
+    var make_table = function()
+    {
+        table = [];
+        
+        var c;
+        for (var n = 0; n < 256*256; n++)
+        {
+            c = n;
+            for (var k = 0; k < 16; k++)
+            {
+                c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+            }
+            table[n] = c;
+        }
+    };
+
+    return function(str)
+    {
+        if (!table) {make_table();}
+
+        var crc = 0 ^ (-1);
+
+        for (var i = 0; i < str.length; i++)
+        {
+            crc = (crc >>> 16) ^ table[(crc ^ str.charCodeAt(i)) & 0xFFFF];
+        }
+
+        return (crc ^ (-1)) >>> 0;
+    };
+})();goog.provide('sector8.board');
+
+goog.require('goog.asserts');
+goog.require('util.make_getters_setters');
+goog.require('util.crc32');
+
+sector8.board = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.board);
+
+    var props = {
+        'rows': 0,
+        'cols': 0,
+        'cells': Array
+    };
+
+    util.make_getters_setters(this, props);
+    
+    this.from_notation = function(str)
+    {
+        var rows = str.trim().split(/[\r\n]+/);
+        
+        var num_cols = 0;
+        var cells = [];
+        
+        var row = 0;
+        while (row < rows.length)
+        {
+            var cols = rows[row].trim().split(/[\s]+/);
+            
+            if (!num_cols) {num_cols = cols.length;}
+            
+            if (num_cols !== cols.length)
+            {
+                return false;
+            }
+            
+            cells[row] = [];
+            
+            var col = 0;
+            while (col < cols.length)
+            {
+                var cell = cells[row][col] = new sector8.cell();
+                if (!cell.from_notation(row, col, cols[col]))
+                {
+                    return false;
+                }
+                
+                col++;
+            }
+            
+            row++;
+        }
+
+        // TODO: Add non-inline sectoids
+        // #a3 01234567!
+        
+        this.set_rows(rows.length);
+        this.set_cols(num_cols);
+        this.set_cells(cells);
+        
+        return true;
+    };
+    
+    this.foreach_row = function(callback)
+    {
+        var cells = this.get_cells();
+        var row = 0;
+        var rows = this.get_rows();
+        while (row < rows)
+        {
+            callback(row, cells[row]);
+            row++;
+        }
+    };
+
+    this.foreach_cell = function(callback)
+    {
+        var cols = this.get_cols();
+        this.foreach_row(function(row, arr)
+        {
+            var col = 0;
+            while (col < cols)
+            {
+                callback(row, col, arr[col]);
+                col++;
+            }
+        });
+    };
+    
+    this.clone = function()
+    {
+        var cells = [];
+        
+        this.foreach_row(function(row)
+        {
+            cells[row] = [];
+        });
+        
+        this.foreach_cell(function(row, col, cell)
+        {
+            cells[row][col] = cell;
+        });
+        
+        var res = new sector8.board();
+        res.set_rows(this.get_rows());
+        res.set_cols(this.get_cols());
+        res.set_cells(cells);
+        return res;
+    };
+
+    this.checksum = function()
+    {
+        var str = '';
+
+        str += String.fromCharCode(this.get_rows());
+        str += String.fromCharCode(this.get_cols());
+
+        this.foreach_cell(function(row, col, cell)
+        {
+            var i = 0;
+            i |= cell.get_void() << 0;
+            i |= cell.get_territory() << 1;
+            i |= cell.get_permanent() << 6;
+            i |= cell.get_sectoid() << 7;
+            /*
+            if (cell.get_sectoid())
+            {
+                i |= cell.get_sectoid().get_prime() << 7;
+                i |= cell.get_sectoid().get_sectors() << 8;
+            }
+            */
+            goog.asserts.assert(i <= 0xFFFF);
+            str += String.fromCharCode(i);
+        });
+
+        return util.crc32(str);
+    };
+    
+    this.make_powered_map = function()
+    {
+        var edges = [];
+        var res = [];
+
+        this.foreach_row(function(row, arr)
+        {
+            res[row] = [];
+        });
+        
+        this.foreach_cell(function(row, col, cell)
+        {
+            //if (cell.get_sectoid() && cell.get_sectoid().get_prime())
+            if (cell.get_sectoid() & (1 << 8))
+            {
+                edges.push([row, col, cell.get_territory()]);
+            }
+
+            res[row][col] = false;
+        });
+
+        var i = 0;
+        while (i < edges.length)
+        {
+            var row = edges[i][0];
+            var col = edges[i][1];
+            var terr = edges[i][2];
+
+            if (board[row][col].get_territory() === terr)
+            {
+                edges.push([row-1, col, terr]);
+                edges.push([row+1, col, terr]);
+                edges.push([row, col-1, terr]);
+                edges.push([row, col+1, terr]);
+
+                res[row][col] = true;
+            }
+
+            i++;
+        }
+
+        return res;
+    };
+};
 goog.provide('sector8.ui.board');
 
 goog.require('goog.array');
@@ -15932,7 +16559,7 @@ sector8.ui.board = function(core, match)
 {
     goog.asserts.assertInstanceof(this, sector8.ui.board);
     
-    var map = match.get_map();
+    var board = match.get_map().get_board();
     
     var cell_els;
     var sectoid_els;
@@ -15941,9 +16568,9 @@ sector8.ui.board = function(core, match)
     {
         var el = goog.dom.createDom('div', {'class': 'board'});
         
-        var rows = map.get_rows();
-        var cols = map.get_cols();
-        var cells = map.get_cells();
+        var rows = board.get_rows();
+        var cols = board.get_cols();
+        var cells = board.get_cells();
         
         cell_els = [];
         sectoid_els = [];
@@ -15965,7 +16592,7 @@ sector8.ui.board = function(core, match)
                 var sectoid = cell.get_sectoid();
                 if (sectoid)
                 {
-                    var sectoid_el = create_sectoid(col, row, sectoid);
+                    var sectoid_el = create_sectoid(row, col, sectoid);
                     goog.dom.append(el, sectoid_el);
                     sectoid_els[row][col] = sectoid_el;
                 }
@@ -15998,11 +16625,37 @@ sector8.ui.board = function(core, match)
         */
         
         // Start test
-        var html = '<div style="padding-left: 600px;">Move: <input type="text" class="move_input" /><button class="move_button">Move</button></div>';
+        var html = '<div style="padding-left: 600px;"><input type="text" class="order_input" /><button class="order_button">Order</button><button class="move_button">Move</button></div>';
         goog.dom.append(el, goog.dom.htmlToDocumentFragment(html));
+        el.getElementsByClassName('order_button')[0].onclick = function()
+        {
+            var order_str = el.getElementsByClassName('order_input')[0].value;
+            var order = new sector8.order();
+            order.from_notation(order_str);
+            
+            match.apply_order(order);
+        };
         el.getElementsByClassName('move_button')[0].onclick = function()
         {
-            var move = el.getElementsByClassName('move_input')[0].value;
+            match.apply_move(function(order, src_row, src_col, sectoid)
+            {
+                var sectoid_el = sectoid_els[src_row][src_col];
+                
+                var i = 0;
+                while (i < 8)
+                {
+                    if ((sectoid >>> i) & 1)
+                    {
+                        var sector = sectoid_el.getElementsByClassName('sector_' + i)[0];
+                        if (typeof sector !== 'undefined')
+                        {
+                            sectoid_el.removeChild(sector);
+                        }
+                    }
+                    i++;
+                }
+                order.get_move_row();
+            });
         };
         // End test
 
@@ -16041,12 +16694,11 @@ sector8.ui.board = function(core, match)
         
         var style = get_positioning(row, col, 0, 0);
         var sectoid_el = goog.dom.createDom('div', {'class': 'sectoid', 'style': style});
-                
-        var sec_bits = sectoid.get_sectors();
+        
         var i = 0;
         while (i < 8)
         {
-            if ((sec_bits >> i) & 1)
+            if ((sectoid >>> i) & 1)
             {
                 var sector_el = goog.dom.createDom('span', {'class': 'sector sector_' + i});
                 goog.dom.append(sectoid_el, sector_el);
@@ -16221,292 +16873,40 @@ sector8.ui.match = function(core, match)
 
     this.render = goog.functions.cacheReturnValue(render);
 };
-goog.provide('sector8.match');
+goog.provide('sector8.map');
 
 goog.require('goog.asserts');
 goog.require('util.make_getters_setters');
 
-sector8.match = function()
+sector8.map = function()
 {
-    goog.asserts.assertInstanceof(this, sector8.match);
+    goog.asserts.assertInstanceof(this, sector8.map);
 
     var props = {
-        'match_id': 0,
+        'map_id': 0,
         'name': '',
-        'players': Array,
-        'map': sector8.map,
-        'move_after': 0,
-        'move_where': 0,
-        'timer_type': 0,
-        'spectators': true,
-        'orders': Array,
-        'stakes': 1.0,
-        'start_date': Date,
-        'end_date': Date
+        'num_players': 0,
+        'board': sector8.board,
+        //'primes': [],
+        'symmetry_flip_x': false,
+        'symmetry_flip_y': false,
+        'symmetry_rot_90': false,
+        'symmetry_rot_180': false,
+        'creator_id': 0,
+        'creation_date': Date
     };
+    
+    // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
 
     util.make_getters_setters(this, props);
-    
-    // move_after:
-    this.MOVE_AFTER_ALL = 1; // Move after all players have ordered
-    this.MOVE_AFTER_EACH = 2; // Move after each player orders
-    this.MOVE_AFTER_CALL = 3; // Move after any player calls it
-    
-    // move_where:
-    this.MOVE_WHERE_ALL = 1; // Execute all orders
-    this.MOVE_WHERE_PLAYER = 2; // Execute orders created by the current player
-    this.MOVE_WHERE_TERRITORY = 3; // Execute orders on sectoids on the current players territory
-
-    /*
-    this.generate_colors = function()
-    {
-        var randomcolor = require('randomcolor');
-        
-        var c = this.get_players().length;
-        var colors = randomcolor({
-            'count': c
-        });
-        
-        var i = 0;
-        while (i < c)
-        {
-            var color = parseInt(colors[i].substr(1), 16);
-            this.get_players()[i].set_color(color)
-            i++;
-        }
-    };
-    */
-    
-    // 0: Initial board state
-    // 1: A orders, move?
-    // 2: B orders, move?
-    // 3: C orders, move?
-    // 4: GRAY orders, move?
-    // 5: A orders, move?
-    // ...
-
-    
-    var orders = [];
-    var boards = [];
-    var sectoids = [];
-    var moves = [];
-
-    this.load_orders = function(str)
-    {
-        var lines = str.split(/,|\r|\n/);
-        var time_per_turn = this.get_map().get_num_players() + 1;
-        
-        var tmp_order = new sector8.order();
-        var i = 0;
-        while (i < lines)
-        {
-            if (tmp_order.from_notation(lines[i]))
-            {
-                var time = tmp_order.get_turn() * time_per_turn + tmp_order.get_player();
-                while (typeof orders[time] === 'undefined') {orders.push([]);}
-                orders[time].push(tmp_order);
-                tmp_order = new sector8.order();
-            }
-            else
-            {
-                // Bad notation
-            }
-            i++;
-        }
-    };
-    
-    this.load_boards = function()
-    {
-        goog.asserts.assert(orders[0].length === 0);
-
-        var board = this.get_map().get_board();
-        
-        var turn = 0;
-        while (turn < orders.length)
-        {
-            board = boards[turn] = board.clone();
-            apply_orders(turn, board);
-            apply_moves(turn, board);
-
-            turn++;
-        }
-    };
-
-    var apply_orders = function(turn, board)
-    {
-        var powered_map = cur_board.make_powered_map();
-
-        var i = 0;
-        while (i < orders[turn].length)
-        {
-            var order = orders[turn][i];
-            i++;
-
-            var order_error = order.error_msg(/*config*/);
-            if (order_error)
-            {
-                // There's a problem with the order
-                // Log order_error
-                continue;
-            }
-
-            var row = order.get_row();
-            var col = order.get_col();
-            
-            if (row >= board.get_rows())
-            {
-                continue;
-            }
-            if (col >= board.get_cols())
-            {
-                continue;
-            }
-            
-            var cell = board.get_cells()[row][col];
-            
-            if (!cell.get_sectoid())
-            {
-                // Tried to order an empty cell
-                // Log error
-                continue;
-            }
-
-            if (order.get_player() !== cell.get_territory())
-            {
-                // Tried to order a sectoid on another player's territory
-                // Log error
-                continue;
-            }
-
-            if (!powered_map[row][col])
-            {
-                // Tried to order a sectoid on an unpowered cell
-                // Log error
-                continue;
-            }
-
-            var min_turn = turn + order.get_wait();
-            var max_turn = min_turn + order.get_duration();
-            while (moves.length < max_turn) {moves.push([]);}
-
-            var move = {
-                'sectoids': [sectoid],
-                'sectors': order.get_sectors(),
-                'direction': order.get_direction()
-            };
-
-            while (min_turn < max_turn)
-            {
-                moves[min_turn].push(move);
-                min_turn++;
-            }
-        }
-    };
-
-    var apply_moves = function(turn, board)
-    {
-        while (typeof moves[turn] === 'undefined') {moves.push([]);}
-
-        var i = 0;
-        while (i < moves[turn].length)
-        {
-            var move = moves[turn][i];
-
-            
-
-
-
-            var move_turn = turn + order.get_wait();
-
-            /*
-            'player': 0,
-            'turn': 0,
-            'wait': 0,
-            'duration': 0,
-            'col': 0,
-            'row': 0,
-            'sectors': 0,
-            'direction': 0
-            */
-            
-            var source = cur_board[order.get_col()][order.get_row()];
-
-            i++;
-        }
-    };
-};
-
-sector8.cell = function()
-{
-    goog.asserts.assertInstanceof(this, sector8.cell);
-
-    var props = {
-        'void': false,
-        'territory': 0,
-        'permanent': false,
-        'sectoid': 0
-    };
-
-    util.make_getters_setters(this, props);
-};
-
-sector8.sectoid = function()
-{
-    goog.asserts.assertInstanceof(this, sector8.sectoid);
-
-    var props = {
-        'prime': false,
-        'sectors': 0
-    };
-
-    util.make_getters_setters(this, props);
-    
-    this.clone = function()
-    {
-        
-    };
-};
-    
-sector8.player = function()
-{
-    goog.asserts.assertInstanceof(this, sector8.player);
-
-    var props = {
-        'id': 0,
-        'color': 0,
-        'time': 0
-    };
-
-    util.make_getters_setters(this, props);
-};
-
-/*
-
-// Move the N, NE, E, S, and SW sectors of the piece currently on b5 south in 2, 3, and 4 turns
-+2-4:b5.01245:4
-
-// Cancel the orders of all sectors of the piece on b5
-:b5:
-
-Turns: 11
-Cell X: 25
-Cell Y: 25
-Sectors: 256
-Dir: 9
-
-
-Match creation options:
-    Map
-    Turn type (parallel, serial)
-    Timer type (hourglass, per-turn, per-game)
-    Shadow match (if yes, then a player can only see cells consecutive to his territory)
-    Spectators
-*/goog.provide('sector8.ui.ui');
+};goog.provide('sector8.ui.ui');
 
 goog.require('goog.functions');
 goog.require('sector8.ui.login');
 
 // Test
+goog.require('sector8.board');
+goog.require('sector8.cell');   
 goog.require('sector8.map');
 goog.require('sector8.match');
 goog.require('sector8.ui.match');
@@ -16531,21 +16931,19 @@ sector8.ui.ui = function(core)
         
         var cells = [];
         var row = 0;
-        while (row < map.get_rows())
+        while (row < board.get_rows())
         {
             cells[row] = [];
             
             var col = 0;
-            while (col < map.get_cols())
+            while (col < board.get_cols())
             {
                 var c = cells[row][col] = new sector8.cell();
                 
-                var sectoid = null;
+                var sectoid = 0;
                 if (row === 1 && (col === 0 || col === 4))
                 {
-                    sectoid = new sector8.sectoid();
-                    sectoid.set_prime(false);
-                    sectoid.set_sectors(Math.floor(Math.random() * 256));
+                    sectoid = Math.floor(Math.random() * 256);
                 }
 
                 var t_map = [1, 1, 0, 2, 2];

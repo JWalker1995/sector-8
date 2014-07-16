@@ -8,7 +8,7 @@ sector8.ui.board = function(core, match)
 {
     goog.asserts.assertInstanceof(this, sector8.ui.board);
     
-    var map = match.get_map();
+    var board = match.get_map().get_board();
     
     var cell_els;
     var sectoid_els;
@@ -17,9 +17,9 @@ sector8.ui.board = function(core, match)
     {
         var el = goog.dom.createDom('div', {'class': 'board'});
         
-        var rows = map.get_rows();
-        var cols = map.get_cols();
-        var cells = map.get_cells();
+        var rows = board.get_rows();
+        var cols = board.get_cols();
+        var cells = board.get_cells();
         
         cell_els = [];
         sectoid_els = [];
@@ -41,7 +41,7 @@ sector8.ui.board = function(core, match)
                 var sectoid = cell.get_sectoid();
                 if (sectoid)
                 {
-                    var sectoid_el = create_sectoid(col, row, sectoid);
+                    var sectoid_el = create_sectoid(row, col, sectoid);
                     goog.dom.append(el, sectoid_el);
                     sectoid_els[row][col] = sectoid_el;
                 }
@@ -74,11 +74,37 @@ sector8.ui.board = function(core, match)
         */
         
         // Start test
-        var html = '<div style="padding-left: 600px;">Move: <input type="text" class="move_input" /><button class="move_button">Move</button></div>';
+        var html = '<div style="padding-left: 600px;"><input type="text" class="order_input" /><button class="order_button">Order</button><button class="move_button">Move</button></div>';
         goog.dom.append(el, goog.dom.htmlToDocumentFragment(html));
+        el.getElementsByClassName('order_button')[0].onclick = function()
+        {
+            var order_str = el.getElementsByClassName('order_input')[0].value;
+            var order = new sector8.order();
+            order.from_notation(order_str);
+            
+            match.apply_order(order);
+        };
         el.getElementsByClassName('move_button')[0].onclick = function()
         {
-            var move = el.getElementsByClassName('move_input')[0].value;
+            match.apply_move(function(order, src_row, src_col, sectoid)
+            {
+                var sectoid_el = sectoid_els[src_row][src_col];
+                
+                var i = 0;
+                while (i < 8)
+                {
+                    if ((sectoid >>> i) & 1)
+                    {
+                        var sector = sectoid_el.getElementsByClassName('sector_' + i)[0];
+                        if (typeof sector !== 'undefined')
+                        {
+                            sectoid_el.removeChild(sector);
+                        }
+                    }
+                    i++;
+                }
+                order.get_move_row();
+            });
         };
         // End test
 
@@ -117,12 +143,11 @@ sector8.ui.board = function(core, match)
         
         var style = get_positioning(row, col, 0, 0);
         var sectoid_el = goog.dom.createDom('div', {'class': 'sectoid', 'style': style});
-                
-        var sec_bits = sectoid.get_sectors();
+        
         var i = 0;
         while (i < 8)
         {
-            if ((sec_bits >> i) & 1)
+            if ((sectoid >>> i) & 1)
             {
                 var sector_el = goog.dom.createDom('span', {'class': 'sector sector_' + i});
                 goog.dom.append(sectoid_el, sector_el);

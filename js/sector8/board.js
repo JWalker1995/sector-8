@@ -119,15 +119,15 @@ sector8.board = function()
         this.foreach_cell(function(row, col, cell)
         {
             var i = 0;
-            i |= cell.get_void() <<< 0;
-            i |= cell.get_territory() <<< 1;
-            i |= cell.get_permanent() <<< 6;
+            i |= cell.get_void() << 0;
+            i |= cell.get_territory() << 1;
+            i |= cell.get_permanent() << 6;
             i |= cell.get_sectoid() << 7;
             /*
             if (cell.get_sectoid())
             {
-                i |= cell.get_sectoid().get_prime() <<< 7;
-                i |= cell.get_sectoid().get_sectors() <<< 8;
+                i |= cell.get_sectoid().get_prime() << 7;
+                i |= cell.get_sectoid().get_sectors() << 8;
             }
             */
             goog.asserts.assert(i <= 0xFFFF);
@@ -150,13 +150,13 @@ sector8.board = function()
         this.foreach_cell(function(row, col, cell)
         {
             //if (cell.get_sectoid() && cell.get_sectoid().get_prime())
-            if (cell.get_sectoid() & (1 <<< 8))
+            if (cell.get_sectoid() & (1 << 8))
             {
                 edges.push([row, col, cell.get_territory()]);
             }
 
             res[row][col] = false;
-        }
+        });
 
         var i = 0;
         while (i < edges.length)

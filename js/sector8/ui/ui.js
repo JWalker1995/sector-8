@@ -4,6 +4,8 @@ goog.require('goog.functions');
 goog.require('sector8.ui.login');
 
 // Test
+goog.require('sector8.board');
+goog.require('sector8.cell');   
 goog.require('sector8.map');
 goog.require('sector8.match');
 goog.require('sector8.ui.match');
@@ -28,21 +30,19 @@ sector8.ui.ui = function(core)
         
         var cells = [];
         var row = 0;
-        while (row < map.get_rows())
+        while (row < board.get_rows())
         {
             cells[row] = [];
             
             var col = 0;
-            while (col < map.get_cols())
+            while (col < board.get_cols())
             {
                 var c = cells[row][col] = new sector8.cell();
                 
-                var sectoid = null;
+                var sectoid = 0;
                 if (row === 1 && (col === 0 || col === 4))
                 {
-                    sectoid = new sector8.sectoid();
-                    sectoid.set_prime(false);
-                    sectoid.set_sectors(Math.floor(Math.random() * 256));
+                    sectoid = Math.floor(Math.random() * 256);
                 }
 
                 var t_map = [1, 1, 0, 2, 2];

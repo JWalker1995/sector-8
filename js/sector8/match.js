@@ -54,17 +54,24 @@ sector8.match = function()
         }
     };
     */
-
-    var trans_row = [-1,-1, 0, 1, 1, 1, 0,-1];
-    var trans_col = [ 0, 1, 1, 1, 0,-1,-1,-1];
-
+    
+    var boards = [];
+    var clone_board = function()
+    {
+        var board = this.get_board().clone();
+        boards[boards.length] = board;
+        this.set_board(board);
+        return board;
+    };
+    
     this.load_orders = function(str)
     {
         var orders = [];
-        var boards = [];
         
+        // Split str into lines
         var lines = str.split(/,|\r|\n/);
         
+        // Parse each line into a sector8.order
         var tmp_order = new sector8.order();
         var i = 0;
         while (i < lines.length)
@@ -77,6 +84,7 @@ sector8.match = function()
             i++;
         }
         
+        // Sort orders, by turn then player
         orders.sort(function(a, b)
         {
             if (a.get_turn() !== b.get_turn())
@@ -86,21 +94,20 @@ sector8.match = function()
             return 0;
         });
         
-        var board = this.get_map().get_board();
-        board = boards[0] = board.clone();
+        this.set_board(this.get_map().get_board());
+        clone_board();
         
         var move_after = this.get_move_after();
         var move_where = this.get_move_where();
         
         var prev_turn;
-        var waiting = [];
         
         var i = 0;
         while (i < orders.length)
         {
             var order = orders[i];
             
-            apply_order(board, order, boards.length);
+            apply_order(order);
             
             if (
                 (move_after === this.MOVE_AFTER_ORDER) ||
@@ -108,8 +115,8 @@ sector8.match = function()
                 (move_after === this.MOVE_AFTER_TURN && prev_turn !== order.get_turn() && (prev_turn = order.get_turn()))
             )
             {
-                board = boards[boards.length] = board.clone();
-                apply_waiting(board);
+                // TODO: move_where
+                apply_moves(function() {});
             }
 
             i++;
@@ -117,16 +124,13 @@ sector8.match = function()
         
         return boards;
     };
+        
+    var moves = {};
     
-    // TODO: remove
-    // Iterate each waiting move, and get the sectoid's current row and col
-    // When moving a sectoid, update waiting orders row and col
-    
-    var waiting = {};
-
-    var apply_order = function(board, order, board_i)
+    var apply_order = function(order)
     {
-        var powered_map = cur_board.make_powered_map();
+        var board = this.get_board();
+        var powered_map = board.make_powered_map();
 
         var order_error = order.error_msg(/*config*/);
         if (order_error)
@@ -173,71 +177,75 @@ sector8.match = function()
         }
         
         var key = row + ',' + col;
-        if (typeof waiting[key] === 'undefined') {waiting[key] = [];}
+        if (typeof moves[key] === 'undefined') {moves[key] = [];}
         
-        waiting[key].push([
+        moves[key].push([
             order.get_wait(),
             order.get_duration(),
-            order.get_sectors(),
-            order.get_direction()
+            order
         ]);
     };
 
-    var apply_waiting = function(board)
+    var apply_moves = function(callback)
     {
-        var add_waiting = [];
+        // TODO: Move this out of apply_moves if possible
+        var board = clone_board();
         
-        for (var key in waiting)
+        var add_moves = [];
+        
+        for (var key in moves)
         {
             var row_col;
             
-            var i = waiting[key].length;
+            var i = moves[key].length;
             while (i > 0)
             {
                 i--;
-                var arr = waiting[key][i];
+                var move = moves[key][i];
 
-                if (arr[0])
+                if (move[0])
                 {
                     // Decrease wait counter
-                    arr[0]--;
+                    move[0]--;
                 }
                 else
                 {
                     // Decrease duration counter
-                    arr[1]--;
+                    move[1]--;
                     
                     if (typeof row_col === 'undefined') {row_col = key.split(',');}
-
-                    var src_row = row_col[0];
-                    var src_col = row_col[1];
-                    var dst_row = src_row + trans_row[arr[3]];
-                    var dst_col = src_col + trans_col[arr[3]];
+                    
+                    var src_row = parseInt(row_col[0]);
+                    var src_col = parseInt(row_col[1]);
+                    var dst_row = src_row + move[2].get_move_row();
+                    var dst_col = src_col + move[2].get_move_col();
                     
                     var src_cell = board[src_row][src_col];
                     var dst_cell = board[dst_row][dst_col];
                     
-                    var src_dst = apply_move(src_cell, dst_cell, arr[2]);
+                    var res = apply_move(src_cell, dst_cell, move[2].get_sectors());
                     
-                    if (!src_dst[0] || arr[1] === 0)
+                    if (!res[0] || move[1] === 0)
                     {
-                        waiting[key].splice(i, 1);
+                        moves[key].splice(i, 1);
                     }
-                    if (src_dst[1] && arr[1] !== 0)
+                    if (res[1] && move[1] !== 0)
                     {
-                        add_waiting.push(arr.concat(dst_row + ',' + dst_col));
+                        add_moves.push(move.concat(dst_row + ',' + dst_col));
                     }
+                    
+                    callback(order, res[1]);
                 }
             }
         }
         
         var i = 0;
-        while (i < add_waiting.length)
+        while (i < add_moves.length)
         {
-            var key = add_waiting[i].pop();
-            if (typeof waiting[key] === 'undefined') {waiting[key] = [];}
+            var key = add_moves[i].pop();
+            if (typeof moves[key] === 'undefined') {moves[key] = [];}
             
-            waiting[key].push(add_waiting[i]);
+            moves[key].push(add_moves[i]);
             
             i++;
         }
@@ -259,10 +267,11 @@ sector8.match = function()
             dst_cell.set_territory(src_cell.get_territory());
         }
         
-        return [src, dst];
+        return [src, sectors, dst];
     };
 };
 
+/*
 sector8.sectoid = function()
 {
     goog.asserts.assertInstanceof(this, sector8.sectoid);
@@ -289,6 +298,7 @@ sector8.player = function()
 
     util.make_getters_setters(this, props);
 };
+*/
 
 /*
 

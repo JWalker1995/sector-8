@@ -22,6 +22,17 @@ sector8.order = function()
 
     util.make_getters_setters(this, props);
     
+    var moves_row = [-1,-1, 0, 1, 1, 1, 0,-1];
+    var moves_col = [ 0, 1, 1, 1, 0,-1,-1,-1];
+    this.get_move_row = function()
+    {
+        return moves_row[this.get_direction()];
+    };
+    this.get_move_col = function()
+    {
+        return moves_col[this.get_direction()];
+    };
+    
     var char_number = '1'.charCodeAt(0) - 1;
     var char_lower = 'a'.charCodeAt(0) - 1;
     var char_upper = 'A'.charCodeAt(0) - 1;
@@ -66,7 +77,7 @@ sector8.order = function()
             {
                 var sector = exec[7].charCodeAt(i) - char_number;
                 if (sector >= 8) {return false;}
-                sectors |= 1 <<< sector;
+                sectors |= 1 << sector;
                 i++;
             }
             
