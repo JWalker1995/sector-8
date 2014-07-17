@@ -61,9 +61,9 @@ sector8.order = function()
     
     this.from_notation = function(str)
     {
-        var regex = /^\s*([A-Z])?\s*(?:\:(\d+))?(?:\+(\d+))?(?:-(\d+))?\s*#([a-z])(\d+)\s*(?:\.(\d+))?\s*@(\d+|x)\s*(!?)\s*$/;
+        var regex = /^([A-Z])?(?:\:(\d+))?(?:\+(\d+))?(?:-(\d+))?#([a-z])(\d+)(?:\.(\d+))?@(\d+|x)(!?)$/;
         var exec;
-        if (exec = regex.exec(str))
+        if (exec = regex.exec(str.replace(/ /g, '')))
         {
             if (!exec[1]) {exec[1] = '';}
             if (!exec[2]) {exec[2] = '';}

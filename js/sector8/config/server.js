@@ -13,7 +13,9 @@ sector8.config.server = function()
             'port': 3306,
             'user': 'sector8',
             'password': '',
-            'database': 'sector8'
-        }
+            'database': 'sector8',
+            'multipleStatements': true
+        },
+        'sql_init_path': 'init.sql'
     });
 };

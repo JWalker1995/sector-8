@@ -16,7 +16,7 @@ goog.addDependency('../../../sector8/old/sectoid.js', ['sector8.sectoid'], ['uti
 goog.addDependency('../../../sector8/old/watchable.js', ['sector8.watchable'], ['goog.asserts']);
 goog.addDependency('../../../sector8/order.js', ['sector8.order'], ['goog.asserts', 'util.make_getters_setters']);
 goog.addDependency('../../../sector8/primus.js', ['primus'], []);
-goog.addDependency('../../../sector8/server.js', ['sector8.server'], ['goog.functions', 'sector8.config.client', 'sector8.config.server', 'sector8.facade', 'sector8.map', 'sector8.session', 'sector8.user', 'util.gate', 'util.logger']);
+goog.addDependency('../../../sector8/server.js', ['sector8.server'], ['goog.functions', 'sector8.config.client', 'sector8.config.server', 'sector8.facade', 'sector8.map', 'sector8.match', 'sector8.session', 'sector8.user', 'util.gate', 'util.logger']);
 goog.addDependency('../../../sector8/server/match.js', ['sector8.server.match'], ['goog.asserts']);
 goog.addDependency('../../../sector8/session.js', ['sector8.session'], ['goog.asserts', 'sector8.net']);
 goog.addDependency('../../../sector8/ui/board.js', ['sector8.ui.board'], ['goog.array', 'goog.dom', 'goog.dom.classes', 'sector8.order']);

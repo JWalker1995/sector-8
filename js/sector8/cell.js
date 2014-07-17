@@ -22,9 +22,9 @@ sector8.cell = function()
     
     this.from_notation = function(row, col, str)
     {
-        var regex = /^\s*([a-zA-Z:\-=])\/?(?:(\d+)\s*(!)?)?\s*$/;
+        var regex = /^([a-zA-Z:\-=])\/?(?:(\d+)(!)?)?$/;
         var exec;
-        if (exec = regex.exec(str))
+        if (exec = regex.exec(str.replace(/ /g, '')))
         {
             this.set_void(false);
             

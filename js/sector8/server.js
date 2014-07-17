@@ -1,10 +1,12 @@
 goog.provide('sector8.server');
 
 goog.require('goog.functions');
+
 goog.require('sector8.config.client');
 goog.require('sector8.config.server');
 goog.require('sector8.facade');
 goog.require('sector8.user');
+goog.require('sector8.match');
 goog.require('sector8.map');
 goog.require('sector8.session');
 goog.require('util.logger');
@@ -172,6 +174,13 @@ sector8.server = function(cd)
         _this.logger.log(_this.logger.trace, 'Connecting to mysql server...');
         conn.connect(_this.logger.get_reporter(_this.logger.fatal, 'sector8.server.setup_mysql'));
         
+        _this.logger.log(_this.logger.trace, 'Reading sql init scripts...');
+        var init_sql = fs.readFileSync(_this.config.sql_init_path);
+        
+        _this.logger.log(_this.logger.trace, 'Executing sql init scripts...');
+        var reporter = _this.logger.get_reporter(_this.logger.fatal, 'sector8.server.setup_facade');
+        conn.query(init_sql.toString(), [], reporter);
+        
         _this.logger.log(_this.logger.trace, 'Creating facade...');
         _this.facade = new sector8.facade(_this, conn);
         _this.logger.log(_this.logger.trace, 'Created facade');
@@ -179,6 +188,7 @@ sector8.server = function(cd)
         _this.logger.log(_this.logger.trace, 'Registering facade types...');
         _this.facade.register_type(sector8.user, 'users');
         _this.facade.register_type(sector8.match, 'matches');
+        _this.facade.register_type(sector8.map, 'maps');
         _this.logger.log(_this.logger.trace, 'Registered facade types');
     };
     

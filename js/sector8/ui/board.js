@@ -220,6 +220,7 @@ sector8.ui.board = function(core, match)
             'usemap': '#sectoid',
             'src': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAN1wAADdcBQiibeAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAD/SURBVHic7dFBDQAgEMAwwL/n440C9mgVLNmemUXH+R3Ay5AYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2Iu+80DxR66mxIAAAAASUVORK5CYII='
         });
+        
         overlay.onmouseover = function(e)
         {
             hover_sectoid = sectoid;
@@ -232,6 +233,7 @@ sector8.ui.board = function(core, match)
             
             hover_sectoid_el = undefined;
         };
+        
         goog.dom.append(sectoid_el, overlay);
         
         return sectoid_el;
@@ -239,7 +241,9 @@ sector8.ui.board = function(core, match)
     
     var create_sector = function(sector_i)
     {
-        var sector_el = goog.dom.createDom('span', {'class': 'sector sector_' + sector_i});
+        var sector_el = goog.dom.createDom('span', {
+            'class': 'sector sector_' + sector_i
+        });
         return sector_el;
     };
     
@@ -324,6 +328,10 @@ sector8.ui.board = function(core, match)
                     sector.className = sector.className.replace(' lit', '');
                 }
             }).bind(area, i);
+            area.onmousedown = function(e)
+            {
+                //debugger;
+            };
             goog.dom.append(map, area);
             
             ang += step * 2.0;

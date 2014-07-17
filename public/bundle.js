@@ -3690,8 +3690,7 @@ sector8.user = function()
         'registration_code': '',
         'match_id': 0,
         'first_login': Date,
-        'last_login': Date,
-        'logins': 0
+        'last_login': Date
     };
 
     util.make_getters_setters(this, props);
@@ -15902,7 +15901,7 @@ goog.require('util.make_getters_setters');
 sector8.match = function()
 {
     goog.asserts.assertInstanceof(this, sector8.match);
-
+    
     var props = {
         'match_id': 0,
         'name': '',
@@ -15915,6 +15914,7 @@ sector8.match = function()
         'move_after': 0,
         'move_where': 0,
         'timer_type': 0,
+        'shadow': false,
         'spectators': true,
         'stakes': 1.0
     };
@@ -15930,6 +15930,11 @@ sector8.match = function()
     this.MOVE_WHERE_ALL = 1; // Execute all orders
     this.MOVE_WHERE_PLAYER = 2; // Execute orders created by the current player
     this.MOVE_WHERE_TERRITORY = 3; // Execute orders on sectoids on the current players territory
+    
+    // timer:
+    this.TIMER_TYPE_HOURGLASS = 1;
+    this.TIMER_TYPE_PER_TURN = 2;
+    this.TIMER_TYPE_PER_GAME = 3;
     
     var move_where_funcs = {};
     move_where_funcs[this.MOVE_WHERE_ALL] = function(order)
@@ -16087,7 +16092,8 @@ sector8.match = function()
         
         for (var key in moves)
         {
-            var row_col;
+            var src_row = undefined;
+            var src_col = undefined;
             
             var i = moves[key].length;
             while (i > 0)
@@ -16105,28 +16111,35 @@ sector8.match = function()
                     // Decrease duration counter
                     move[1]--;
                     
-                    if (typeof row_col === 'undefined') {row_col = key.split(',');}
+                    var order = move[2];
                     
-                    var src_row = parseInt(row_col[0]);
-                    var src_col = parseInt(row_col[1]);
-                    var dst_row = src_row + move[2].get_move_row();
-                    var dst_col = src_col + move[2].get_move_col();
+                    if (typeof src_row === 'undefined')
+                    {
+                        var row_col = key.split(',');
+                        src_row = parseInt(row_col[0]);
+                        src_col = parseInt(row_col[1]);
+                    }
                     
                     var src_cell = board[src_row][src_col];
-                    var dst_cell = board[dst_row][dst_col];
                     
-                    var res = apply_move(src_cell, dst_cell, move[2].get_sectors());
-                    
-                    if (!res[0] || move[1] === 0)
+                    if (src_cell.get_sectoid() & (1 << order.get_direction()))
                     {
-                        moves[key].splice(i, 1);
+                        var dst_row = src_row + order.get_move_row();
+                        var dst_col = src_col + order.get_move_col();
+                        var dst_cell = board[dst_row][dst_col];
+                        
+                        var res = apply_move(src_cell, dst_cell, order.get_sectors());
+                        if (!res[0] || move[1] === 0)
+                        {
+                            moves[key].splice(i, 1);
+                        }
+                        if (res[1] && move[1] !== 0)
+                        {
+                            add_moves.push(move.concat(dst_row + ',' + dst_col));
+                        }
+
+                        callback(order, res[1], src_row, src_col, dst_row, dst_col);
                     }
-                    if (res[1] && move[1] !== 0)
-                    {
-                        add_moves.push(move.concat(dst_row + ',' + dst_col));
-                    }
-                    
-                    callback(move[2], res[1], src_row, src_col, dst_row, dst_col);
                 }
             }
         }
@@ -16191,29 +16204,6 @@ sector8.player = function()
     util.make_getters_setters(this, props);
 };
 */
-
-/*
-
-// Move the N, NE, E, S, and SW sectors of the piece currently on b5 south in 2, 3, and 4 turns
-+2-4:b5.01245:4
-
-// Cancel the orders of all sectors of the piece on b5
-:b5:
-
-Turns: 11
-Cell X: 25
-Cell Y: 25
-Sectors: 256
-Dir: 9
-
-
-Match creation options:
-    Map
-    Turn type (parallel, serial)
-    Timer type (hourglass, per-turn, per-game)
-    Shadow match (if yes, then a player can only see cells consecutive to his territory)
-    Spectators
-*/
 goog.provide('sector8.sectoid');
 
 goog.require('util.make_getters_setters');
@@ -16256,9 +16246,9 @@ sector8.cell = function()
     
     this.from_notation = function(row, col, str)
     {
-        var regex = /^\s*([a-zA-Z:\-=])\/?(?:(\d+)\s*(!)?)?\s*$/;
+        var regex = /^([a-zA-Z:\-=])\/?(?:(\d+)(!)?)?$/;
         var exec;
-        if (exec = regex.exec(str))
+        if (exec = regex.exec(str.replace(/ /g, '')))
         {
             this.set_void(false);
             
@@ -16617,9 +16607,9 @@ sector8.order = function()
     
     this.from_notation = function(str)
     {
-        var regex = /^\s*([A-Z])?\s*(?:\:(\d+))?(?:\+(\d+))?(?:-(\d+))?\s*#([a-z])(\d+)\s*(?:\.(\d+))?\s*@(\d+|x)\s*(!?)\s*$/;
+        var regex = /^([A-Z])?(?:\:(\d+))?(?:\+(\d+))?(?:-(\d+))?#([a-z])(\d+)(?:\.(\d+))?@(\d+|x)(!?)$/;
         var exec;
-        if (exec = regex.exec(str))
+        if (exec = regex.exec(str.replace(/ /g, '')))
         {
             if (!exec[1]) {exec[1] = '';}
             if (!exec[2]) {exec[2] = '';}
@@ -16898,6 +16888,7 @@ sector8.ui.board = function(core, match)
             'usemap': '#sectoid',
             'src': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAN1wAADdcBQiibeAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAD/SURBVHic7dFBDQAgEMAwwL/n440C9mgVLNmemUXH+R3Ay5AYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2Iu+80DxR66mxIAAAAASUVORK5CYII='
         });
+        
         overlay.onmouseover = function(e)
         {
             hover_sectoid = sectoid;
@@ -16910,6 +16901,7 @@ sector8.ui.board = function(core, match)
             
             hover_sectoid_el = undefined;
         };
+        
         goog.dom.append(sectoid_el, overlay);
         
         return sectoid_el;
@@ -16917,7 +16909,9 @@ sector8.ui.board = function(core, match)
     
     var create_sector = function(sector_i)
     {
-        var sector_el = goog.dom.createDom('span', {'class': 'sector sector_' + sector_i});
+        var sector_el = goog.dom.createDom('span', {
+            'class': 'sector sector_' + sector_i
+        });
         return sector_el;
     };
     
@@ -17002,6 +16996,10 @@ sector8.ui.board = function(core, match)
                     sector.className = sector.className.replace(' lit', '');
                 }
             }).bind(area, i);
+            area.onmousedown = function(e)
+            {
+                //debugger;
+            };
             goog.dom.append(map, area);
             
             ang += step * 2.0;
@@ -17055,19 +17053,19 @@ goog.require('util.make_getters_setters');
 sector8.map = function()
 {
     goog.asserts.assertInstanceof(this, sector8.map);
-
+    
     var props = {
         'map_id': 0,
         'name': '',
+        'creator_id': 0,
+        'creation_date': Date,
         'num_players': 0,
         'board': sector8.board,
         //'primes': [],
         'symmetry_flip_x': false,
         'symmetry_flip_y': false,
         'symmetry_rot_90': false,
-        'symmetry_rot_180': false,
-        'creator_id': 0,
-        'creation_date': Date
+        'symmetry_rot_180': false
     };
     
     // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
