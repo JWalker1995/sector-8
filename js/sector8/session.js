@@ -91,7 +91,6 @@ sector8.session = function(server, spark)
                     'username': user.get_username(),
                     'email': user.get_email(),
                     'registered': user.get_registered(),
-                    'match_id': user.get_match_id(),
                     'first_login': user.get_first_login(),
                     'last_login': user.get_last_login()
                 };
@@ -131,7 +130,7 @@ sector8.session = function(server, spark)
                 text += 'Go to this link to confirm your registration: ' + confirm_link + '\n';
 
                 email_transport.sendMail({
-                    'from': 'Sector-8 <no-reply@' + server.config.sector8.host + '>',
+                    'from': 'Sector-8 <' + server.config.registration_email + '>',
                     'to': user.get_username() + ' <' + data.email + '>',
                     'subject': 'Sector-8 Registration Confirmation',
                     'html': html,
@@ -166,14 +165,29 @@ sector8.session = function(server, spark)
         reply({'msg': 'logged out'});
     });
 
-    net.await('create_match', function(data, reply)
+    net.await('create_challenge', function(data, reply)
     {
         if (error_else_login(reply)) {return;}
+        server.create_challenge(data, reply);
+    });
+    
+    net.await('watch_challenges', function(data, reply)
+    {
+        if (error_else_login(reply)) {return;}
+        server.watch_challenges(data, reply);
     });
 
-    net.await('enter_match', function(data, reply)
+    net.await('accept_challenge', function(data, reply)
     {
         if (error_else_login(reply)) {return;}
+        
+        var player = new sector8.player();
+        player.set_match_id(data.match_id);
+        player.set_user_id(user.get_user_id());
+        server.facade.save(player);
+        
+        // TODO: Add to user's matches list
+        // TODO: Add to match's users list
     });
     
     net.await('order', function(data, reply)
@@ -213,7 +227,7 @@ sector8.session = function(server, spark)
 
     var get_match = function(reply, callback)
     {
-
+        /*
         var match_id = user.get_match_id();
         if (error_else(match_id, reply, 'You are not currently in a match')) {return;}
 
@@ -222,6 +236,7 @@ sector8.session = function(server, spark)
             if (error_else(match, reply, 'Match with id ' + match_id + ' does not exist')) {return;}
             callback(match);
         });
+        */
     };
     
     

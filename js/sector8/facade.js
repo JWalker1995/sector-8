@@ -86,8 +86,10 @@ sector8.facade = function(server, conn)
             var c = types[inst.constructor._facade];
             goog.asserts.assert(c);
             
-            var query = 'SELECT * FROM ' + c.table + ' WHERE ' + prop + '=? LIMIT 1';
-            conn.query(query, [value], function(err, result)
+            var where = {};
+            where[prop] = value;
+            var query = 'SELECT * FROM ' + c.table + ' WHERE ' + create_where(where) + ' LIMIT 1';
+            conn.query(query, function(err, result)
             {
                 report_load(err);
                 if (result)
@@ -105,6 +107,50 @@ sector8.facade = function(server, conn)
                     }
                 }
                 callback();
+            });
+        };
+        
+        if (showing) {ready_callbacks.push(func);}
+        else {func();}
+    };
+    
+    this.load_arr = function(constructor, where, callback)
+    {
+        var func = function()
+        {
+            if (typeof constructor._facade !== 'number')
+            {
+                report_load('Tried to load an unregistered type');
+                return;
+            }
+            
+            var c = types[constructor._facade];
+            goog.asserts.assert(c);
+            
+            var query = 'SELECT * FROM ' + c.table + ' WHERE ' + create_where(where);
+            conn.query(query, function(err, result)
+            {
+                report_load(err);
+                
+                var arr = [];
+                if (result)
+                {
+                    var i = 0;
+                    while (i < result.length)
+                    {
+                        var inst = new constructor();
+                        arr.push(inst);
+                        
+                        var j = 0;
+                        while (j < c.cols.length)
+                        {
+                            inst['set_' + c.cols[j]](result[i][c.cols[j]]);
+                            j++;
+                        }
+                        i++;
+                    }
+                }
+                callback(arr);
             });
         };
         
@@ -144,6 +190,33 @@ sector8.facade = function(server, conn)
         if (showing) {ready_callbacks.push(func);}
         else {func();}
     };
+    
+    var create_where = function(where)
+    {
+        var eqs = [];
+        for (var col in where)
+        {
+            var eq = conn.escapeId(col);
+            var val = where[col];
+            if (val instanceof sector8.facade.expr)
+            {
+                eq += val.get_str();
+            }
+            else
+            {
+                eq += '=' + conn.escape(val);
+            }
+        }
+        
+        return eqs.join(' AND ');
+    };
+};
+
+sector8.facade.expr = function(str)
+{
+    goog.asserts.assertInstanceof(this, sector8.facade.expr);
+    
+    this.get_str = function() {return str;}
 };
 
 /*

@@ -1,7 +1,27 @@
 goog.provide('util.make_getters_setters');
 
-util.make_getters_setters = function(obj, props)
+util.make_getters_setters = function(obj, props, update)
 {
+    var updated = [];
+    
+    var set = function(prop, val)
+    {
+        props[prop] = val;
+        
+        if (typeof update === 'function')
+        {
+            if (!updated.length)
+            {
+                setTimeout(function()
+                {
+                    update(updated);
+                    updated = [];
+                }, 0);
+            }
+            updated.push([prop, val]);
+        }
+    };
+    
     for (var prop in props)
     {
         (function(prop)
@@ -20,7 +40,7 @@ util.make_getters_setters = function(obj, props)
                 {
                     if (val === null || val instanceof type)
                     {
-                        props[prop] = val;
+                        set(prop, val);
                     }
                     else
                     {
@@ -36,7 +56,7 @@ util.make_getters_setters = function(obj, props)
                 {
                     if (typeof val === type)
                     {
-                        props[prop] = val;
+                        set(prop, val);
                     }
                     else
                     {

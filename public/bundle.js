@@ -3688,7 +3688,6 @@ sector8.user = function()
         'password_hash': '',
         'email': '',
         'registration_code': '',
-        'match_id': 0,
         'first_login': Date,
         'last_login': Date
     };

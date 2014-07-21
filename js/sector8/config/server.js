@@ -16,6 +16,7 @@ sector8.config.server = function()
             'database': 'sector8',
             'multipleStatements': true
         },
+        'registration_email': 'no-reply@localhost',
         'sql_init_path': 'init.sql'
     });
 };

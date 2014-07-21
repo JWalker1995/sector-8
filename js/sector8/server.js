@@ -205,13 +205,71 @@ sector8.server = function(cd)
         if (typeof user === 'undefined')
         {
             user = new sector8.user();
-            _this.facade.load(user, 'username', username, callback.bind(null, user));
+            _this.facade.load(user, {'username': username}, callback.bind(null, user));
             users[username] = user;
         }
         else
         {
             callback(user);
         }
+    };
+    
+    
+    var challenges;
+    var challenges_watchers = [];
+    _this.facade.load_arr(sector8.match, {
+        'start_date': new sector8.facade.expr(' IS NULL'),
+        'end_date': new sector8.facade.expr(' IS NULL')
+    }, function(arr)
+    {
+        challenges = arr;
+    });
+    
+    var update_challenges = function(change)
+    {
+        var arg = {};
+        var i = 0;
+        while (i < changed.length
+        
+        var i = 0;
+        while (i < challenges_watchers.length)
+        {
+            challenges_watchers[i](arg);
+            i++;
+        }
+    };
+    
+    this.create_challenge = function(data, reply)
+    {
+        var match = new sector8.match();
+        
+        if (typeof data.name !== 'undefined') {match.set_name(data.name);}
+        if (typeof data.map_id !== 'undefined')
+        {
+            match.set_map_id(data.map_id);
+            match.set_board(match.get_map().get_board());
+        }
+        if (typeof data.move_after !== 'undefined') {match.set_move_after(data.move_after);}
+        if (typeof data.move_where !== 'undefined') {match.set_move_where(data.move_where);}
+        if (typeof data.timer_type !== 'undefined') {match.set_timer_type(data.timer_type);}
+        if (typeof data.shadow !== 'undefined') {match.set_shadow(data.shadow);}
+        if (typeof data.spectators !== 'undefined') {match.set_spectators(data.spectators);}
+        if (typeof data.stakes !== 'undefined') {match.set_stakes(data.stakes);}
+        
+        _this.facade.save(match, reply.bind(null, {'msg': 'Successfully created a new match'}));
+        
+        var c = challenges.length;
+        challenges[c] = match;
+        update_challenges(match);
+        
+        // Synchronized array of match_ids for challenges: [1,2,3,6]
+        // Can watch any match for updates to its properties
+        // Make a synchronized_array class, with a checksum
+    };
+    
+    this.watch_challenges = function(data, reply)
+    {
+        challenges_watchers.push(reply);
     };
 };
 

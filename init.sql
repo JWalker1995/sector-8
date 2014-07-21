@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS sector8.users (
 	password_hash VARCHAR(255),
 	email VARCHAR(255),
 	registration_code VARCHAR(255),
-	match_id INT UNSIGNED,
 	first_login DATETIME NOT NULL,
 	last_login DATETIME NOT NULL,
 	CONSTRAINT `PRIMARY` PRIMARY KEY (user_id)
@@ -28,6 +27,13 @@ CREATE TABLE IF NOT EXISTS sector8.matches (
 	spectators BIT NOT NULL,
 	stakes FLOAT NOT NULL,
 	CONSTRAINT `PRIMARY` PRIMARY KEY (match_id)
+);
+
+CREATE TABLE IF NOT EXISTS sector8.players (
+	player_id INT UNSIGNED NOT NULL,
+	match_id INT UNSIGNED NOT NULL,
+	user_id INT UNSIGNED NOT NULL,
+	CONSTRAINT `PRIMARY` PRIMARY KEY (player_id)
 );
 
 CREATE TABLE IF NOT EXISTS sector8.maps (
