@@ -1,5 +1,6 @@
 goog.provide('sector8.server');
 
+goog.require('goog.asserts');
 goog.require('goog.functions');
 
 goog.require('sector8.config.client');
@@ -215,29 +216,21 @@ sector8.server = function(cd)
     };
     
     
-    var challenges;
-    var challenges_watchers = [];
+    var challenges = util.make_getters_setters([]);
     _this.facade.load_arr(sector8.match, {
         'start_date': new sector8.facade.expr(' IS NULL'),
         'end_date': new sector8.facade.expr(' IS NULL')
     }, function(arr)
     {
-        challenges = arr;
-    });
-    
-    var update_challenges = function(change)
-    {
-        var arg = {};
-        var i = 0;
-        while (i < changed.length
+        goog.asserts.assert(challenges.length === 0);
         
         var i = 0;
-        while (i < challenges_watchers.length)
+        while (i < arr.length)
         {
-            challenges_watchers[i](arg);
+            challenges.set(i, arr[i]);
             i++;
         }
-    };
+    });
     
     this.create_challenge = function(data, reply)
     {
@@ -258,13 +251,9 @@ sector8.server = function(cd)
         
         _this.facade.save(match, reply.bind(null, {'msg': 'Successfully created a new match'}));
         
-        var c = challenges.length;
-        challenges[c] = match;
-        update_challenges(match);
+        match.watch(challenges);
         
-        // Synchronized array of match_ids for challenges: [1,2,3,6]
-        // Can watch any match for updates to its properties
-        // Make a synchronized_array class, with a checksum
+        challenges.set(challenges.length, match);
     };
     
     this.watch_challenges = function(data, reply)

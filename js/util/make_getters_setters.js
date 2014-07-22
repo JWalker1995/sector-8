@@ -1,70 +1,136 @@
 goog.provide('util.make_getters_setters');
 
-util.make_getters_setters = function(obj, props, update)
+goog.require('goog.asserts');
+
+// TODO: Change make_getters_setters to make_class
+util.make_getters_setters = function(obj, props)
 {
+    if (typeof props === 'undefined') {props = obj;}
+    
+    var watchers = [];
     var updated = [];
+    
+    var call_watchers = function(arr)
+    {
+        var i = 0;
+        while (i < arr.length)
+        {
+            var watcher = arr[i];
+            if (typeof watcher === 'function')
+            {
+                watcher(updated);
+            }
+            else
+            {
+                call_watchers(watcher);
+            }
+            i++;
+        }
+    };
     
     var set = function(prop, val)
     {
         props[prop] = val;
         
-        if (typeof update === 'function')
+        if (!updated.length)
         {
-            if (!updated.length)
+            setTimeout(function()
             {
-                setTimeout(function()
-                {
-                    update(updated);
-                    updated = [];
-                }, 0);
-            }
-            updated.push([prop, val]);
+                call_watchers(watchers);
+                updated = [];
+            }, 0);
         }
+        updated.push(prop);
     };
     
-    for (var prop in props)
+    goog.asserts.assert(typeof props === 'object');
+    
+    if (props instanceof Array)
     {
-        (function(prop)
+        var first = props.shift();
+        var type = typeof first;
+
+        obj.get = function(i)
         {
-            var type = typeof props[prop];
+            return props[i];
+        };
 
-            obj['get_' + prop] = function()
+        if (type === 'function')
+        {
+            obj.set = function(i, val)
             {
-                return props[prop];
+                if (val === null || val instanceof first)
+                {
+                    set(i, val);
+                }
+                else
+                {
+                    throw new Error('set(): Argument must be an instanceof ' + first);
+                }
             };
+        }
+        else
+        {
+            if (first === '_func') {type = 'function';}
+            obj.set = function(i, val)
+            {
+                if (typeof val === type)
+                {
+                    set(i, val);
+                }
+                else
+                {
+                    throw new Error('set(): Argument must be of type ' + type);
+                }
+            };
+        }
+    }
+    else
+    {
+        for (var prop in props)
+        {
+            (function(prop)
+            {
+                var type = typeof props[prop];
 
-            if (type === 'function')
-            {
-                type = props[prop];
-                obj['set_' + prop] = function(val)
+                obj['get_' + prop] = function()
                 {
-                    if (val === null || val instanceof type)
-                    {
-                        set(prop, val);
-                    }
-                    else
-                    {
-                        throw new Error('set_' + prop + '(): Argument must be an instanceof ' + type);
-                    }
+                    return props[prop];
                 };
-                props[prop] = null;
-            }
-            else
-            {
-                if (props[prop] === '_func') {type = 'function';}
-                obj['set_' + prop] = function(val)
+
+                if (type === 'function')
                 {
-                    if (typeof val === type)
+                    type = props[prop];
+                    obj['set_' + prop] = function(val)
                     {
-                        set(prop, val);
-                    }
-                    else
+                        if (val === null || val instanceof type)
+                        {
+                            set(prop, val);
+                        }
+                        else
+                        {
+                            throw new Error('set_' + prop + '(): Argument must be an instanceof ' + type);
+                        }
+                    };
+                    props[prop] = null;
+                }
+                else
+                {
+                    if (props[prop] === '_func') {type = 'function';}
+                    obj['set_' + prop] = function(val)
                     {
-                        throw new Error('set_' + prop + '(): Argument must be of type ' + type);
-                    }
-                };
-            }
-        })(prop);
+                        if (typeof val === type)
+                        {
+                            set(prop, val);
+                        }
+                        else
+                        {
+                            throw new Error('set_' + prop + '(): Argument must be of type ' + type);
+                        }
+                    };
+                }
+            })(prop);
+        }
     }
     
     obj.to_obj = function()
@@ -87,4 +153,19 @@ util.make_getters_setters = function(obj, props, update)
             }
         }
     };
+    
+    obj.watch = function(arg)
+    {
+        if (arg._watchers instanceof Array)
+        {
+            arg = arg._watchers;
+        }
+        
+        goog.asserts.assert(typeof arg === 'function' || arg instanceof Array);
+        watchers.push(arg);
+    };
+    
+    obj._watchers = watchers;
+    
+    return obj;
 };
