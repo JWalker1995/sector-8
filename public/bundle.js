@@ -3645,7 +3645,7 @@ util.make_class = function(obj, props)
                 updated = [];
             }, 0);
         }
-        updated.push(prop);
+        updated.push([prop, val]);
     };
     
     goog.asserts.assert(typeof props === 'object');
@@ -3761,11 +3761,6 @@ util.make_class = function(obj, props)
     
     obj.watch = function(arg)
     {
-        if (arg._watchers instanceof Array)
-        {
-            arg = arg._watchers;
-        }
-        
         goog.asserts.assert(typeof arg === 'function' || arg instanceof Array);
         watchers.push(arg);
     };

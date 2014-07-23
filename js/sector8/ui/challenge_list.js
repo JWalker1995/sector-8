@@ -7,7 +7,7 @@ sector8.ui.challenge_list = function(core)
     goog.asserts.assertInstanceof(this, sector8.ui.challenge_list);
 
     var no_challenges;
-    var challenges = {};
+    var challenges = [];
     var num_challenges = 0;
     
     var render = function()
@@ -18,8 +18,19 @@ sector8.ui.challenge_list = function(core)
         goog.dom.append(list, no_challenges);
         
         // Request matches that haven't started yet (challenges)
-        core.net.request('matches', {'type': 'challenge'}, function(data, reply)
+        core.net.request('watch_challenges', {}, function(data, reply)
         {
+            var i = 0;
+            while (i < data.length)
+            {
+                if (data[i][1])
+                {
+                    var item = create_challenge();
+                    goog.dom.append(list, item);
+                }
+                i++;
+            }
+            
             for (var id in data.matches)
             {
                 var challenge = challenges[id];

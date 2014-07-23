@@ -28,11 +28,13 @@ sector8.server = function(cd)
     {
         setup_logger();
         setup_config();
-        setup_server();
+        setup_primus();
         write_client_js();
         write_client_css();
         setup_facade();
         setup_caches();
+        
+        load_challenges();
     };
     this.run = goog.functions.cacheReturnValue(run);
     
@@ -94,17 +96,30 @@ sector8.server = function(cd)
         _this.logger.log(_this.logger.trace, 'Imported server config');
     };
     
-    var server;
-    var setup_server = function()
+    var adapter;
+    var setup_adapter = function()
     {
-        _this.logger.log(_this.logger.trace, 'Creating server...');
+        _this.logger.log(_this.logger.trace, 'Creating adapter...');
         
-        server = primus.createServer(function(spark)
+        adapter = new sector8.adapter();
+        
+        _this.logger.log(_this.logger.trace, 'Created adapter');
+    };
+    
+    var primus_server;
+    var setup_primus = function()
+    {
+        _this.logger.log(_this.logger.trace, 'Creating primus server...');
+        
+        var config = _this.config.primus;
+        config.parser = adapter;
+        
+        primus_server = primus.createServer(function(spark)
         {
             return new sector8.session(_this, spark);
-        }, _this.config.primus);
+        }, config);
         
-        _this.logger.log(_this.logger.trace, 'Created server');
+        _this.logger.log(_this.logger.trace, 'Created primus server');
     };
     
     var write_client_js = function()
@@ -117,7 +132,7 @@ sector8.server = function(cd)
         str += '\n';
         str += 'goog.provide(\'primus\');\n';
         str += '\n';
-        str += server.library();
+        str += primus_server.library();
 
         fs.writeFileSync(cd + '/js/sector8/primus.js', str, 'utf-8');
         
@@ -217,23 +232,31 @@ sector8.server = function(cd)
     };
     
     
-    var challenges = util.make_class([]);
-    _this.facade.load_arr(sector8.match, {
-        'start_date': new sector8.facade.expr(' IS NULL'),
-        'end_date': new sector8.facade.expr(' IS NULL')
-    }, function(arr)
-    {
-        goog.asserts.assert(challenges.length === 0);
-        
-        var i = 0;
-        while (i < arr.length)
-        {
-            challenges.set(i, arr[i]);
-            i++;
-        }
-    });
+    var challenges;
+    var challenges_gate = new util.gate(1);
     
-    this.create_challenge = function(data, reply)
+    var load_challenges = function()
+    {
+        challenges = util.make_class([]);
+        _this.facade.load_arr(sector8.match, {
+            'start_date': new sector8.facade.expr(' IS NULL'),
+            'end_date': new sector8.facade.expr(' IS NULL')
+        }, function(arr)
+        {
+            goog.asserts.assert(challenges.length === 0);
+
+            var i = 0;
+            while (i < arr.length)
+            {
+                challenges.set(i, arr[i]);
+                i++;
+            }
+            
+            challenges_gate.open();
+        });
+    };
+    
+    this.create_challenge = challenges_gate.pass(function(data, reply)
     {
         var match = new sector8.match();
         
@@ -255,12 +278,12 @@ sector8.server = function(cd)
         match.watch(challenges);
         
         challenges.set(challenges.length, match);
-    };
+    });
     
-    this.watch_challenges = function(data, reply)
+    this.watch_challenges = challenges_gate.pass(function(data, reply)
     {
-        challenges_watchers.push(reply);
-    };
+        challenges.watch(reply);
+    });
 };
 
 

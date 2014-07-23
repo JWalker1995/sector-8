@@ -2,6 +2,8 @@ goog.provide('sector8.facade');
 
 goog.require('goog.asserts');
 
+var mysql = require('mysql');
+
 sector8.facade = function(server, conn)
 {
     goog.asserts.assertInstanceof(this, sector8.facade);
@@ -19,7 +21,7 @@ sector8.facade = function(server, conn)
     {
         showing++;
         
-        type._facade = types.length;
+        type._s8_facade = types.length;
         var c = types[types.length] = {};
         
         c.table = table;
@@ -77,13 +79,13 @@ sector8.facade = function(server, conn)
     {
         var func = function()
         {
-            if (typeof inst.constructor._facade !== 'number')
+            if (typeof inst.constructor._s8_facade !== 'number')
             {
                 report_load('Tried to load an unregistered type');
                 return;
             }
             
-            var c = types[inst.constructor._facade];
+            var c = types[inst.constructor._s8_facade];
             goog.asserts.assert(c);
             
             var where = {};
@@ -118,13 +120,13 @@ sector8.facade = function(server, conn)
     {
         var func = function()
         {
-            if (typeof constructor._facade !== 'number')
+            if (typeof constructor._s8_facade !== 'number')
             {
                 report_load('Tried to load an unregistered type');
                 return;
             }
             
-            var c = types[constructor._facade];
+            var c = types[constructor._s8_facade];
             goog.asserts.assert(c);
             
             var query = 'SELECT * FROM ' + c.table + ' WHERE ' + create_where(where);
@@ -162,13 +164,13 @@ sector8.facade = function(server, conn)
     {
         var func = function()
         {
-            if (!inst.constructor._facade)
+            if (!inst.constructor._s8_facade)
             {
                 report_load('Tried to save an unregistered type');
                 return;
             }
             
-            var c = types[inst.constructor._facade];
+            var c = types[inst.constructor._s8_facade];
             goog.asserts.assert(c);
             
             var tokens = [];
@@ -196,7 +198,7 @@ sector8.facade = function(server, conn)
         var eqs = [];
         for (var col in where)
         {
-            var eq = conn.escapeId(col);
+            var eq = mysql.escapeId(col);
             var val = where[col];
             if (val instanceof sector8.facade.expr)
             {
