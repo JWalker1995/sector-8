@@ -1,7 +1,7 @@
 goog.provide('sector8.player');
 
 goog.require('goog.asserts');
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 
 sector8.player = function()
 {
@@ -13,5 +13,5 @@ sector8.player = function()
         'user_id': 0
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
 };

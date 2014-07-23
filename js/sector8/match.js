@@ -1,7 +1,7 @@
 goog.provide('sector8.match');
 
 goog.require('goog.asserts');
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 
 sector8.match = function()
 {
@@ -24,7 +24,7 @@ sector8.match = function()
         'stakes': 1.0
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
     
     // move_after:
     this.MOVE_AFTER_ORDER = 1; // Move after each player orders
@@ -293,7 +293,7 @@ sector8.sectoid = function()
         'prime': false
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
 };
     
 sector8.player = function()
@@ -306,6 +306,6 @@ sector8.player = function()
         'time': 0
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
 };
 */

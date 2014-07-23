@@ -3604,12 +3604,11 @@ sector8.net = function(core, spark)
     
     spark.on('data', on_data);
 };
-goog.provide('util.make_getters_setters');
+goog.provide('util.make_class');
 
 goog.require('goog.asserts');
 
-// TODO: Change make_getters_setters to make_class
-util.make_getters_setters = function(obj, props)
+util.make_class = function(obj, props)
 {
     if (typeof props === 'undefined') {props = obj;}
     
@@ -3663,7 +3662,7 @@ util.make_getters_setters = function(obj, props)
 
         if (type === 'function')
         {
-            obj['set'] = function(i, val)
+            obj.set = function(i, val)
             {
                 if (val === null || val instanceof first)
                 {
@@ -3678,7 +3677,7 @@ util.make_getters_setters = function(obj, props)
         else
         {
             if (first === '_func') {type = 'function';}
-            obj['set'] = function(i, val)
+            obj.set = function(i, val)
             {
                 if (typeof val === type)
                 {
@@ -3760,17 +3759,24 @@ util.make_getters_setters = function(obj, props)
         }
     };
     
-    obj.watch = function(callback)
+    obj.watch = function(arg)
     {
-        // callback could be a function or an array of functions
-        watchers.push(callback);
+        if (arg._watchers instanceof Array)
+        {
+            arg = arg._watchers;
+        }
+        
+        goog.asserts.assert(typeof arg === 'function' || arg instanceof Array);
+        watchers.push(arg);
     };
+    
+    obj._watchers = watchers;
     
     return obj;
 };
 goog.provide('sector8.user');
 
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 
 sector8.user = function()
 {
@@ -3786,7 +3792,7 @@ sector8.user = function()
         'last_login': Date
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
 
 
     this.get_id = this.get_user_id;
@@ -15989,7 +15995,7 @@ sector8.ui.login = function(core)
 goog.provide('sector8.match');
 
 goog.require('goog.asserts');
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 
 sector8.match = function()
 {
@@ -16012,7 +16018,7 @@ sector8.match = function()
         'stakes': 1.0
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
     
     // move_after:
     this.MOVE_AFTER_ORDER = 1; // Move after each player orders
@@ -16281,7 +16287,7 @@ sector8.sectoid = function()
         'prime': false
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
 };
     
 sector8.player = function()
@@ -16294,12 +16300,12 @@ sector8.player = function()
         'time': 0
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
 };
 */
 goog.provide('sector8.sectoid');
 
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 
 sector8.sectoid = function()
 {
@@ -16313,12 +16319,13 @@ sector8.sectoid = function()
         'sectors': 0
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
 };
 goog.provide('sector8.cell');
 
 goog.require('goog.asserts');
 goog.require('sector8.sectoid');
+goog.require('util.make_class');
 
 sector8.cell = function()
 {
@@ -16331,7 +16338,7 @@ sector8.cell = function()
         'sectoid': 0
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
     
     var char_number = '1'.charCodeAt(0) - 1;
     var char_lower = 'a'.charCodeAt(0) - 1;
@@ -16448,7 +16455,7 @@ util.crc32 = (function()
 })();goog.provide('sector8.board');
 
 goog.require('goog.asserts');
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 goog.require('util.crc32');
 
 sector8.board = function()
@@ -16461,7 +16468,7 @@ sector8.board = function()
         'cells': Array
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
     
     this.from_notation = function(str)
     {
@@ -16640,7 +16647,7 @@ sector8.board = function()
 goog.provide('sector8.order');
 
 goog.require('goog.asserts');
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 
 sector8.order = function()
 {
@@ -16659,7 +16666,7 @@ sector8.order = function()
     };
     // A :20+2-4 #b5 .01245 @4 !
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
     
     var moves_row = [ 0,-1,-1, 0, 1, 1, 1, 0,-1];
     var moves_col = [ 0, 0, 1, 1, 1, 0,-1,-1,-1];
@@ -17141,7 +17148,7 @@ sector8.ui.match = function(core, match)
 goog.provide('sector8.map');
 
 goog.require('goog.asserts');
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 
 sector8.map = function()
 {
@@ -17163,7 +17170,7 @@ sector8.map = function()
     
     // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
 };goog.provide('sector8.ui.ui');
 
 goog.require('goog.functions');

@@ -1,7 +1,7 @@
 goog.provide('sector8.board');
 
 goog.require('goog.asserts');
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 goog.require('util.crc32');
 
 sector8.board = function()
@@ -14,7 +14,7 @@ sector8.board = function()
         'cells': Array
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
     
     this.from_notation = function(str)
     {

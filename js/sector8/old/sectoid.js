@@ -1,6 +1,6 @@
 goog.provide('sector8.sectoid');
 
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 
 sector8.sectoid = function()
 {
@@ -14,5 +14,5 @@ sector8.sectoid = function()
         'sectors': 0
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
 };

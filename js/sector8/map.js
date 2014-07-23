@@ -1,7 +1,7 @@
 goog.provide('sector8.map');
 
 goog.require('goog.asserts');
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 
 sector8.map = function()
 {
@@ -23,5 +23,5 @@ sector8.map = function()
     
     // Each cell: territory/unclaimed/void, permanent, prime, sectors, sector chance, sectoid chance
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
 };

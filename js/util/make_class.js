@@ -1,9 +1,8 @@
-goog.provide('util.make_getters_setters');
+goog.provide('util.make_class');
 
 goog.require('goog.asserts');
 
-// TODO: Change make_getters_setters to make_class
-util.make_getters_setters = function(obj, props)
+util.make_class = function(obj, props)
 {
     if (typeof props === 'undefined') {props = obj;}
     

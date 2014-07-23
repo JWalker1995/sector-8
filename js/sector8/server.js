@@ -10,6 +10,7 @@ goog.require('sector8.user');
 goog.require('sector8.match');
 goog.require('sector8.map');
 goog.require('sector8.session');
+goog.require('util.make_class');
 goog.require('util.logger');
 goog.require('util.gate');
 
@@ -216,7 +217,7 @@ sector8.server = function(cd)
     };
     
     
-    var challenges = util.make_getters_setters([]);
+    var challenges = util.make_class([]);
     _this.facade.load_arr(sector8.match, {
         'start_date': new sector8.facade.expr(' IS NULL'),
         'end_date': new sector8.facade.expr(' IS NULL')

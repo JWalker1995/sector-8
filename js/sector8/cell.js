@@ -2,6 +2,7 @@ goog.provide('sector8.cell');
 
 goog.require('goog.asserts');
 goog.require('sector8.sectoid');
+goog.require('util.make_class');
 
 sector8.cell = function()
 {
@@ -14,7 +15,7 @@ sector8.cell = function()
         'sectoid': 0
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
     
     var char_number = '1'.charCodeAt(0) - 1;
     var char_lower = 'a'.charCodeAt(0) - 1;

@@ -1,7 +1,7 @@
 goog.provide('sector8.order');
 
 goog.require('goog.asserts');
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 
 sector8.order = function()
 {
@@ -20,7 +20,7 @@ sector8.order = function()
     };
     // A :20+2-4 #b5 .01245 @4 !
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
     
     var moves_row = [ 0,-1,-1, 0, 1, 1, 1, 0,-1];
     var moves_col = [ 0, 0, 1, 1, 1, 0,-1,-1,-1];

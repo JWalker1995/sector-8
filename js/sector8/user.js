@@ -1,6 +1,6 @@
 goog.provide('sector8.user');
 
-goog.require('util.make_getters_setters');
+goog.require('util.make_class');
 
 sector8.user = function()
 {
@@ -16,7 +16,7 @@ sector8.user = function()
         'last_login': Date
     };
 
-    util.make_getters_setters(this, props);
+    util.make_class(this, props);
 
 
     this.get_id = this.get_user_id;
