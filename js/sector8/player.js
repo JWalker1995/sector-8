@@ -9,9 +9,12 @@ sector8.player = function()
     
     var props = {
         'player_id': 0,
-        'match_id': 0,
-        'user_id': 0
+        'match': sector8.match,
+        'user': sector8.user
     };
+    
+    this.get_match_id = function() {return this.get_match().get_match_id();};
+    this.get_user_id = function() {return this.get_user().get_user_id();};
 
     util.make_class(this, props);
 };

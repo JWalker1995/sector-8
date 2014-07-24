@@ -3577,6 +3577,7 @@ sector8.net = function(core, spark)
     {
         trace_reporter('Writing data: ' + JSON.stringify(data));
         
+        debugger;
         spark.write(data);
     };
     
@@ -3598,11 +3599,18 @@ sector8.net = function(core, spark)
         
         notice_reporter('Received data with invalid query: ' + JSON.stringify(data));
     };
-
+    
+    var on_end = function()
+    {
+        trace_reporter('Closed connection');
+    };
+    
     this.request = request;
     this.await = await;
+    this.on_close = spark.on.bind(spark, 'end');
     
     spark.on('data', on_data);
+    spark.on('end', on_end);
 };
 goog.provide('util.make_class');
 
@@ -3613,7 +3621,8 @@ util.make_class = function(obj, props)
     if (typeof props === 'undefined') {props = obj;}
     
     var watchers = [];
-    var updated = [];
+    var has_updated = false;
+    var updated = {};
     
     var call_watchers = function(arr)
     {
@@ -3637,15 +3646,20 @@ util.make_class = function(obj, props)
     {
         props[prop] = val;
         
-        if (!updated.length)
+        if (!has_updated)
         {
+            has_updated = true;
+            
             setTimeout(function()
             {
                 call_watchers(watchers);
-                updated = [];
+                
+                has_updated = false;
+                updated = {};
             }, 0);
         }
-        updated.push([prop, val]);
+        
+        updated[prop] = val;
     };
     
     goog.asserts.assert(typeof props === 'object');
@@ -3762,10 +3776,9 @@ util.make_class = function(obj, props)
     obj.watch = function(arg)
     {
         goog.asserts.assert(typeof arg === 'function' || arg instanceof Array);
+        
         watchers.push(arg);
     };
-    
-    obj._watchers = watchers;
     
     return obj;
 };
@@ -16015,6 +16028,8 @@ sector8.match = function()
 
     util.make_class(this, props);
     
+    this.get_map_id = function() {return this.get_map().get_map_id();};
+    
     // move_after:
     this.MOVE_AFTER_ORDER = 1; // Move after each player orders
     this.MOVE_AFTER_CALL = 2; // Move after any player calls it
@@ -18819,24 +18834,8 @@ Primus.prototype.client = function client() {
 };
 Primus.prototype.authorization = false;
 Primus.prototype.pathname = "/sector8/socket";
-Primus.prototype.encoder = function encoder(data, fn) {
-  var err;
-
-  try { data = JSON.stringify(data); }
-  catch (e) { err = e; }
-
-  fn(err, data);
-};
-Primus.prototype.decoder = function decoder(data, fn) {
-  var err;
-
-  if ('string' !== typeof data) return fn(err, data);
-
-  try { data = JSON.parse(data); }
-  catch (e) { err = e; }
-
-  fn(err, data);
-};
+Primus.prototype.encoder = function() {this.options.parser.encoder.apply(this, arguments);};
+Primus.prototype.decoder = function() {this.options.parser.decoder.apply(this, arguments);};
 Primus.prototype.version = "2.3.0";
 
 //
@@ -18980,6 +18979,167 @@ sector8.config.client = function()
             //'float_offset': 20
         }
     });
+};goog.provide('sector8.adapter');
+
+goog.require('goog.asserts');
+goog.require('util.make_class');
+
+sector8.adapter = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.adapter);
+    
+    var spark_i = 0;
+    var types = [];
+    var insts = [];
+    
+    this.register_type = function(type, name)
+    {
+        if (typeof types[name] !== 'undefined' && types[name] !== type)
+        {
+            throw new Error('Registered 2 different types with the same name');
+        }
+        
+        types[name] = type;
+        type._s8_adapter_type = name;
+    };
+    
+    this.encoder = function(data, fn)
+    {
+        var spark_id = get_spark_id(this);
+        
+        var err;
+        try
+        {
+            data = JSON.stringify(data, function(key, val)
+            {
+                if (typeof val.constructor === 'function' && typeof val.constructor._s8_adapter_type !== 'undefined')
+                {
+                    // val is a registered type
+                    
+                    if (typeof val._s8_adapter_inst !== 'number' || typeof val._s8_adapter_sent !== 'object')
+                    {
+                        val._s8_adapter_inst = insts.length;
+                        insts[val._s8_adapter_inst] = val;
+                        val._s8_adapter_sent = [];
+                    }
+                    
+                    var obj;
+                    if (val._s8_adapter_sent[spark_id] !== true)
+                    {
+                        val._s8_adapter_sent[spark_id] = true;
+                        
+                        obj = val.to_obj();
+                        obj._s8_adapter_type = val.constructor._s8_adapter_type;
+
+                        /*
+                        val.watch(function(updated)
+                        {
+                            fn(undefined, val._s8_adapter_inst + encode(updated));
+                        });
+                        */
+                    }
+                    else
+                    {
+                        obj = {};
+                    }
+                    
+                    obj._s8_adapter_inst = val._s8_adapter_inst;
+                    
+                    return obj;
+                }
+                else
+                {
+                    // val is not a registered type
+                    
+                    return val;
+                }
+            });
+        }
+        catch (e)
+        {
+            err = e;
+        }
+        
+        fn(err, data);
+    };
+    
+    this.decoder = function(data, fn)
+    {
+        var spark_id = get_spark_id(this);
+        
+        var err;
+        try
+        {
+            data = JSON.parse(data, function(key, val)
+            {
+                if (typeof val._s8_adapter_inst === 'number')
+                {
+                    var inst;
+                    
+                    if (typeof val._s8_adapter_type !== 'undefined')
+                    {
+                        var type = types[val._s8_adapter_type];
+                        if (typeof type !== 'undefined')
+                        {
+                            inst = new type();
+                            inst.from_obj(val);
+                            
+                            if (typeof insts[val._s8_adapter_inst] === 'undefined')
+                            {
+                                insts[val._s8_adapter_inst] = inst;
+                            }
+                            else
+                            {
+                                throw new Error('Tried to create a new instance with an already taken id "' + val._s8_adapter_inst + '"');
+                            }
+                        }
+                        else
+                        {
+                            throw new Error('Tried to load an unregistered type "' + val._s8_adapter_type + '"');
+                        }
+                    }
+                    else
+                    {
+                        inst = insts[val._s8_adapter_inst];
+                        
+                        if (typeof inst === 'undefined')
+                        {
+                            throw new Error('Tried to load an unsent instance "' + val._s8_adapter_inst + '"');
+                        }
+                    }
+                    
+                    return inst;
+                }
+                else
+                {
+                    return val;
+                }
+            });
+        }
+        catch (e)
+        {
+            err = e;
+        }
+        
+        fn(err, data);
+    };
+    
+    // Primus defaults to encoder/decoder.toString() to write the client code (in sector8.server.write_client_js),
+    // However, since the encoder and decoder use class resources (like get_spark_id), this won't work,
+    // So in the browser, an adapter is created and passed to the primus client (in sector8.client.setup_primus),
+    // And this code forwards calls to the instance.
+    this.encoder.client = 'function() {this.options.parser.encoder.apply(this, arguments);}';
+    this.decoder.client = 'function() {this.options.parser.decoder.apply(this, arguments);}';
+    
+    var get_spark_id = function(spark)
+    {
+        if (typeof spark._s8_adapter_spark === 'undefined')
+        {
+            spark._s8_adapter_spark = spark_i++;
+        }
+
+        return spark._s8_adapter_spark;
+    };
 };goog.provide('util.logger');
 
 goog.require('goog.asserts');
@@ -19186,6 +19346,7 @@ goog.provide('sector8.client');
 
 goog.require('goog.functions');
 goog.require('sector8.config.client');
+goog.require('sector8.adapter');
 goog.require('sector8.net');
 goog.require('sector8.ui.ui');
 goog.require('util.logger');
@@ -19203,7 +19364,15 @@ sector8.client = function()
     {
         setup_logger();
         setup_config();
+        setup_adapter();
+        setup_primus();
         setup_net();
+        
+        // TODO: Remove debug code
+        window.client = _this;
+        window.adapter = adapter;
+        window.primus_client = primus_client;
+        window.net = _this.net;
         
         return ui.render();
     };
@@ -19212,19 +19381,62 @@ sector8.client = function()
     var setup_logger = function()
     {
         _this.logger = new util.logger();
+        
+        var make_func = function(endpoint)
+        {
+            return function(date, info, msg)
+            {
+                var throttle_str = (info.throttles ? ' throttled ' + info.throttles + 'x' : '');
+                var str = info.level_str + ' ' + info.reporter + throttle_str + ' at ' + date.getTime() + ' : ' + msg;
+                endpoint(str);
+            };
+        };
+        
+        _this.logger.update_handler('console', true, _this.logger.trace, make_func(console.log.bind(console)));
+        
+        _this.logger.log(_this.logger.trace, 'Started logger');
     };
     
     var setup_config = function()
     {
+        _this.logger.log(_this.logger.trace, 'Importing server config...');
+        
         _this.config = new sector8.config.client();
+        
+        _this.logger.log(_this.logger.trace, 'Imported server config');
+    };
+    
+    var adapter;
+    var setup_adapter = function()
+    {
+        _this.logger.log(_this.logger.trace, 'Creating adapter...');
+        
+        adapter = new sector8.adapter();
+        
+        _this.logger.log(_this.logger.trace, 'Created adapter');
+    };
+    
+    var primus_client;
+    var setup_primus = function()
+    {
+        _this.logger.log(_this.logger.trace, 'Creating primus client...');
+        
+        var host = _this.config.primus.host;
+        var port = _this.config.primus.port;
+        var config = {};
+        config.parser = adapter;
+        
+        primus_client = new Primus('http://' + host + ':' + port, config);
+        
+        _this.logger.log(_this.logger.trace, 'Created primus server');
     };
     
     var setup_net = function()
     {
-        var host = _this.config.primus.host;
-        var port = _this.config.primus.port;
-        var primus = new Primus('http://' + host + ':' + port, {});
-
-        _this.net = new sector8.net(_this, primus);
+        _this.logger.log(_this.logger.trace, 'Creating net...');
+        
+        _this.net = new sector8.net(_this, primus_client);
+        
+        _this.logger.log(_this.logger.trace, 'Created net');
     };
 };

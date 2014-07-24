@@ -44,6 +44,7 @@ sector8.net = function(core, spark)
     {
         trace_reporter('Writing data: ' + JSON.stringify(data));
         
+        debugger;
         spark.write(data);
     };
     
@@ -65,9 +66,16 @@ sector8.net = function(core, spark)
         
         notice_reporter('Received data with invalid query: ' + JSON.stringify(data));
     };
-
+    
+    var on_end = function()
+    {
+        trace_reporter('Closed connection');
+    };
+    
     this.request = request;
     this.await = await;
+    this.on_close = spark.on.bind(spark, 'end');
     
     spark.on('data', on_data);
+    spark.on('end', on_end);
 };

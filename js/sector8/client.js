@@ -2,6 +2,7 @@ goog.provide('sector8.client');
 
 goog.require('goog.functions');
 goog.require('sector8.config.client');
+goog.require('sector8.adapter');
 goog.require('sector8.net');
 goog.require('sector8.ui.ui');
 goog.require('util.logger');
@@ -19,7 +20,15 @@ sector8.client = function()
     {
         setup_logger();
         setup_config();
+        setup_adapter();
+        setup_primus();
         setup_net();
+        
+        // TODO: Remove debug code
+        window.client = _this;
+        window.adapter = adapter;
+        window.primus_client = primus_client;
+        window.net = _this.net;
         
         return ui.render();
     };
@@ -28,19 +37,62 @@ sector8.client = function()
     var setup_logger = function()
     {
         _this.logger = new util.logger();
+        
+        var make_func = function(endpoint)
+        {
+            return function(date, info, msg)
+            {
+                var throttle_str = (info.throttles ? ' throttled ' + info.throttles + 'x' : '');
+                var str = info.level_str + ' ' + info.reporter + throttle_str + ' at ' + date.getTime() + ' : ' + msg;
+                endpoint(str);
+            };
+        };
+        
+        _this.logger.update_handler('console', true, _this.logger.trace, make_func(console.log.bind(console)));
+        
+        _this.logger.log(_this.logger.trace, 'Started logger');
     };
     
     var setup_config = function()
     {
+        _this.logger.log(_this.logger.trace, 'Importing server config...');
+        
         _this.config = new sector8.config.client();
+        
+        _this.logger.log(_this.logger.trace, 'Imported server config');
+    };
+    
+    var adapter;
+    var setup_adapter = function()
+    {
+        _this.logger.log(_this.logger.trace, 'Creating adapter...');
+        
+        adapter = new sector8.adapter();
+        
+        _this.logger.log(_this.logger.trace, 'Created adapter');
+    };
+    
+    var primus_client;
+    var setup_primus = function()
+    {
+        _this.logger.log(_this.logger.trace, 'Creating primus client...');
+        
+        var host = _this.config.primus.host;
+        var port = _this.config.primus.port;
+        var config = {};
+        config.parser = adapter;
+        
+        primus_client = new Primus('http://' + host + ':' + port, config);
+        
+        _this.logger.log(_this.logger.trace, 'Created primus server');
     };
     
     var setup_net = function()
     {
-        var host = _this.config.primus.host;
-        var port = _this.config.primus.port;
-        var primus = new Primus('http://' + host + ':' + port, {});
-
-        _this.net = new sector8.net(_this, primus);
+        _this.logger.log(_this.logger.trace, 'Creating net...');
+        
+        _this.net = new sector8.net(_this, primus_client);
+        
+        _this.logger.log(_this.logger.trace, 'Created net');
     };
 };

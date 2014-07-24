@@ -6,6 +6,7 @@ goog.require('goog.functions');
 goog.require('sector8.config.client');
 goog.require('sector8.config.server');
 goog.require('sector8.facade');
+goog.require('sector8.adapter');
 goog.require('sector8.user');
 goog.require('sector8.match');
 goog.require('sector8.map');
@@ -28,6 +29,7 @@ sector8.server = function(cd)
     {
         setup_logger();
         setup_config();
+        setup_adapter();
         setup_primus();
         write_client_js();
         write_client_css();
@@ -258,6 +260,8 @@ sector8.server = function(cd)
     
     this.create_challenge = challenges_gate.pass(function(data, reply)
     {
+        debugger;
+        
         var match = new sector8.match();
         
         if (typeof data.name !== 'undefined') {match.set_name(data.name);}

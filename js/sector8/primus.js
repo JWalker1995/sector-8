@@ -1553,24 +1553,8 @@ Primus.prototype.client = function client() {
 };
 Primus.prototype.authorization = false;
 Primus.prototype.pathname = "/sector8/socket";
-Primus.prototype.encoder = function encoder(data, fn) {
-  var err;
-
-  try { data = JSON.stringify(data); }
-  catch (e) { err = e; }
-
-  fn(err, data);
-};
-Primus.prototype.decoder = function decoder(data, fn) {
-  var err;
-
-  if ('string' !== typeof data) return fn(err, data);
-
-  try { data = JSON.parse(data); }
-  catch (e) { err = e; }
-
-  fn(err, data);
-};
+Primus.prototype.encoder = function() {this.options.parser.encoder.apply(this, arguments);};
+Primus.prototype.decoder = function() {this.options.parser.decoder.apply(this, arguments);};
 Primus.prototype.version = "2.3.0";
 
 //

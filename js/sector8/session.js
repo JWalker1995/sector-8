@@ -202,12 +202,12 @@ sector8.session = function(server, spark)
 
     net.on_close(function()
     {
-        if (error_else_login(reply)) {return;}
-
+        /*
         get_match(function(match)
         {
             match.exit(this);
         });
+        */
     });
 
 

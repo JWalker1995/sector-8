@@ -7,7 +7,8 @@ util.make_class = function(obj, props)
     if (typeof props === 'undefined') {props = obj;}
     
     var watchers = [];
-    var updated = [];
+    var has_updated = false;
+    var updated = {};
     
     var call_watchers = function(arr)
     {
@@ -31,15 +32,20 @@ util.make_class = function(obj, props)
     {
         props[prop] = val;
         
-        if (!updated.length)
+        if (!has_updated)
         {
+            has_updated = true;
+            
             setTimeout(function()
             {
                 call_watchers(watchers);
-                updated = [];
+                
+                has_updated = false;
+                updated = {};
             }, 0);
         }
-        updated.push([prop, val]);
+        
+        updated[prop] = val;
     };
     
     goog.asserts.assert(typeof props === 'object');
@@ -156,10 +162,9 @@ util.make_class = function(obj, props)
     obj.watch = function(arg)
     {
         goog.asserts.assert(typeof arg === 'function' || arg instanceof Array);
+        
         watchers.push(arg);
     };
-    
-    obj._watchers = watchers;
     
     return obj;
 };

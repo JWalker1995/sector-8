@@ -31,7 +31,7 @@ sector8.adapter = function()
         {
             data = JSON.stringify(data, function(key, val)
             {
-                if (typeof val.constructor === 'function' && val.constructor._s8_adapter_type !== 'undefined')
+                if (typeof val.constructor === 'function' && typeof val.constructor._s8_adapter_type !== 'undefined')
                 {
                     // val is a registered type
                     
@@ -49,6 +49,13 @@ sector8.adapter = function()
                         
                         obj = val.to_obj();
                         obj._s8_adapter_type = val.constructor._s8_adapter_type;
+
+                        /*
+                        val.watch(function(updated)
+                        {
+                            fn(undefined, val._s8_adapter_inst + encode(updated));
+                        });
+                        */
                     }
                     else
                     {
@@ -136,13 +143,20 @@ sector8.adapter = function()
         fn(err, data);
     };
     
+    // Primus defaults to encoder/decoder.toString() to write the client code (in sector8.server.write_client_js),
+    // However, since the encoder and decoder use class resources (like get_spark_id), this won't work,
+    // So in the browser, an adapter is created and passed to the primus client (in sector8.client.setup_primus),
+    // And this code forwards calls to the instance.
+    this.encoder.client = 'function() {this.options.parser.encoder.apply(this, arguments);}';
+    this.decoder.client = 'function() {this.options.parser.decoder.apply(this, arguments);}';
+    
     var get_spark_id = function(spark)
     {
         if (typeof spark._s8_adapter_spark === 'undefined')
         {
             spark._s8_adapter_spark = spark_i++;
         }
-        
+
         return spark._s8_adapter_spark;
     };
 };
