@@ -1,15 +1,16 @@
 goog.provide('util.gate');
 
-util.gate = function(times)
+util.gate = function(opens)
 {
-    if (typeof times !== 'number') {times = 1;}
+    if (typeof opens !== 'number') {opens = 1;}
     
     var funcs = [];
     
     this.open = function()
     {
-        times--;
-        if (!times)
+        opens--;
+        if (opens < 0) {opens = 0;}
+        if (opens === 0)
         {
             var i = 0;
             while (i < funcs.length)
@@ -17,17 +18,25 @@ util.gate = function(times)
                 funcs[i]();
                 i++;
             }
+            funcs = [];
         }
     };
-    
+
+    this.close = function()
+    {
+        opens++;
+    };
+
+    // Wraps func so that calls to it will be delayed until open is called the specified number of times.
+    // Guarantees that call order will be preserved
     this.pass = function(func)
     {
-        if (times)
+        if (opens)
         {
             return function()
             {
                 var f = func.apply.bind(func, null, arguments);
-                if (times)
+                if (opens)
                 {
                     funcs.push(f);
                 }
@@ -41,5 +50,10 @@ util.gate = function(times)
         {
             return func;
         }
+    };
+
+    this.run = function(func)
+    {
+        return this.pass(func)();
     };
 };

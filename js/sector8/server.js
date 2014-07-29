@@ -18,6 +18,7 @@ goog.require('util.gate');
 var fs = require('fs');
 var primus = require('primus');
 var mysql = require('mysql');
+var shell = require('child_process');
 
 sector8.server = function(cd)
 {
@@ -25,21 +26,36 @@ sector8.server = function(cd)
     
     goog.asserts.assertInstanceof(this, sector8.server);
     
+    var ready_gate;
+
     var run = function()
     {
+        ready_gate = new util.gate(1);
+
         setup_logger();
+        _this.logger.log(_this.logger.info, 'Server is starting...');
+
         setup_config();
         setup_adapter();
         setup_primus();
-        write_client_js();
-        write_client_css();
         setup_facade();
         setup_caches();
-        
+
+        write_primus();
+        write_css_config();
+        compile();
+
         load_challenges();
+
+        ready_gate.open();
+
+        ready_gate.run(function()
+        {
+            _this.logger.log(_this.logger.info, 'Server is ready!!!');
+        });
     };
     this.run = goog.functions.cacheReturnValue(run);
-    
+
     var setup_logger = function()
     {
         var log_path = 'log/';
@@ -59,8 +75,9 @@ sector8.server = function(cd)
         {
             return function(date, info, msg)
             {
+                var level_str = info.level_str + Array(Math.max(0, 8 - info.level_str.length)).join(' ');
                 var throttle_str = (info.throttles ? ' throttled ' + info.throttles + 'x' : '');
-                var str = info.level_str + ' ' + info.reporter + throttle_str + ' at ' + date.getTime() + ' : ' + msg;
+                var str = level_str + ' ' + info.reporter + throttle_str + ' at ' + date.getTime() + ' : ' + msg;
                 endpoint(str);
             };
         };
@@ -85,6 +102,9 @@ sector8.server = function(cd)
         _this.logger.update_handler('email', true, _this.logger.fatal, function(date, info, msg)
         {
         });
+
+        ready_gate.close();
+        gate.run(ready_gate.open);
         
         _this.logger.log(_this.logger.trace, 'Started logger');
     };
@@ -124,7 +144,37 @@ sector8.server = function(cd)
         _this.logger.log(_this.logger.trace, 'Created primus server');
     };
     
-    var write_client_js = function()
+    var setup_facade = function()
+    {
+        _this.logger.log(_this.logger.trace, 'Creating mysql connection...');
+        var conn = mysql.createConnection(_this.config.mysql);
+        
+        _this.logger.log(_this.logger.trace, 'Connecting to mysql server...');
+        conn.connect(_this.logger.get_reporter(_this.logger.fatal, 'sector8.server.setup_mysql'));
+        
+        _this.logger.log(_this.logger.trace, 'Reading sql init scripts...');
+        var init_sql = fs.readFileSync(_this.config.sql_init_path);
+        
+        _this.logger.log(_this.logger.trace, 'Executing sql init scripts...');
+        var reporter = _this.logger.get_reporter(_this.logger.fatal, 'sector8.server.setup_facade');
+        conn.query(init_sql.toString(), [], reporter);
+        
+        _this.logger.log(_this.logger.trace, 'Creating facade...');
+        _this.facade = new sector8.facade(_this, conn);
+        _this.logger.log(_this.logger.trace, 'Created facade');
+        
+        _this.logger.log(_this.logger.trace, 'Registering facade types...');
+        _this.facade.register_type(sector8.user, 'users');
+        _this.facade.register_type(sector8.match, 'matches');
+        _this.facade.register_type(sector8.map, 'maps');
+        _this.logger.log(_this.logger.trace, 'Registered facade types');
+    };
+    
+    var setup_caches = function()
+    {
+    };
+    
+    var write_primus = function()
     {
         _this.logger.log(_this.logger.trace, 'Writing client js...');
         
@@ -136,12 +186,12 @@ sector8.server = function(cd)
         str += '\n';
         str += primus_server.library();
 
-        fs.writeFileSync(cd + '/js/sector8/primus.js', str, 'utf-8');
+        fs.writeFileSync(cd + '/js/sector8/primus.js', str);
         
         _this.logger.log(_this.logger.trace, 'Wrote client js');
     };
     
-    var write_client_css = function()
+    var write_css_config = function()
     {
         _this.logger.log(_this.logger.trace, 'Importing client config...');
         
@@ -180,41 +230,134 @@ sector8.server = function(cd)
             write_prop(key, client_config.geometry[key]);
         }
 
-        fs.writeFileSync(cd + '/css/config.scss', str, 'utf-8');
+        fs.writeFileSync(cd + '/css/config.scss', str);
         
         _this.logger.log(_this.logger.trace, 'Wrote client css');
     };
-    
-    var setup_facade = function()
+
+    var get_compile_config = function()
     {
-        _this.logger.log(_this.logger.trace, 'Creating mysql connection...');
-        var conn = mysql.createConnection(_this.config.mysql);
-        
-        _this.logger.log(_this.logger.trace, 'Connecting to mysql server...');
-        conn.connect(_this.logger.get_reporter(_this.logger.fatal, 'sector8.server.setup_mysql'));
-        
-        _this.logger.log(_this.logger.trace, 'Reading sql init scripts...');
-        var init_sql = fs.readFileSync(_this.config.sql_init_path);
-        
-        _this.logger.log(_this.logger.trace, 'Executing sql init scripts...');
-        var reporter = _this.logger.get_reporter(_this.logger.fatal, 'sector8.server.setup_facade');
-        conn.query(init_sql.toString(), [], reporter);
-        
-        _this.logger.log(_this.logger.trace, 'Creating facade...');
-        _this.facade = new sector8.facade(_this, conn);
-        _this.logger.log(_this.logger.trace, 'Created facade');
-        
-        _this.logger.log(_this.logger.trace, 'Registering facade types...');
-        _this.facade.register_type(sector8.user, 'users');
-        _this.facade.register_type(sector8.match, 'matches');
-        _this.facade.register_type(sector8.map, 'maps');
-        _this.logger.log(_this.logger.trace, 'Registered facade types');
-    };
-    
-    var setup_caches = function()
+        return {
+            'public/bundle.js': [
+                'python',
+                'js/closure-library/closure/bin/build/closurebuilder.py',
+                '--root=js/closure-library/',
+                '--root=js/util/',
+                '--root=js/sector8/',
+                '--namespace=goog.dom',
+                '--namespace=sector8.client',
+                '--output_mode=script',
+                '--compiler_jar="' + _this.config.google_closure_compiler_path + '"',
+                '--compiler_flags="--compilation_level=ADVANCED_OPTIMIZATIONS"',
+                '--output_file={tmp_path}'
+            ],
+            'public/bundle.css': [
+                'sass',
+                '--scss',
+                '--update',
+                'css/main.scss:{tmp_path}'
+            ]
+        };
+    }
+
+    var compile = function()
     {
+        _this.logger.log(_this.logger.trace, 'Compiling...');
+
+        var compile_config = get_compile_config();
+
+        for (var dest in compile_config)
+        {
+            compile_item(dest, compile_config[dest]);
+        }
     };
-    
+
+    var compile_item = function(dest, args)
+    {
+        ready_gate.close();
+
+        var tmp_path = _this.config.tmp_dir_path + '/sector8_' + dest.replace(/[^a-zA-Z0-9_]/g, '_');
+
+        var i = 0;
+        while (i < args.length)
+        {
+            args[i] = args[i].replace(/\{tmp_path\}/g, tmp_path);
+            i++;
+        }
+
+        _this.logger.log(_this.logger.trace, 'Spawning ' + dest + ' compiler...');
+
+        var command = args.shift();
+        shell.execFile(command, args, {}, function(error, stdout, stderr)
+        {
+            if (error)
+            {
+                _this.logger.log(_this.logger.fatal, 'Could not compile ' + dest + ': ' + error.toString());
+                process.exit(1);
+            }
+            else
+            {
+                _this.logger.log(_this.logger.trace, 'Compiled ' + dest);
+                check_compiled(dest, tmp_path);
+                publish_compiled(dest, tmp_path);
+                ready_gate.open();
+            }
+        });
+
+        _this.logger.log(_this.logger.trace, 'Spawned ' + dest + ' compiler');
+    };
+
+    var check_compiled = function(dest, path)
+    {
+        _this.logger.log(_this.logger.trace, 'Reading compiled ' + dest + ' from ' + path + ' ...');
+        var contents = fs.readFileSync(path).toString();
+        _this.logger.log(_this.logger.trace, 'Read compiled ' + dest);
+
+        _this.logger.log(_this.logger.trace, 'Checking compiled ' + dest + '...');
+
+        var bad = false;
+
+        var blacklist = _this.config.check_compiled_blacklist;
+        var i = 0;
+        while (i < blacklist.length)
+        {
+            if (contents.indexOf(blacklist[i]) !== -1)
+            {
+                _this.logger.log(_this.logger.fatal, 'Compiled ' + dest + ' contains blacklisted string "' + blacklist[i] + '"');
+                bad = true;
+            }
+            i++;
+        }
+
+        _this.logger.log(_this.logger.trace, 'Checked compiled ' + dest);
+
+        if (bad)
+        {
+            process.exit(1);
+        }
+    };
+
+    var publish_compiled = function(dest, path)
+    {
+        _this.logger.log(_this.logger.trace, 'Publishing compiled ' + dest + ' from ' + path + ' ...');
+
+        ready_gate.close();
+
+        fs.rename(path, dest, function (err)
+        {
+            if (err)
+            {
+                _this.logger.log(_this.logger.fatal, 'Could not publish ' + dest + ' from ' + path + ' : ' + error.toString());
+                process.exit(1);
+            }
+            else
+            {
+                _this.logger.log(_this.logger.trace, 'Published ' + dest);
+                ready_gate.open();
+            }
+        });
+    };
+
     
     var users = {};
     this.load_user = function(username, callback)

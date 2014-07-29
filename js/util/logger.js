@@ -5,12 +5,13 @@ goog.require('goog.asserts');
 util.logger = function()
 {
     var throttle_ms = 1000;
-    var levels = ['all', 'trace', 'event', 'alert', 'notice', 'warning', 'fatal'];
+    var levels = ['all', 'trace', 'event', 'alert', 'info', 'notice', 'warning', 'fatal'];
     var num_levels = levels.length;
 
     // Trace - method calls, loops
-    // Event - user login/logout/register, moves
+    // Event - user login/logout/register
     // Alert - user login failed 3 times
+    // Info - server started
     // Notice - timeouts or reconnects, client sends invalid packet
     // Warning - assertion failed
     // Fatal - cannot connect to db
