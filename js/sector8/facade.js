@@ -1,18 +1,21 @@
 goog.provide('sector8.facade');
 
 goog.require('goog.asserts');
+goog.require('util.gate');
 
 var mysql = require('mysql');
 
 sector8.facade = function(server, conn)
 {
+    var _this = this;
+    
     goog.asserts.assertInstanceof(this, sector8.facade);
 
     var report_registration = server.logger.get_reporter(server.logger.fatal, 'sector8.facade.show_columns');
     var report_load = server.logger.get_reporter(server.logger.error, 'sector8.facade.load');
     var report_save = server.logger.get_reporter(server.logger.error, 'sector8.facade.save');
     
-    var types = [];
+    var models = [];
     
     var showing = 0;
     var ready_callbacks = [];
@@ -21,13 +24,15 @@ sector8.facade = function(server, conn)
     {
         showing++;
         
-        type._s8_facade = types.length;
-        var c = types[types.length] = {};
+        type._s8_facade = models.length;
+        var model = models[models.length] = {};
         
-        c.table = table;
-        c.primaries = [];
-        c.composites = [];
-        c.cols = [];
+        model.type = type;
+        model.table = table;
+        
+        model.primaries = [];
+        model.composites = [];
+        model.cols = [];
         
         // if conn.state === 'authenticated'
         conn.query('SHOW COLUMNS FROM ' + table, [], function(err, result)
@@ -42,20 +47,20 @@ sector8.facade = function(server, conn)
                 {
                     var field = result[i].Field;
                     
-                    (result[i].Key === 'PRI' ? c.primaries : c.composites).push(field);
-                    c.cols.push(field);
+                    (result[i].Key === 'PRI' ? model.primaries : model.composites).push(field);
+                    model.cols.push(field);
                     sets.push(field + '=?');
 
                     i++;
                 }
                 
-                if (!c.primaries.length)
+                if (!model.primaries.length)
                 {
                     report_registration('No primary key for table ' + table);
                 }
                 
                 sets = sets.join(', ');
-                c.save_query = 'INSERT INTO ' + table + ' SET ' + sets + ' ON DUPLICATE KEY UPDATE ' + sets;
+                model.save_query = 'INSERT INTO ' + table + ' SET ' + sets + ' ON DUPLICATE KEY UPDATE ' + sets;
             }
             else
             {
@@ -85,28 +90,20 @@ sector8.facade = function(server, conn)
                 return;
             }
             
-            var c = types[inst.constructor._s8_facade];
-            goog.asserts.assert(c);
+            var model = models[inst.constructor._s8_facade];
+            goog.asserts.assert(model);
             
             var where = {};
             where[prop] = value;
-            var query = 'SELECT * FROM ' + c.table + ' WHERE ' + create_where(where) + ' LIMIT 1';
+            var query = 'SELECT * FROM ' + model.table + ' WHERE ' + create_where(where) + ' LIMIT 1';
             conn.query(query, function(err, result)
             {
                 report_load(err);
-                if (result)
+                if (result && result.length)
                 {
-                    var i = 0;
-                    while (i < result.length)
-                    {
-                        var j = 0;
-                        while (j < c.cols.length)
-                        {
-                            inst['set_' + c.cols[j]](result[i][c.cols[j]]);
-                            j++;
-                        }
-                        i++;
-                    }
+                    goog.asserts.assert(result.length === 1);
+                    
+                    populate(model, inst, result[0]);
                 }
                 callback();
             });
@@ -126,10 +123,10 @@ sector8.facade = function(server, conn)
                 return;
             }
             
-            var c = types[constructor._s8_facade];
-            goog.asserts.assert(c);
+            var model = models[constructor._s8_facade];
+            goog.asserts.assert(model);
             
-            var query = 'SELECT * FROM ' + c.table + ' WHERE ' + create_where(where);
+            var query = 'SELECT * FROM ' + model.table + ' WHERE ' + create_where(where);
             conn.query(query, function(err, result)
             {
                 report_load(err);
@@ -143,12 +140,8 @@ sector8.facade = function(server, conn)
                         var inst = new constructor();
                         arr.push(inst);
                         
-                        var j = 0;
-                        while (j < c.cols.length)
-                        {
-                            inst['set_' + c.cols[j]](result[i][c.cols[j]]);
-                            j++;
-                        }
+                        populate(model, inst, result[i]);
+                        
                         i++;
                     }
                 }
@@ -170,21 +163,34 @@ sector8.facade = function(server, conn)
                 return;
             }
             
-            var c = types[inst.constructor._s8_facade];
-            goog.asserts.assert(c);
+            var model = models[inst.constructor._s8_facade];
+            goog.asserts.assert(model);
             
             var tokens = [];
             var i = 0;
-            while (i < c.cols.length)
+            while (i < model.cols.length)
             {
-                tokens[i] = inst['get_' + c.cols[i]]();
+                var getter_key = 'get_' + model.cols[i];
+                var getter = inst[getter_key];
+                
+                if (typeof getter !== 'function' && getter_key.slice(-3) === '_id')
+                {
+                    var inst2 = inst[getter_key.slice(0, -3)]();
+                    tokens[i] = inst2 ? inst2[getter_key]() : 0;
+                }
+                else
+                {
+                    tokens[i] = getter();
+                }
                 i++;
             }
             
-            conn.query(c.save_query, tokens, function(err, result)
+            debugger;
+            
+            conn.query(model.save_query, tokens.concat(tokens), function(err, result)
             {
-                report_save(err);
                 debugger;
+                report_save(err);
                 callback();
             });
         };
@@ -211,6 +217,54 @@ sector8.facade = function(server, conn)
         }
         
         return eqs.join(' AND ');
+    };
+    
+    var make_loader = function(inst, col, id)
+    {
+        var gate = new util.gate(1);
+        var dirty = true;
+        
+        return function(callback)
+        {
+            if (dirty)
+            {
+                _this.load(inst, col, id, gate.open);
+                dirty = false;
+            }
+
+            gate.pass(callback)();
+        };
+    };
+    
+    // Updates an instance based on a row returned by a mysql query
+    var populate = function(model, inst, row)
+    {
+        var i = 0;
+        while (i < model.cols.length)
+        {
+            var col = model.cols[i];
+            var val = row[col];
+            
+            var setter = inst['set_' + col];
+            
+            if (typeof setter !== 'function' && col.slice(-3) === '_id')
+            {
+                var field = col.slice(0, -3);
+                
+                var inst2 = new inst.defaults[field]();
+                inst2['set_' + col](val);
+                
+                inst['load_' + field] = make_loader(inst2, col, val);
+                
+                inst['set_' + field](inst2);
+            }
+            else
+            {
+                setter(val);
+            }
+            
+            i++;
+        }
     };
 };
 

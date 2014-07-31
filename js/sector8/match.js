@@ -14,7 +14,7 @@ sector8.match = function()
         'end_date': Date,
         'players': Array,
         'map': sector8.map,
-        'orders': Array,
+        'orders': '',
         'board': sector8.board,
         'move_after': 0,
         'move_where': 0,
@@ -25,8 +25,6 @@ sector8.match = function()
     };
 
     util.make_class(this, props);
-    
-    this.get_map_id = function() {return this.get_map().get_map_id();};
     
     // move_after:
     this.MOVE_AFTER_ORDER = 1; // Move after each player orders

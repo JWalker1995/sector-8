@@ -17,9 +17,54 @@ sector8.cell = function()
 
     util.make_class(this, props);
     
+    this.get_sectoid_prime = function()
+    {
+        return this.get_sectoid() & 0x10;
+    };
+    this.get_sectoid_sectors = function()
+    {
+        return this.get_sectoid() & 0x0F;
+    };
+    
     var char_number = '1'.charCodeAt(0) - 1;
     var char_lower = 'a'.charCodeAt(0) - 1;
     var char_upper = 'A'.charCodeAt(0) - 1;
+    
+    this.to_notation = function(pretty)
+    {
+        var bg;
+        if (this.get_void())
+        {
+            bg = ':';
+        }
+        else if (this.get_territory())
+        {
+            var code = (this.get_permanent() ? char_upper : char_lower) + this.get_territory();
+            bg = String.fromCharCode(code);
+        }
+        else
+        {
+            bg = this.get_permanent() ? '=' : '-';
+        }
+        
+        var sectoid = '';
+        var i = 0;
+        while (i < 8)
+        {
+            if ((this.get_sectoid() >>> i) & 1)
+            {
+                sectoid += i;
+            }
+            i++;
+        }
+        
+        if (this.get_sectoid_prime())
+        {
+            sectoid += '!';
+        }
+        
+        return [bg, sectoid].join(pretty ? '/' : '');
+    };
     
     this.from_notation = function(row, col, str)
     {
@@ -94,4 +139,6 @@ sector8.cell = function()
             return false;
         }
     };
+    
+    this.toString = this.to_notation;
 };

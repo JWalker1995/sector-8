@@ -15,7 +15,7 @@ sector8.adapter = function()
     {
         if (typeof types[name] !== 'undefined' && types[name] !== type)
         {
-            throw new Error('Registered 2 different types with the same name');
+            throw new Error('Registered 2 different types with the same name: "' + name + '"');
         }
         
         types[name] = type;
@@ -26,12 +26,14 @@ sector8.adapter = function()
     {
         var spark_id = get_spark_id(this);
         
+        debugger;
+        
         var err;
         try
         {
             data = JSON.stringify(data, function(key, val)
             {
-                if (typeof val.constructor === 'function' && typeof val.constructor._s8_adapter_type !== 'undefined')
+                if (val && typeof val.constructor === 'function' && typeof val.constructor._s8_adapter_type !== 'undefined')
                 {
                     // val is a registered type
                     
@@ -146,7 +148,7 @@ sector8.adapter = function()
     // Primus defaults to encoder/decoder.toString() to write the client code (in sector8.server.write_client_js),
     // However, since the encoder and decoder use class resources (like get_spark_id), this won't work,
     // So in the browser, an adapter is created and passed to the primus client (in sector8.client.setup_primus),
-    // And this code forwards calls to the instance.
+    // And this code forwards calls to the adapter instance.
     this.encoder.client = 'function() {this.options.parser.encoder.apply(this, arguments);}';
     this.decoder.client = 'function() {this.options.parser.decoder.apply(this, arguments);}';
     

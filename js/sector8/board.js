@@ -16,6 +16,20 @@ sector8.board = function()
 
     util.make_class(this, props);
     
+    this.to_notation = function()
+    {
+        var rows = [];
+        
+        var row = 0;
+        while (row < this.get_rows())
+        {
+            rows[row] = cells[row].join(' ');
+            row++;
+        }
+        
+        return rows.join('\n');
+    };
+    
     this.from_notation = function(str)
     {
         var rows = str.trim().split(/[\r\n]+/);
@@ -189,4 +203,6 @@ sector8.board = function()
 
         return res;
     };
+    
+    this.toString = this.to_notation;
 };

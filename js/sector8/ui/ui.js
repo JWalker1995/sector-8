@@ -68,8 +68,10 @@ sector8.ui.ui = function(core)
         var match = new sector8.match();
         match.set_players([]);
         match.set_map(map);
-        match.set_orders([]);
+        match.set_orders('');
         match.set_start_date(new Date());
+        
+        window.test_match = match;
 
         var ui_match = new sector8.ui.match(core, match);
         goog.dom.append(el, ui_match.render());

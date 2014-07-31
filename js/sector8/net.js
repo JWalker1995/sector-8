@@ -14,14 +14,12 @@ sector8.net = function(core, spark)
     
     var request = function(query, data, callback)
     {
-        goog.asserts.assert(typeof data.query === 'undefined');
-        
         var reply = '_' + (++next_callback);
-        data.query = query + ':' + reply;
+        query += ':' + reply;
         
         await(reply, callback);
         
-        write_data(data);
+        write_data([query, data]);
     };
     
     var await = function(query, callback)
@@ -44,7 +42,6 @@ sector8.net = function(core, spark)
     {
         trace_reporter('Writing data: ' + JSON.stringify(data));
         
-        debugger;
         spark.write(data);
     };
     
@@ -52,14 +49,13 @@ sector8.net = function(core, spark)
     {
         trace_reporter('Received data: ' + JSON.stringify(data));
         
-        if (typeof data.query !== 'undefined')
+        if (data instanceof Array)
         {
-            var query = data.query.split(':', 2);
+            var query = data[0].split(':', 2);
             var callback = callbacks[query[0]];
             if (typeof callback === 'function')
             {
-                delete data.query;
-                callback(query, data);
+                callback(query, data[1]);
                 return;
             }
         }

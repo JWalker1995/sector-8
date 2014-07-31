@@ -71,13 +71,43 @@ sector8.server = function(cd)
         
         _this.logger = new util.logger();
         
+        var spaces = Array(1025).join(' ');
+        var pad_str = function(str, len)
+        {
+            var prepend = len < 0;
+            
+            str += '';
+            var add = (prepend ? -len : len) - str.length;
+            
+            if (add > 0)
+            {
+                goog.asserts.assert(add < spaces.length);
+                
+                var pend = spaces.slice(0, add);
+                if (prepend)
+                {
+                    str = pend + str;
+                }
+                else
+                {
+                    str = str + pend;
+                }
+            }
+            
+            return str;
+        };
+        
         var make_func = function(endpoint)
         {
+            var last_time = (new Date()).getTime();
+            
             return function(date, info, msg)
             {
-                var level_str = info.level_str + Array(Math.max(0, 8 - info.level_str.length)).join(' ');
+                var level_str = pad_str(info.level_str, 8);
                 var throttle_str = (info.throttles ? ' throttled ' + info.throttles + 'x' : '');
-                var str = level_str + ' ' + info.reporter + throttle_str + ' at ' + date.getTime() + ' : ' + msg;
+                var time = date.getTime();
+                var str = level_str + ' ' + info.reporter + throttle_str + ' at ' + time + ' (+' + pad_str(time - last_time, -4) + ') : ' + msg;
+                last_time = time;
                 endpoint(str);
             };
         };
@@ -122,10 +152,16 @@ sector8.server = function(cd)
     var setup_adapter = function()
     {
         _this.logger.log(_this.logger.trace, 'Creating adapter...');
-        
         adapter = new sector8.adapter();
-        
         _this.logger.log(_this.logger.trace, 'Created adapter');
+        
+        _this.logger.log(_this.logger.trace, 'Registering adapter types...');
+        // TODO: combine with facade
+        adapter.register_type(sector8.user, 'user');
+        adapter.register_type(sector8.match, 'match');
+        adapter.register_type(sector8.map, 'map');
+        adapter.register_type(sector8.board, 'board');
+        _this.logger.log(_this.logger.trace, 'Registered adapter types');
     };
     
     var primus_server;
@@ -164,6 +200,7 @@ sector8.server = function(cd)
         _this.logger.log(_this.logger.trace, 'Created facade');
         
         _this.logger.log(_this.logger.trace, 'Registering facade types...');
+        // TODO: combine with facade
         _this.facade.register_type(sector8.user, 'users');
         _this.facade.register_type(sector8.match, 'matches');
         _this.facade.register_type(sector8.map, 'maps');
@@ -382,7 +419,7 @@ sector8.server = function(cd)
     
     var load_challenges = function()
     {
-        challenges = util.make_class([]);
+        challenges = util.make_class([sector8.match]);
         _this.facade.load_arr(sector8.match, {
             'start_date': new sector8.facade.expr(' IS NULL'),
             'end_date': new sector8.facade.expr(' IS NULL')
@@ -401,24 +438,14 @@ sector8.server = function(cd)
         });
     };
     
-    this.create_challenge = challenges_gate.pass(function(data, reply)
+    this.create_challenge = challenges_gate.pass(function(match, reply)
     {
-        debugger;
-        
-        var match = new sector8.match();
-        
-        if (typeof data.name !== 'undefined') {match.set_name(data.name);}
-        if (typeof data.map_id !== 'undefined')
-        {
-            match.set_map_id(data.map_id);
-            match.set_board(match.get_map().get_board());
-        }
-        if (typeof data.move_after !== 'undefined') {match.set_move_after(data.move_after);}
-        if (typeof data.move_where !== 'undefined') {match.set_move_where(data.move_where);}
-        if (typeof data.timer_type !== 'undefined') {match.set_timer_type(data.timer_type);}
-        if (typeof data.shadow !== 'undefined') {match.set_shadow(data.shadow);}
-        if (typeof data.spectators !== 'undefined') {match.set_spectators(data.spectators);}
-        if (typeof data.stakes !== 'undefined') {match.set_stakes(data.stakes);}
+        match.set_match_id(0);
+        match.set_start_date(null);
+        match.set_end_date(null);
+        match.set_players([]);
+        match.set_orders('');
+        match.set_board(match.get_map().get_board());
         
         _this.facade.save(match, reply.bind(null, {'msg': 'Successfully created a new match'}));
         

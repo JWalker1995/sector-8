@@ -1,6 +1,7 @@
 goog.provide('util.make_class');
 
 goog.require('goog.asserts');
+goog.require('goog.object');
 
 util.make_class = function(obj, props)
 {
@@ -50,6 +51,8 @@ util.make_class = function(obj, props)
     
     goog.asserts.assert(typeof props === 'object');
     
+    obj.defaults = goog.object.clone(props);
+    
     if (props instanceof Array)
     {
         var first = props.shift();
@@ -60,7 +63,14 @@ util.make_class = function(obj, props)
             return props[i];
         };
 
-        if (type === 'function')
+        if (type === 'undefined')
+        {
+            obj.set = function(i, val)
+            {
+                set(i, val);
+            };
+        }
+        else if (type === 'function')
         {
             obj.set = function(i, val)
             {

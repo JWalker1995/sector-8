@@ -7,7 +7,7 @@ goog.addDependency('../../../sector8/client.js', ['sector8.client'], ['goog.func
 goog.addDependency('../../../sector8/config/client.js', ['sector8.config.client'], ['sector8.config.common', 'util.deepcopy']);
 goog.addDependency('../../../sector8/config/common.js', ['sector8.config.common'], []);
 goog.addDependency('../../../sector8/config/server.js', ['sector8.config.server'], ['sector8.config.common', 'util.deepcopy']);
-goog.addDependency('../../../sector8/facade.js', ['sector8.facade'], ['goog.asserts']);
+goog.addDependency('../../../sector8/facade.js', ['sector8.facade'], ['goog.asserts', 'util.gate']);
 goog.addDependency('../../../sector8/map.js', ['sector8.map'], ['goog.asserts', 'util.make_class']);
 goog.addDependency('../../../sector8/match.js', ['sector8.match'], ['goog.asserts', 'util.make_class']);
 goog.addDependency('../../../sector8/net.js', ['sector8.net'], ['goog.asserts']);
@@ -36,4 +36,4 @@ goog.addDependency('../../../util/deepcopy.js', ['util.deepcopy'], []);
 goog.addDependency('../../../util/gate.js', ['util.gate'], []);
 goog.addDependency('../../../util/logger.js', ['util.logger'], ['goog.asserts']);
 goog.addDependency('../../../util/make_children_obj.js', ['util.make_children_obj'], []);
-goog.addDependency('../../../util/make_class.js', ['util.make_class'], ['goog.asserts']);
+goog.addDependency('../../../util/make_class.js', ['util.make_class'], ['goog.asserts', 'goog.object']);

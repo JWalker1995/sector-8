@@ -55,21 +55,26 @@ sector8.client = function()
     
     var setup_config = function()
     {
-        _this.logger.log(_this.logger.trace, 'Importing server config...');
+        _this.logger.log(_this.logger.trace, 'Importing client config...');
         
         _this.config = new sector8.config.client();
         
-        _this.logger.log(_this.logger.trace, 'Imported server config');
+        _this.logger.log(_this.logger.trace, 'Imported client config');
     };
     
     var adapter;
     var setup_adapter = function()
     {
         _this.logger.log(_this.logger.trace, 'Creating adapter...');
-        
         adapter = new sector8.adapter();
-        
         _this.logger.log(_this.logger.trace, 'Created adapter');
+        
+        _this.logger.log(_this.logger.trace, 'Registering adapter types...');
+        adapter.register_type(sector8.user, 'user');
+        adapter.register_type(sector8.match, 'match');
+        adapter.register_type(sector8.map, 'map');
+        adapter.register_type(sector8.board, 'board');
+        _this.logger.log(_this.logger.trace, 'Registered adapter types');
     };
     
     var primus_client;
@@ -84,7 +89,7 @@ sector8.client = function()
         
         primus_client = new Primus('http://' + host + ':' + port, config);
         
-        _this.logger.log(_this.logger.trace, 'Created primus server');
+        _this.logger.log(_this.logger.trace, 'Created primus client');
     };
     
     var setup_net = function()
