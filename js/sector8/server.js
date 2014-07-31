@@ -10,6 +10,7 @@ goog.require('sector8.adapter');
 goog.require('sector8.user');
 goog.require('sector8.match');
 goog.require('sector8.map');
+goog.require('sector8.board');
 goog.require('sector8.session');
 goog.require('util.make_class');
 goog.require('util.logger');
@@ -399,17 +400,15 @@ sector8.server = function(cd)
     var users = {};
     this.load_user = function(username, callback)
     {
-        var user = users[username];
-        
-        if (typeof user === 'undefined')
+        if (users.hasOwnProperty(username))
         {
-            user = new sector8.user();
-            _this.facade.load(user, {'username': username}, callback.bind(null, user));
-            users[username] = user;
+            callback(users[username]);
         }
         else
         {
-            callback(user);
+            var user = new sector8.user();
+            _this.facade.load(user, {'username': username}, callback.bind(null, user));
+            users[username] = user;
         }
     };
     

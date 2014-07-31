@@ -179,7 +179,7 @@ sector8.match = function()
         }
         
         var key = row + ',' + col;
-        if (typeof moves[key] === 'undefined') {moves[key] = [];}
+        if (!moves.hasOwnProperty(key)) {moves[key] = [];}
         
         moves[key].push([
             order.get_wait(),
@@ -253,7 +253,7 @@ sector8.match = function()
         while (i < add_moves.length)
         {
             var key = add_moves[i].pop();
-            if (typeof moves[key] === 'undefined') {moves[key] = [];}
+            if (!moves.hasOwnProperty(key)) {moves[key] = [];}
             
             moves[key].push(add_moves[i]);
             

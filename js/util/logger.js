@@ -20,8 +20,9 @@ util.logger = function()
 
     this.update_handler = function(name, args)
     {
-        var handler = handlers[name];
-        if (typeof handler === 'undefined') {handler = handlers[name] = {};}
+        var handler;
+        if (handlers.hasOwnProperty(name)) {handler = handlers[name];}
+        else {handler = handlers[name] = {};}
 
         var i = 1;
         var c = arguments.length;

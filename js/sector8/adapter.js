@@ -13,7 +13,7 @@ sector8.adapter = function()
     
     this.register_type = function(type, name)
     {
-        if (typeof types[name] !== 'undefined' && types[name] !== type)
+        if (types.hasOwnProperty(name) && types[name] !== type)
         {
             throw new Error('Registered 2 different types with the same name: "' + name + '"');
         }
@@ -99,10 +99,9 @@ sector8.adapter = function()
                     
                     if (typeof val._s8_adapter_type !== 'undefined')
                     {
-                        var type = types[val._s8_adapter_type];
-                        if (typeof type !== 'undefined')
+                        if (types.hasOwnProperty(val._s8_adapter_type))
                         {
-                            inst = new type();
+                            inst = new types[val._s8_adapter_type]();
                             inst.from_obj(val);
                             
                             if (typeof insts[val._s8_adapter_inst] === 'undefined')

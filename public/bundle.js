@@ -4351,47 +4351,50 @@ util.make_class = function(obj, props)
     {
         for (var prop in props)
         {
-            (function(prop)
+            if (props.hasOwnProperty(prop))
             {
-                var type = typeof props[prop];
+                (function(prop)
+                {
+                    var type = typeof props[prop];
 
-                obj['get_' + prop] = function()
-                {
-                    return props[prop];
-                };
+                    obj['get_' + prop] = function()
+                    {
+                        return props[prop];
+                    };
 
-                if (type === 'function')
-                {
-                    type = props[prop];
-                    obj['set_' + prop] = function(val)
+                    if (type === 'function')
                     {
-                        if (val === null || val instanceof type)
+                        type = props[prop];
+                        obj['set_' + prop] = function(val)
                         {
-                            set(prop, val);
-                        }
-                        else
-                        {
-                            throw new Error('set_' + prop + '(): Argument must be an instanceof ' + type);
-                        }
-                    };
-                    props[prop] = null;
-                }
-                else
-                {
-                    if (props[prop] === '_func') {type = 'function';}
-                    obj['set_' + prop] = function(val)
+                            if (val === null || val instanceof type)
+                            {
+                                set(prop, val);
+                            }
+                            else
+                            {
+                                throw new Error('set_' + prop + '(): Argument must be an instanceof ' + type);
+                            }
+                        };
+                        props[prop] = null;
+                    }
+                    else
                     {
-                        if (typeof val === type)
+                        if (props[prop] === '_func') {type = 'function';}
+                        obj['set_' + prop] = function(val)
                         {
-                            set(prop, val);
-                        }
-                        else
-                        {
-                            throw new Error('set_' + prop + '(): Argument must be of type ' + type);
-                        }
-                    };
-                }
-            })(prop);
+                            if (typeof val === type)
+                            {
+                                set(prop, val);
+                            }
+                            else
+                            {
+                                throw new Error('set_' + prop + '(): Argument must be of type ' + type);
+                            }
+                        };
+                    }
+                })(prop);
+            }
         }
     }
     
@@ -4400,7 +4403,10 @@ util.make_class = function(obj, props)
         var o = {};
         for (var prop in props)
         {
-            o[prop] = obj['get_' + prop]();
+            if (props.hasOwnProperty(prop))
+            {
+                o[prop] = obj['get_' + prop]();
+            }
         }
         return o;
     };
@@ -4409,7 +4415,7 @@ util.make_class = function(obj, props)
     {
         for (var prop in props)
         {
-            if (typeof o[prop] !== 'undefined')
+            if (props.hasOwnProperty(prop) && o.hasOwnProperty(prop))
             {
                 obj['set_' + prop](o[prop]);
             }
@@ -16187,7 +16193,7 @@ sector8.match = function()
         }
         
         var key = row + ',' + col;
-        if (typeof moves[key] === 'undefined') {moves[key] = [];}
+        if (!moves.hasOwnProperty(key)) {moves[key] = [];}
         
         moves[key].push([
             order.get_wait(),
@@ -16261,7 +16267,7 @@ sector8.match = function()
         while (i < add_moves.length)
         {
             var key = add_moves[i].pop();
-            if (typeof moves[key] === 'undefined') {moves[key] = [];}
+            if (!moves.hasOwnProperty(key)) {moves[key] = [];}
             
             moves[key].push(add_moves[i]);
             
@@ -19050,13 +19056,16 @@ util.deepcopy = function(to, from)
 {
     for (var i in from)
     {
-        if (typeof to[i] !== 'object')
+        if (from.hasOwnProperty(i))
         {
-            to[i] = from[i];
-        }
-        else
-        {
-            copy(to[i], from[i]);
+            if (typeof to[i] !== 'object')
+            {
+                to[i] = from[i];
+            }
+            else
+            {
+                copy(to[i], from[i]);
+            }
         }
     }
 };goog.provide('sector8.config.client');
@@ -19097,9 +19106,9 @@ sector8.adapter = function()
     
     this.register_type = function(type, name)
     {
-        if (typeof types[name] !== 'undefined' && types[name] !== type)
+        if (types.hasOwnProperty(name) && types[name] !== type)
         {
-            throw new Error('Registered 2 different types with the same name');
+            throw new Error('Registered 2 different types with the same name: "' + name + '"');
         }
         
         types[name] = type;
@@ -19183,10 +19192,9 @@ sector8.adapter = function()
                     
                     if (typeof val._s8_adapter_type !== 'undefined')
                     {
-                        var type = types[val._s8_adapter_type];
-                        if (typeof type !== 'undefined')
+                        if (types.hasOwnProperty(val._s8_adapter_type))
                         {
-                            inst = new type();
+                            inst = new types[val._s8_adapter_type]();
                             inst.from_obj(val);
                             
                             if (typeof insts[val._s8_adapter_inst] === 'undefined')
@@ -19267,8 +19275,9 @@ util.logger = function()
 
     this.update_handler = function(name, args)
     {
-        var handler = handlers[name];
-        if (typeof handler === 'undefined') {handler = handlers[name] = {};}
+        var handler;
+        if (handlers.hasOwnProperty(name)) {handler = handlers[name];}
+        else {handler = handlers[name] = {};}
 
         var i = 1;
         var c = arguments.length;
@@ -19520,9 +19529,10 @@ sector8.client = function()
         _this.logger.log(_this.logger.trace, 'Created adapter');
         
         _this.logger.log(_this.logger.trace, 'Registering adapter types...');
-        adapter.register_type(sector8.user, 'users');
-        adapter.register_type(sector8.match, 'matches');
-        adapter.register_type(sector8.map, 'maps');
+        adapter.register_type(sector8.user, 'user');
+        adapter.register_type(sector8.match, 'match');
+        adapter.register_type(sector8.map, 'map');
+        adapter.register_type(sector8.board, 'board');
         _this.logger.log(_this.logger.trace, 'Registered adapter types');
     };
     

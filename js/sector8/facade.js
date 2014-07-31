@@ -171,16 +171,15 @@ sector8.facade = function(server, conn)
             while (i < model.cols.length)
             {
                 var getter_key = 'get_' + model.cols[i];
-                var getter = inst[getter_key];
                 
-                if (typeof getter !== 'function' && getter_key.slice(-3) === '_id')
+                if (!inst.hasOwnProperty(getter_key) && getter_key.slice(-3) === '_id')
                 {
                     var inst2 = inst[getter_key.slice(0, -3)]();
                     tokens[i] = inst2 ? inst2[getter_key]() : 0;
                 }
                 else
                 {
-                    tokens[i] = getter();
+                    tokens[i] = inst[getter_key]();
                 }
                 i++;
             }
@@ -245,14 +244,14 @@ sector8.facade = function(server, conn)
             var col = model.cols[i];
             var val = row[col];
             
-            var setter = inst['set_' + col];
+            var setter_key = 'set_' + col;
             
-            if (typeof setter !== 'function' && col.slice(-3) === '_id')
+            if (!inst.hasOwnProperty(setter_key) && col.slice(-3) === '_id')
             {
                 var field = col.slice(0, -3);
                 
                 var inst2 = new inst.defaults[field]();
-                inst2['set_' + col](val);
+                inst2[setter_key](val);
                 
                 inst['load_' + field] = make_loader(inst2, col, val);
                 
@@ -260,7 +259,7 @@ sector8.facade = function(server, conn)
             }
             else
             {
-                setter(val);
+                inst[setter_key](val);
             }
             
             i++;
@@ -274,118 +273,3 @@ sector8.facade.expr = function(str)
     
     this.get_str = function() {return str;}
 };
-
-/*
-    this.save = function(callback)
-    {
-        var query;
-        if (this.get_user_id())
-        {
-            query = 'UPDATE ' + user_table + ' SET username=?, password_hash=?, email=?, registration_code=?, match_id=?, first_login=?, last_login=? WHERE user_id=?';
-        }
-        else
-        {
-            query = 'INSERT INTO ' + user_table + ' SET username=?, password_hash=?, email=?, registration_code=?, match_id=?, first_login=?, last_login=?, user_id=?';
-        }
-
-        if (connection.state === 'authenticated')
-        {
-            var tokens = [this.get_username(), this.get_password_hash(), this.get_email(), this.get_registration_code(), this.get_match_id(), this.get_first_login(), this.get_last_login(), this.get_user_id()];
-            connection.query(query, tokens, function(err, result)
-            {
-                handle_mysql_error(err);
-                if (result && result.insertId) {this.set_user_id(result.insertId);}
-                callback();
-            });
-        }
-        else
-        {
-            callback();
-        }
-    };
-    
-    
-    
-    var load_type = function(class, cache, prop, value, callback)
-    {
-        var id_cache = cache['id'];
-        var prop_cache = cache[prop];
-        if (typeof prop_cache === 'undefined')
-        {
-            prop_cache = cache[prop] = {};
-        }
-
-        var prop_inst = prop_cache[value];
-        if (typeof prop_inst === 'undefined' && prop_inst['get_' + prop]() === value)
-        {
-            prop_inst = new class();
-            prop_inst.populate_from(prop, value, callback);
-
-            var id_inst = id_cache[prop_inst.get_id()];
-            if (typeof id_inst === 'undefined')
-            {
-                id_cache[prop_inst.get_id()] = prop_inst;
-            }
-            else
-            {
-                delete prop_inst;
-                prop_inst = id_inst;
-            }
-
-            prop_cache[prop] = prop_inst;
-        }
-        else
-        {
-            callback();
-        }
-
-        return prop_inst;
-    };
-
-
-    var user_id_cache = {};
-    var user_username_cache = {};
-
-    this.load_user_by_username = function(username, callback)
-    {
-        load_class(sector8.user, user_cache, 'username', username, callback);
-    };
-};
-
-
-
-
-    this.populate_from = function(prop, value, callback)
-    {
-        var query = 'SELECT * FROM ' + user_table + ' WHERE ' + prop + '=? LIMIT 1';
-        populate(query, [value], callback);
-    };
-
-    var populate = function(query, tokens, callback)
-    {
-        if (connection.state === 'authenticated')
-        {
-            connection.query(query, tokens, function(err, result)
-            {
-                handle_mysql_error(err);
-                var success = !err && result && result[0];
-                if (success)
-                {
-                    this.set_user_id(result[0].user_id);
-                    this.set_username(result[0].username);
-                    this.set_password_hash(result[0].password_hash);
-                    this.set_email(result[0].email);
-                    this.set_registration_code(result[0].registration_code);
-                    this.set_match_id(result[0].match_id);
-                    this.set_first_login(result[0].first_login);
-                    this.set_last_login(result[0].last_login);
-                }
-                callback();
-            });
-        }
-        else
-        {
-            callback();
-        }
-    };
-*/
