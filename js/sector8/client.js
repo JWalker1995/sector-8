@@ -3,6 +3,11 @@ goog.provide('sector8.client');
 goog.require('goog.functions');
 goog.require('sector8.config.client');
 goog.require('sector8.adapter');
+goog.require('sector8.user');
+goog.require('sector8.match');
+goog.require('sector8.map');
+goog.require('sector8.board');
+goog.require('sector8.cell');
 goog.require('sector8.net');
 goog.require('sector8.ui.ui');
 goog.require('util.logger');
@@ -70,10 +75,12 @@ sector8.client = function()
         _this.logger.log(_this.logger.trace, 'Created adapter');
         
         _this.logger.log(_this.logger.trace, 'Registering adapter types...');
-        adapter.register_type(sector8.user, 'user');
-        adapter.register_type(sector8.match, 'match');
-        adapter.register_type(sector8.map, 'map');
-        adapter.register_type(sector8.board, 'board');
+        adapter.register_type(sector8.user, 'sector8.user', 'to_obj', 'from_obj');
+        adapter.register_type(sector8.match, 'sector8.match', 'to_obj', 'from_obj');
+        adapter.register_type(sector8.map, 'sector8.map', 'to_obj', 'from_obj');
+        adapter.register_type(sector8.board, 'sector8.board', 'to_obj', 'from_obj');
+        adapter.register_type(sector8.cell, 'sector8.cell', 'to_obj', 'from_obj');
+        adapter.register_type(Date, 'Date', 'getTime', 'setTime');
         _this.logger.log(_this.logger.trace, 'Registered adapter types');
     };
     

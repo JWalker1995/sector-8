@@ -11,14 +11,14 @@ sector8.adapter = function()
     var types = [];
     var insts = [];
     
-    this.register_type = function(type, name)
+    this.register_type = function(type, name, to_obj, from_obj)
     {
         if (types.hasOwnProperty(name) && types[name] !== type)
         {
             throw new Error('Registered 2 different types with the same name: "' + name + '"');
         }
         
-        types[name] = type;
+        types[name] = [type, to_obj, from_obj];
         type._s8_adapter_type = name;
     };
     
@@ -26,16 +26,20 @@ sector8.adapter = function()
     {
         var spark_id = get_spark_id(this);
         
-        debugger;
-        
         var err;
         try
         {
-            data = JSON.stringify(data, function(key, val)
+            data = JSON.stringify(data, function(key)
             {
+                // Do not use the second argument as val. For some reason, Date objects are converted to strings.
+                val = this[key];
+                
                 if (val && typeof val.constructor === 'function' && typeof val.constructor._s8_adapter_type !== 'undefined')
                 {
                     // val is a registered type
+                    
+                    var type = val.constructor._s8_adapter_type;
+                    goog.asserts.assert(types.hasOwnProperty(type));
                     
                     if (typeof val._s8_adapter_inst !== 'number' || typeof val._s8_adapter_sent !== 'object')
                     {
@@ -49,8 +53,13 @@ sector8.adapter = function()
                     {
                         val._s8_adapter_sent[spark_id] = true;
                         
-                        obj = val.to_obj();
-                        obj._s8_adapter_type = val.constructor._s8_adapter_type;
+                        obj = val[types[type][1]]();
+                        if (typeof obj !== 'object')
+                        {
+                            obj = {'_s8_adapter_raw': obj};
+                        }
+                        
+                        obj._s8_adapter_type = type;
 
                         /*
                         val.watch(function(updated)
@@ -78,6 +87,7 @@ sector8.adapter = function()
         }
         catch (e)
         {
+            throw e;
             err = e;
         }
         
@@ -91,9 +101,12 @@ sector8.adapter = function()
         var err;
         try
         {
-            data = JSON.parse(data, function(key, val)
+            data = JSON.parse(data, function(key)
             {
-                if (typeof val._s8_adapter_inst === 'number')
+                // Do not use the second argument as val. For some reason, Date objects are converted to strings.
+                val = this[key];
+                
+                if (val && typeof val._s8_adapter_inst === 'number')
                 {
                     var inst;
                     
@@ -101,8 +114,11 @@ sector8.adapter = function()
                     {
                         if (types.hasOwnProperty(val._s8_adapter_type))
                         {
-                            inst = new types[val._s8_adapter_type]();
-                            inst.from_obj(val);
+                            var type_arr = types[val._s8_adapter_type];
+                            inst = new type_arr[0]();
+                            
+                            var obj = val.hasOwnProperty('_s8_adapter_raw') ? val._s8_adapter_raw : val;
+                            inst[type_arr[2]](obj);
                             
                             if (typeof insts[val._s8_adapter_inst] === 'undefined')
                             {
@@ -138,6 +154,7 @@ sector8.adapter = function()
         }
         catch (e)
         {
+            throw e;
             err = e;
         }
         

@@ -11,6 +11,7 @@ goog.require('sector8.user');
 goog.require('sector8.match');
 goog.require('sector8.map');
 goog.require('sector8.board');
+goog.require('sector8.cell');
 goog.require('sector8.session');
 goog.require('util.make_class');
 goog.require('util.logger');
@@ -133,6 +134,8 @@ sector8.server = function(cd)
         _this.logger.update_handler('email', true, _this.logger.fatal, function(date, info, msg)
         {
         });
+        
+        _this.logger.update_handler('exit', true, _this.logger.fatal, process.exit.bind(process, 1));
 
         ready_gate.close();
         gate.run(ready_gate.open);
@@ -158,10 +161,12 @@ sector8.server = function(cd)
         
         _this.logger.log(_this.logger.trace, 'Registering adapter types...');
         // TODO: combine with facade
-        adapter.register_type(sector8.user, 'user');
-        adapter.register_type(sector8.match, 'match');
-        adapter.register_type(sector8.map, 'map');
-        adapter.register_type(sector8.board, 'board');
+        adapter.register_type(sector8.user, 'sector8.user', 'to_obj', 'from_obj');
+        adapter.register_type(sector8.match, 'sector8.match', 'to_obj', 'from_obj');
+        adapter.register_type(sector8.map, 'sector8.map', 'to_obj', 'from_obj');
+        adapter.register_type(sector8.board, 'sector8.board', 'to_obj', 'from_obj');
+        adapter.register_type(sector8.cell, 'sector8.cell', 'to_obj', 'from_obj');
+        adapter.register_type(Date, 'Date', 'getTime', 'setTime');
         _this.logger.log(_this.logger.trace, 'Registered adapter types');
     };
     
@@ -331,7 +336,6 @@ sector8.server = function(cd)
             if (error)
             {
                 _this.logger.log(_this.logger.fatal, 'Could not compile ' + dest + ': ' + error.toString());
-                process.exit(1);
             }
             else
             {
@@ -368,11 +372,6 @@ sector8.server = function(cd)
         }
 
         _this.logger.log(_this.logger.trace, 'Checked compiled ' + dest);
-
-        if (bad)
-        {
-            process.exit(1);
-        }
     };
 
     var publish_compiled = function(dest, path)
@@ -386,7 +385,6 @@ sector8.server = function(cd)
             if (err)
             {
                 _this.logger.log(_this.logger.fatal, 'Could not publish ' + dest + ' from ' + path + ' : ' + error.toString());
-                process.exit(1);
             }
             else
             {
@@ -440,7 +438,7 @@ sector8.server = function(cd)
     this.create_challenge = challenges_gate.pass(function(match, reply)
     {
         match.set_match_id(0);
-        match.set_start_date(null);
+        //match.set_start_date(null);// TODO: uncomment
         match.set_end_date(null);
         match.set_players([]);
         match.set_orders('');

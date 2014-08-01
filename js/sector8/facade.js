@@ -22,6 +22,8 @@ sector8.facade = function(server, conn)
     
     this.register_type = function(type, table)
     {
+        goog.asserts.assert(typeof type._s8_facade === 'undefined');
+        
         showing++;
         
         type._s8_facade = models.length;
@@ -57,6 +59,10 @@ sector8.facade = function(server, conn)
                 if (!model.primaries.length)
                 {
                     report_registration('No primary key for table ' + table);
+                }
+                else if (model.primaries.length > 1)
+                {
+                    report_registration('Table cannot have multiple primary columns');
                 }
                 
                 sets = sets.join(', ');
@@ -166,6 +172,8 @@ sector8.facade = function(server, conn)
             var model = models[inst.constructor._s8_facade];
             goog.asserts.assert(model);
             
+            var gate = new util.gate(0);
+            
             var tokens = [];
             var i = 0;
             while (i < model.cols.length)
@@ -175,22 +183,47 @@ sector8.facade = function(server, conn)
                 if (!inst.hasOwnProperty(getter_key) && getter_key.slice(-3) === '_id')
                 {
                     var inst2 = inst[getter_key.slice(0, -3)]();
-                    tokens[i] = inst2 ? inst2[getter_key]() : 0;
+                    
+                    var id;
+                    if (inst2)
+                    {
+                        id = inst2[getter_key]();
+                        
+                        if (!id)
+                        {
+                            gate.close();
+                            _this.save(inst2, gate.open);
+                        }
+                    }
+                    else
+                    {
+                        id = 0;
+                    }
+                    tokens[i] = id;
                 }
                 else
                 {
-                    tokens[i] = inst[getter_key]();
+                    var val = inst[getter_key]();
+                    if (typeof val === 'object' && !(val === null || val instanceof Date || val instanceof Buffer))
+                    {
+                        val = val.toString();
+                    }
+                    tokens[i] = val;
                 }
                 i++;
             }
             
-            debugger;
-            
-            conn.query(model.save_query, tokens.concat(tokens), function(err, result)
+            gate.run(function()
             {
-                debugger;
-                report_save(err);
-                callback();
+                conn.query(model.save_query, tokens.concat(tokens), function(err, result)
+                {
+                    report_save(err);
+                    if (result && typeof result.insertId === 'number')
+                    {
+                        inst['set_' + model.primaries[0]](result.insertId);
+                    }
+                    callback();
+                });
             });
         };
         

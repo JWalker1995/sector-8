@@ -18,6 +18,7 @@ sector8.board = function()
     
     this.to_notation = function()
     {
+        var cells = this.get_cells();
         var rows = [];
         
         var row = 0;
@@ -79,6 +80,7 @@ sector8.board = function()
     this.foreach_row = function(callback)
     {
         var cells = this.get_cells();
+        
         var row = 0;
         var rows = this.get_rows();
         while (row < rows)

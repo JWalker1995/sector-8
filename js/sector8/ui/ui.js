@@ -66,10 +66,19 @@ sector8.ui.ui = function(core)
         map.set_creation_date(new Date());
 
         var match = new sector8.match();
+        
+        match.set_name('Awesome Match!!!');
+        match.set_start_date(new Date());
         match.set_players([]);
         match.set_map(map);
         match.set_orders('');
-        match.set_start_date(new Date());
+        match.set_board(map.get_board());
+        match.set_move_after(match.MOVE_AFTER_ORDER);
+        match.set_move_where(match.MOVE_WHERE_PLAYER);
+        match.set_timer_type(match.TIMER_TYPE_HOURGLASS);
+        match.set_shadow(true);
+        match.set_spectators(false);
+        match.set_stakes(7.0);
         
         window.test_match = match;
 
