@@ -19130,139 +19130,121 @@ sector8.adapter = function()
     {
         var spark_id = get_spark_id(this);
         
-        var err;
-        try
+        data = JSON.stringify(data, function(key)
         {
-            data = JSON.stringify(data, function(key)
-            {
-                // Do not use the second argument as val. For some reason, Date objects are converted to strings.
-                val = this[key];
-                
-                if (val && typeof val.constructor === 'function' && typeof val.constructor._s8_adapter_type !== 'undefined')
-                {
-                    // val is a registered type
-                    
-                    var type = val.constructor._s8_adapter_type;
-                    goog.asserts.assert(types.hasOwnProperty(type));
-                    
-                    if (typeof val._s8_adapter_inst !== 'number' || typeof val._s8_adapter_sent !== 'object')
-                    {
-                        val._s8_adapter_inst = insts.length;
-                        insts[val._s8_adapter_inst] = val;
-                        val._s8_adapter_sent = [];
-                    }
-                    
-                    var obj;
-                    if (val._s8_adapter_sent[spark_id] !== true)
-                    {
-                        val._s8_adapter_sent[spark_id] = true;
-                        
-                        obj = val[types[type][1]]();
-                        if (typeof obj !== 'object')
-                        {
-                            obj = {'_s8_adapter_raw': obj};
-                        }
-                        
-                        obj._s8_adapter_type = type;
+            // Do not use the second argument as val. For some reason, Date objects are converted to strings.
+            val = this[key];
 
-                        /*
-                        val.watch(function(updated)
-                        {
-                            fn(undefined, val._s8_adapter_inst + encode(updated));
-                        });
-                        */
-                    }
-                    else
+            if (val && typeof val.constructor === 'function' && typeof val.constructor._s8_adapter_type !== 'undefined')
+            {
+                // val is a registered type
+
+                var type = val.constructor._s8_adapter_type;
+                goog.asserts.assert(types.hasOwnProperty(type));
+
+                if (typeof val._s8_adapter_inst !== 'number' || typeof val._s8_adapter_sent !== 'object')
+                {
+                    val._s8_adapter_inst = insts.length;
+                    insts[val._s8_adapter_inst] = val;
+                    val._s8_adapter_sent = [];
+                }
+
+                var obj;
+                if (val._s8_adapter_sent[spark_id] !== true)
+                {
+                    val._s8_adapter_sent[spark_id] = true;
+
+                    obj = val[types[type][1]]();
+                    if (typeof obj !== 'object')
                     {
-                        obj = {};
+                        obj = {'_s8_adapter_raw': obj};
                     }
-                    
-                    obj._s8_adapter_inst = val._s8_adapter_inst;
-                    
-                    return obj;
+
+                    obj._s8_adapter_type = type;
+
+                    /*
+                    val.watch(function(updated)
+                    {
+                        fn(undefined, val._s8_adapter_inst + encode(updated));
+                    });
+                    */
                 }
                 else
                 {
-                    // val is not a registered type
-                    
-                    return val;
+                    obj = {};
                 }
-            });
-        }
-        catch (e)
-        {
-            throw e;
-            err = e;
-        }
+
+                obj._s8_adapter_inst = val._s8_adapter_inst;
+
+                return obj;
+            }
+            else
+            {
+                // val is not a registered type
+
+                return val;
+            }
+        });
         
-        fn(err, data);
+        fn(undefined, data);
     };
     
     this.decoder = function(data, fn)
     {
         var spark_id = get_spark_id(this);
         
-        var err;
-        try
+        data = JSON.parse(data, function(key)
         {
-            data = JSON.parse(data, function(key)
+            // Do not use the second argument as val. For some reason, Date objects are converted to strings.
+            val = this[key];
+
+            if (val && typeof val._s8_adapter_inst === 'number')
             {
-                // Do not use the second argument as val. For some reason, Date objects are converted to strings.
-                val = this[key];
-                
-                if (val && typeof val._s8_adapter_inst === 'number')
+                var inst;
+
+                if (typeof val._s8_adapter_type !== 'undefined')
                 {
-                    var inst;
-                    
-                    if (typeof val._s8_adapter_type !== 'undefined')
+                    if (types.hasOwnProperty(val._s8_adapter_type))
                     {
-                        if (types.hasOwnProperty(val._s8_adapter_type))
+                        var type_arr = types[val._s8_adapter_type];
+                        inst = new type_arr[0]();
+
+                        var obj = val.hasOwnProperty('_s8_adapter_raw') ? val._s8_adapter_raw : val;
+                        inst[type_arr[2]](obj);
+
+                        if (typeof insts[val._s8_adapter_inst] === 'undefined')
                         {
-                            var type_arr = types[val._s8_adapter_type];
-                            inst = new type_arr[0]();
-                            
-                            var obj = val.hasOwnProperty('_s8_adapter_raw') ? val._s8_adapter_raw : val;
-                            inst[type_arr[2]](obj);
-                            
-                            if (typeof insts[val._s8_adapter_inst] === 'undefined')
-                            {
-                                insts[val._s8_adapter_inst] = inst;
-                            }
-                            else
-                            {
-                                throw new Error('Tried to create a new instance with an already taken id "' + val._s8_adapter_inst + '"');
-                            }
+                            insts[val._s8_adapter_inst] = inst;
                         }
                         else
                         {
-                            throw new Error('Tried to load an unregistered type "' + val._s8_adapter_type + '"');
+                            throw new Error('Tried to create a new instance with an already taken id "' + val._s8_adapter_inst + '"');
                         }
                     }
                     else
                     {
-                        inst = insts[val._s8_adapter_inst];
-                        
-                        if (typeof inst === 'undefined')
-                        {
-                            throw new Error('Tried to load an unsent instance "' + val._s8_adapter_inst + '"');
-                        }
+                        throw new Error('Tried to load an unregistered type "' + val._s8_adapter_type + '"');
                     }
-                    
-                    return inst;
                 }
                 else
                 {
-                    return val;
+                    inst = insts[val._s8_adapter_inst];
+
+                    if (typeof inst === 'undefined')
+                    {
+                        throw new Error('Tried to load an unsent instance "' + val._s8_adapter_inst + '"');
+                    }
                 }
-            });
-        }
-        catch (e)
-        {
-            throw e;
-            err = e;
-        }
-        
-        fn(err, data);
+
+                return inst;
+            }
+            else
+            {
+                return val;
+            }
+        });
+
+        fn(undefined, data);
     };
     
     // Primus defaults to encoder/decoder.toString() to write the client code (in sector8.server.write_client_js),
