@@ -20,6 +20,9 @@ sector8.config.common = function()
             'transformer': 'websockets',
             'iknowhttpsisbetter': true
         },
+        'net': {
+            'enable_compression': true
+        },
         'bcrypt': {
             'hash_rounds': 12
         }

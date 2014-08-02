@@ -2,12 +2,14 @@ goog.provide('sector8.client');
 
 goog.require('goog.functions');
 goog.require('sector8.config.client');
-goog.require('sector8.adapter');
+goog.require('sector8.registry');
 goog.require('sector8.user');
 goog.require('sector8.match');
+goog.require('sector8.player');
 goog.require('sector8.map');
 goog.require('sector8.board');
 goog.require('sector8.cell');
+goog.require('sector8.parser');
 goog.require('sector8.net');
 goog.require('sector8.ui.ui');
 goog.require('util.logger');
@@ -19,19 +21,22 @@ sector8.client = function()
     
     goog.asserts.assertInstanceof(this, sector8.client);
     
+    _this.is_master = false;
+    
     var ui = new sector8.ui.ui(this);
     
     var run = function()
     {
         setup_logger();
         setup_config();
-        setup_adapter();
+        setup_registry();
+        setup_parser();
         setup_primus();
         setup_net();
         
         // TODO: Remove debug code
         window.client = _this;
-        window.adapter = adapter;
+        window.parser = parser;
         window.primus_client = primus_client;
         window.net = _this.net;
         
@@ -67,21 +72,53 @@ sector8.client = function()
         _this.logger.log(_this.logger.trace, 'Imported client config');
     };
     
-    var adapter;
-    var setup_adapter = function()
+    var registry;
+    _this.registry = registry;
+    var setup_registry = function()
     {
-        _this.logger.log(_this.logger.trace, 'Creating adapter...');
-        adapter = new sector8.adapter();
-        _this.logger.log(_this.logger.trace, 'Created adapter');
+        // TODO: Move this function to a class because it is duplicated on sector8.client and sector8.server
         
-        _this.logger.log(_this.logger.trace, 'Registering adapter types...');
-        adapter.register_type(sector8.user, 'sector8.user', 'to_obj', 'from_obj');
-        adapter.register_type(sector8.match, 'sector8.match', 'to_obj', 'from_obj');
-        adapter.register_type(sector8.map, 'sector8.map', 'to_obj', 'from_obj');
-        adapter.register_type(sector8.board, 'sector8.board', 'to_obj', 'from_obj');
-        adapter.register_type(sector8.cell, 'sector8.cell', 'to_obj', 'from_obj');
-        adapter.register_type(Date, 'Date', 'getTime', 'setTime');
-        _this.logger.log(_this.logger.trace, 'Registered adapter types');
+        _this.logger.log(_this.logger.trace, 'Creating registry...');
+        registry = new sector8.registry(_this);
+        _this.logger.log(_this.logger.trace, 'Created registry');
+        
+        _this.logger.log(_this.logger.trace, 'Registering types...');
+        
+        registry.register_type('Date', Date, {
+            'to_obj': 'getTime',
+            'from_obj': 'setTime'
+        });
+        
+        registry.register_type('sector8', {
+            'to_obj': 'to_obj',
+            'from_obj': 'from_obj'
+        });
+        registry.register_type('sector8.user', sector8.user, {
+            'table': 'users'
+        });
+        registry.register_type('sector8.match', sector8.match, {
+            'table': 'matches'
+        });
+        registry.register_type('sector8.player', sector8.player, {
+            'table': 'players'
+        });
+        registry.register_type('sector8.map', sector8.map, {
+            'table': 'maps'
+        });
+        registry.register_type('sector8.board', sector8.board, {
+        });
+        registry.register_type('sector8.cell', sector8.cell, {
+        });
+        
+        _this.logger.log(_this.logger.trace, 'Registered types');
+    };
+    
+    var parser;
+    var setup_parser = function()
+    {
+        _this.logger.log(_this.logger.trace, 'Creating parser...');
+        parser = new sector8.parser(_this);
+        _this.logger.log(_this.logger.trace, 'Created parser');
     };
     
     var primus_client;
@@ -92,7 +129,7 @@ sector8.client = function()
         var host = _this.config.primus.host;
         var port = _this.config.primus.port;
         var config = {};
-        config.parser = adapter;
+        config.parser = parser;
         
         primus_client = new Primus('http://' + host + ':' + port, config);
         

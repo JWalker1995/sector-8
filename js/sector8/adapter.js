@@ -7,7 +7,7 @@ sector8.adapter = function()
 {
     goog.asserts.assertInstanceof(this, sector8.adapter);
     
-    var spark_i = 0;
+    //var spark_i = 1;
     var types = [];
     var insts = [];
     
@@ -24,12 +24,15 @@ sector8.adapter = function()
     
     this.encoder = function(data, fn)
     {
-        var spark_id = get_spark_id(this);
+        if (typeof spark._s8_adapter_insts === 'undefined')
+        {
+            spark._s8_adapter_insts = [];
+        }
         
         data = JSON.stringify(data, function(key)
         {
             // Do not use the second argument as val. For some reason, Date objects are converted to strings.
-            val = this[key];
+            var val = this[key];
 
             if (val && typeof val.constructor === 'function' && typeof val.constructor._s8_adapter_type !== 'undefined')
             {
@@ -92,7 +95,7 @@ sector8.adapter = function()
         data = JSON.parse(data, function(key)
         {
             // Do not use the second argument as val. For some reason, Date objects are converted to strings.
-            val = this[key];
+            var val = this[key];
 
             if (val && typeof val._s8_adapter_inst === 'number')
             {
@@ -141,22 +144,5 @@ sector8.adapter = function()
         });
 
         fn(undefined, data);
-    };
-    
-    // Primus defaults to encoder/decoder.toString() to write the client code (in sector8.server.write_client_js),
-    // However, since the encoder and decoder use class resources (like get_spark_id), this won't work,
-    // So in the browser, an adapter is created and passed to the primus client (in sector8.client.setup_primus),
-    // And this code forwards calls to the adapter instance.
-    this.encoder.client = 'function() {this.options.parser.encoder.apply(this, arguments);}';
-    this.decoder.client = 'function() {this.options.parser.decoder.apply(this, arguments);}';
-    
-    var get_spark_id = function(spark)
-    {
-        if (typeof spark._s8_adapter_spark === 'undefined')
-        {
-            spark._s8_adapter_spark = spark_i++;
-        }
-
-        return spark._s8_adapter_spark;
     };
 };

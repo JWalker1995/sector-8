@@ -66,6 +66,7 @@ sector8.facade = function(server, conn)
                 }
                 
                 sets = sets.join(', ');
+                // Need to fix this query so it doesn't always save with id 0
                 model.save_query = 'INSERT INTO ' + table + ' SET ' + sets + ' ON DUPLICATE KEY UPDATE ' + sets;
             }
             else

@@ -1,14 +1,18 @@
 goog.provide('util.deepcopy');
 
-util.deepcopy = function(to, from)
+util.deepcopy = function(to, from, weak)
 {
     for (var i in from)
     {
         if (from.hasOwnProperty(i))
         {
-            if (typeof to[i] !== 'object')
+            var type = typeof to[i];
+            if (type !== 'object')
             {
-                to[i] = from[i];
+                if (!weak || type === 'undefined')
+                {
+                    to[i] = from[i];
+                }
             }
             else
             {

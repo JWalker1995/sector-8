@@ -3603,10 +3603,168 @@ sector8.net = function(core, spark)
     
     this.request = request;
     this.await = await;
-    this.on_close = spark.on.bind(spark, 'end');
+    this.on_close = function(callback)
+    {
+        spark.on('end', callback);
+    };
     
     spark.on('data', on_data);
     spark.on('end', on_end);
+    
+    
+    var recurse = function(obj, callback)
+    {
+        obj = callback(obj);
+        
+        if (typeof obj === 'object')
+        {
+            for (var key in obj)
+            {
+                obj[key] = recurse(obj[key], callback);
+            }
+        }
+        
+        return obj;
+    };
+    
+    //var spark_i = 1;
+    var types = [];
+    var insts = [];
+    
+    this.register_type = function(type, name, to_obj, from_obj)
+    {
+        if (types.hasOwnProperty(name) && types[name] !== type)
+        {
+            throw new Error('Registered 2 different types with the same name: "' + name + '"');
+        }
+        
+        types[name] = [type, to_obj, from_obj];
+        type._s8_adapter_type = name;
+    };
+    
+    var encoder = function(data, fn)
+    {
+        if (typeof spark._s8_adapter_insts === 'undefined')
+        {
+            spark._s8_adapter_insts = [];
+        }
+        
+        data = JSON.stringify(data, function(key)
+        {
+            // Do not use the second argument as val. For some reason, Date objects are converted to strings.
+            var val = this[key];
+
+            if (val && typeof val.constructor === 'function' && typeof val.constructor._s8_adapter_type !== 'undefined')
+            {
+                // val is a registered type
+
+                var type = val.constructor._s8_adapter_type;
+                goog.asserts.assert(types.hasOwnProperty(type));
+
+                if (typeof val._s8_adapter_inst !== 'number' || typeof val._s8_adapter_sent !== 'object')
+                {
+                    val._s8_adapter_inst = insts.length;
+                    insts[val._s8_adapter_inst] = val;
+                    val._s8_adapter_sent = [];
+                }
+
+                var obj;
+                if (val._s8_adapter_sent[spark_id] !== true)
+                {
+                    val._s8_adapter_sent[spark_id] = true;
+
+                    obj = val[types[type][1]]();
+                    if (typeof obj !== 'object')
+                    {
+                        obj = {'_s8_adapter_raw': obj};
+                    }
+
+                    obj._s8_adapter_type = type;
+
+                    /*
+                    val.watch(function(updated)
+                    {
+                        fn(undefined, val._s8_adapter_inst + encode(updated));
+                    });
+                    */
+                }
+                else
+                {
+                    obj = {};
+                }
+
+                obj._s8_adapter_inst = val._s8_adapter_inst;
+
+                return obj;
+            }
+            else
+            {
+                // val is not a registered type
+
+                return val;
+            }
+        });
+        
+        fn(undefined, data);
+    };
+    
+    var decoder = function(data, fn)
+    {
+        var spark_id = get_spark_id(this);
+        
+        data = JSON.parse(data, function(key)
+        {
+            // Do not use the second argument as val. For some reason, Date objects are converted to strings.
+            var val = this[key];
+
+            if (val && typeof val._s8_adapter_inst === 'number')
+            {
+                var inst;
+
+                if (typeof val._s8_adapter_type !== 'undefined')
+                {
+                    if (types.hasOwnProperty(val._s8_adapter_type))
+                    {
+                        var type_arr = types[val._s8_adapter_type];
+                        inst = new type_arr[0]();
+
+                        var obj = val.hasOwnProperty('_s8_adapter_raw') ? val._s8_adapter_raw : val;
+                        inst[type_arr[2]](obj);
+
+                        if (typeof insts[val._s8_adapter_inst] === 'undefined')
+                        {
+                            insts[val._s8_adapter_inst] = inst;
+                        }
+                        else
+                        {
+                            throw new Error('Tried to create a new instance with an already taken id "' + val._s8_adapter_inst + '"');
+                        }
+                    }
+                    else
+                    {
+                        throw new Error('Tried to load an unregistered type "' + val._s8_adapter_type + '"');
+                    }
+                }
+                else
+                {
+                    inst = insts[val._s8_adapter_inst];
+
+                    if (typeof inst === 'undefined')
+                    {
+                        throw new Error('Tried to load an unsent instance "' + val._s8_adapter_inst + '"');
+                    }
+                }
+
+                return inst;
+            }
+            else
+            {
+                return val;
+            }
+        });
+
+        fn(undefined, data);
+    };
 };
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
@@ -17364,7 +17522,26 @@ sector8.ui.ui = function(core)
 
     this.render = goog.functions.cacheReturnValue(render);
 };
-// Autogenerated by js/sector8/server.js
+goog.provide('sector8.player');
+
+goog.require('goog.asserts');
+goog.require('util.make_class');
+
+sector8.player = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.player);
+    
+    var props = {
+        'player_id': 0,
+        'match': sector8.match,
+        'user': sector8.user
+    };
+    
+    this.get_match_id = function() {return this.get_match().get_match_id();};
+    this.get_user_id = function() {return this.get_user().get_user_id();};
+
+    util.make_class(this, props);
+};// Autogenerated by js/sector8/server.js
 
 goog.provide('primus');
 
@@ -19057,21 +19234,28 @@ sector8.config.common = function()
             'transformer': 'websockets',
             'iknowhttpsisbetter': true
         },
+        'net': {
+            'enable_compression': true
+        },
         'bcrypt': {
             'hash_rounds': 12
         }
     });
 };goog.provide('util.deepcopy');
 
-util.deepcopy = function(to, from)
+util.deepcopy = function(to, from, weak)
 {
     for (var i in from)
     {
         if (from.hasOwnProperty(i))
         {
-            if (typeof to[i] !== 'object')
+            var type = typeof to[i];
+            if (type !== 'object')
             {
-                to[i] = from[i];
+                if (!weak || type === 'undefined')
+                {
+                    to[i] = from[i];
+                }
             }
             else
             {
@@ -19102,167 +19286,38 @@ sector8.config.client = function()
             //'float_offset': 20
         }
     });
-};goog.provide('sector8.adapter');
+};goog.provide('sector8.parser');
 
 goog.require('goog.asserts');
-goog.require('util.make_class');
 
-sector8.adapter = function()
+sector8.parser = function(core)
 {
-    goog.asserts.assertInstanceof(this, sector8.adapter);
-    
-    var spark_i = 0;
-    var types = [];
-    var insts = [];
-    
-    this.register_type = function(type, name, to_obj, from_obj)
-    {
-        if (types.hasOwnProperty(name) && types[name] !== type)
-        {
-            throw new Error('Registered 2 different types with the same name: "' + name + '"');
-        }
-        
-        types[name] = [type, to_obj, from_obj];
-        type._s8_adapter_type = name;
-    };
-    
     this.encoder = function(data, fn)
     {
-        var spark_id = get_spark_id(this);
-        
-        data = JSON.stringify(data, function(key)
+        data = JSON.stringify(data);
+        if (core.config.net.enable_compression)
         {
-            // Do not use the second argument as val. For some reason, Date objects are converted to strings.
-            val = this[key];
-
-            if (val && typeof val.constructor === 'function' && typeof val.constructor._s8_adapter_type !== 'undefined')
-            {
-                // val is a registered type
-
-                var type = val.constructor._s8_adapter_type;
-                goog.asserts.assert(types.hasOwnProperty(type));
-
-                if (typeof val._s8_adapter_inst !== 'number' || typeof val._s8_adapter_sent !== 'object')
-                {
-                    val._s8_adapter_inst = insts.length;
-                    insts[val._s8_adapter_inst] = val;
-                    val._s8_adapter_sent = [];
-                }
-
-                var obj;
-                if (val._s8_adapter_sent[spark_id] !== true)
-                {
-                    val._s8_adapter_sent[spark_id] = true;
-
-                    obj = val[types[type][1]]();
-                    if (typeof obj !== 'object')
-                    {
-                        obj = {'_s8_adapter_raw': obj};
-                    }
-
-                    obj._s8_adapter_type = type;
-
-                    /*
-                    val.watch(function(updated)
-                    {
-                        fn(undefined, val._s8_adapter_inst + encode(updated));
-                    });
-                    */
-                }
-                else
-                {
-                    obj = {};
-                }
-
-                obj._s8_adapter_inst = val._s8_adapter_inst;
-
-                return obj;
-            }
-            else
-            {
-                // val is not a registered type
-
-                return val;
-            }
-        });
-        
+            // TODO: compress data
+        }
         fn(undefined, data);
     };
     
     this.decoder = function(data, fn)
     {
-        var spark_id = get_spark_id(this);
-        
-        data = JSON.parse(data, function(key)
+        data = JSON.parse(data);
+        if (core.config.net.enable_compression)
         {
-            // Do not use the second argument as val. For some reason, Date objects are converted to strings.
-            val = this[key];
-
-            if (val && typeof val._s8_adapter_inst === 'number')
-            {
-                var inst;
-
-                if (typeof val._s8_adapter_type !== 'undefined')
-                {
-                    if (types.hasOwnProperty(val._s8_adapter_type))
-                    {
-                        var type_arr = types[val._s8_adapter_type];
-                        inst = new type_arr[0]();
-
-                        var obj = val.hasOwnProperty('_s8_adapter_raw') ? val._s8_adapter_raw : val;
-                        inst[type_arr[2]](obj);
-
-                        if (typeof insts[val._s8_adapter_inst] === 'undefined')
-                        {
-                            insts[val._s8_adapter_inst] = inst;
-                        }
-                        else
-                        {
-                            throw new Error('Tried to create a new instance with an already taken id "' + val._s8_adapter_inst + '"');
-                        }
-                    }
-                    else
-                    {
-                        throw new Error('Tried to load an unregistered type "' + val._s8_adapter_type + '"');
-                    }
-                }
-                else
-                {
-                    inst = insts[val._s8_adapter_inst];
-
-                    if (typeof inst === 'undefined')
-                    {
-                        throw new Error('Tried to load an unsent instance "' + val._s8_adapter_inst + '"');
-                    }
-                }
-
-                return inst;
-            }
-            else
-            {
-                return val;
-            }
-        });
-
+            // TODO: decompress data
+        }
         fn(undefined, data);
     };
     
     // Primus defaults to encoder/decoder.toString() to write the client code (in sector8.server.write_client_js),
-    // However, since the encoder and decoder use class resources (like get_spark_id), this won't work,
-    // So in the browser, an adapter is created and passed to the primus client (in sector8.client.setup_primus),
-    // And this code forwards calls to the adapter instance.
+    // However, since the encoder and decoder use class resources (like core), this won't work,
+    // So in the browser, a parser is created and passed to the primus client (in sector8.client.setup_primus),
+    // And this code forwards calls to the parser instance.
     this.encoder.client = 'function() {this.options.parser.encoder.apply(this, arguments);}';
     this.decoder.client = 'function() {this.options.parser.decoder.apply(this, arguments);}';
-    
-    var get_spark_id = function(spark)
-    {
-        if (typeof spark._s8_adapter_spark === 'undefined')
-        {
-            spark._s8_adapter_spark = spark_i++;
-        }
-
-        return spark._s8_adapter_spark;
-    };
 };goog.provide('util.logger');
 
 goog.require('goog.asserts');
@@ -19467,16 +19522,89 @@ util.logger = function()
         i++;
     }
 };
-goog.provide('sector8.client');
+goog.provide('sector8.registry');
+
+goog.require('goog.asserts');
+
+sector8.registry = function()
+{
+    goog.asserts.assertInstanceof(this, sector8.registry);
+    
+    var types = {};
+    
+    this.register_type = function(name, type, props)
+    {
+        if (typeof props === 'undefined')
+        {
+            switch (typeof type)
+            {
+                case 'object':
+                    props = type;
+                    type = function() {};
+                    break;
+                
+                case 'function':
+                    props = {};
+                    break;
+                
+                default:
+                    goog.asserts.fail();
+            }
+        }
+        
+        goog.asserts.assert(typeof name === 'string');
+        goog.asserts.assert(typeof type === 'function');
+        goog.asserts.assert(typeof props === 'object');
+        
+        if (types.hasOwnProperty(name) && types[name] !== type)
+        {
+            throw new Error('Registered 2 different types with the same name: "' + name + '"');
+        }
+        
+        props.type = type;
+        props.name = name;
+        types[name] = props;
+        type._s8_registry = props;
+        
+        var parts = name.split('.');
+        var i = 0;
+        var c = parts.length - 1;
+        while (i < c)
+        {
+            var base = parts.slice(0, i).join('.');
+            if (types.hasOwnProperty(base))
+            {
+                util.deepcopy(props, types[base], true);
+            }
+            
+            i++;
+        }
+    };
+    
+    this.get_props = function(inst)
+    {
+        if (1
+            && inst
+            && typeof inst.constructor === 'function'
+            && typeof inst.constructor._s8_registry !== 'undefined'
+            && types.hasOwnProperty(inst.constructor._s8_registry)
+           )
+        {
+            return types[inst.constructor._s8_registry];
+        }
+    };
+};goog.provide('sector8.client');
 
 goog.require('goog.functions');
 goog.require('sector8.config.client');
-goog.require('sector8.adapter');
+goog.require('sector8.registry');
 goog.require('sector8.user');
 goog.require('sector8.match');
+goog.require('sector8.player');
 goog.require('sector8.map');
 goog.require('sector8.board');
 goog.require('sector8.cell');
+goog.require('sector8.parser');
 goog.require('sector8.net');
 goog.require('sector8.ui.ui');
 goog.require('util.logger');
@@ -19488,19 +19616,22 @@ sector8.client = function()
     
     goog.asserts.assertInstanceof(this, sector8.client);
     
+    _this.is_master = false;
+    
     var ui = new sector8.ui.ui(this);
     
     var run = function()
     {
         setup_logger();
         setup_config();
-        setup_adapter();
+        setup_registry();
+        setup_parser();
         setup_primus();
         setup_net();
         
         // TODO: Remove debug code
         window.client = _this;
-        window.adapter = adapter;
+        window.parser = parser;
         window.primus_client = primus_client;
         window.net = _this.net;
         
@@ -19536,21 +19667,53 @@ sector8.client = function()
         _this.logger.log(_this.logger.trace, 'Imported client config');
     };
     
-    var adapter;
-    var setup_adapter = function()
+    var registry;
+    _this.registry = registry;
+    var setup_registry = function()
     {
-        _this.logger.log(_this.logger.trace, 'Creating adapter...');
-        adapter = new sector8.adapter();
-        _this.logger.log(_this.logger.trace, 'Created adapter');
+        // TODO: Move this function to a class because it is duplicated on sector8.client and sector8.server
         
-        _this.logger.log(_this.logger.trace, 'Registering adapter types...');
-        adapter.register_type(sector8.user, 'sector8.user', 'to_obj', 'from_obj');
-        adapter.register_type(sector8.match, 'sector8.match', 'to_obj', 'from_obj');
-        adapter.register_type(sector8.map, 'sector8.map', 'to_obj', 'from_obj');
-        adapter.register_type(sector8.board, 'sector8.board', 'to_obj', 'from_obj');
-        adapter.register_type(sector8.cell, 'sector8.cell', 'to_obj', 'from_obj');
-        adapter.register_type(Date, 'Date', 'getTime', 'setTime');
-        _this.logger.log(_this.logger.trace, 'Registered adapter types');
+        _this.logger.log(_this.logger.trace, 'Creating registry...');
+        registry = new sector8.registry(_this);
+        _this.logger.log(_this.logger.trace, 'Created registry');
+        
+        _this.logger.log(_this.logger.trace, 'Registering types...');
+        
+        registry.register_type('Date', Date, {
+            'to_obj': 'getTime',
+            'from_obj': 'setTime'
+        });
+        
+        registry.register_type('sector8', {
+            'to_obj': 'to_obj',
+            'from_obj': 'from_obj'
+        });
+        registry.register_type('sector8.user', sector8.user, {
+            'table': 'users'
+        });
+        registry.register_type('sector8.match', sector8.match, {
+            'table': 'matches'
+        });
+        registry.register_type('sector8.player', sector8.player, {
+            'table': 'players'
+        });
+        registry.register_type('sector8.map', sector8.map, {
+            'table': 'maps'
+        });
+        registry.register_type('sector8.board', sector8.board, {
+        });
+        registry.register_type('sector8.cell', sector8.cell, {
+        });
+        
+        _this.logger.log(_this.logger.trace, 'Registered types');
+    };
+    
+    var parser;
+    var setup_parser = function()
+    {
+        _this.logger.log(_this.logger.trace, 'Creating parser...');
+        parser = new sector8.parser(_this);
+        _this.logger.log(_this.logger.trace, 'Created parser');
     };
     
     var primus_client;
@@ -19561,7 +19724,7 @@ sector8.client = function()
         var host = _this.config.primus.host;
         var port = _this.config.primus.port;
         var config = {};
-        config.parser = adapter;
+        config.parser = parser;
         
         primus_client = new Primus('http://' + host + ':' + port, config);
         

@@ -3,7 +3,7 @@
 goog.addDependency('../../../sector8/adapter.js', ['sector8.adapter'], ['goog.asserts', 'util.make_class']);
 goog.addDependency('../../../sector8/board.js', ['sector8.board'], ['goog.asserts', 'util.crc32', 'util.make_class']);
 goog.addDependency('../../../sector8/cell.js', ['sector8.cell'], ['goog.asserts', 'sector8.sectoid', 'util.make_class']);
-goog.addDependency('../../../sector8/client.js', ['sector8.client'], ['goog.functions', 'primus', 'sector8.adapter', 'sector8.config.client', 'sector8.net', 'sector8.ui.ui', 'util.logger']);
+goog.addDependency('../../../sector8/client.js', ['sector8.client'], ['goog.functions', 'primus', 'sector8.board', 'sector8.cell', 'sector8.config.client', 'sector8.map', 'sector8.match', 'sector8.net', 'sector8.parser', 'sector8.player', 'sector8.registry', 'sector8.ui.ui', 'sector8.user', 'util.logger']);
 goog.addDependency('../../../sector8/config/client.js', ['sector8.config.client'], ['sector8.config.common', 'util.deepcopy']);
 goog.addDependency('../../../sector8/config/common.js', ['sector8.config.common'], []);
 goog.addDependency('../../../sector8/config/server.js', ['sector8.config.server'], ['sector8.config.common', 'util.deepcopy']);
@@ -16,9 +16,11 @@ goog.addDependency('../../../sector8/old/db.js', ['sector8.db'], ['goog.asserts'
 goog.addDependency('../../../sector8/old/sectoid.js', ['sector8.sectoid'], ['util.make_class']);
 goog.addDependency('../../../sector8/old/watchable.js', ['sector8.watchable'], ['goog.asserts']);
 goog.addDependency('../../../sector8/order.js', ['sector8.order'], ['goog.asserts', 'util.make_class']);
+goog.addDependency('../../../sector8/parser.js', ['sector8.parser'], ['goog.asserts']);
 goog.addDependency('../../../sector8/player.js', ['sector8.player'], ['goog.asserts', 'util.make_class']);
 goog.addDependency('../../../sector8/primus.js', ['primus'], []);
-goog.addDependency('../../../sector8/server.js', ['sector8.server'], ['goog.asserts', 'goog.functions', 'sector8.adapter', 'sector8.config.client', 'sector8.config.server', 'sector8.facade', 'sector8.map', 'sector8.match', 'sector8.session', 'sector8.user', 'util.gate', 'util.logger', 'util.make_class']);
+goog.addDependency('../../../sector8/registry.js', ['sector8.registry'], ['goog.asserts']);
+goog.addDependency('../../../sector8/server.js', ['sector8.server'], ['goog.asserts', 'goog.functions', 'sector8.board', 'sector8.cell', 'sector8.config.client', 'sector8.config.server', 'sector8.facade', 'sector8.map', 'sector8.match', 'sector8.parser', 'sector8.player', 'sector8.registry', 'sector8.session', 'sector8.user', 'util.gate', 'util.logger', 'util.make_class']);
 goog.addDependency('../../../sector8/server/match.js', ['sector8.server.match'], ['goog.asserts']);
 goog.addDependency('../../../sector8/session.js', ['sector8.session'], ['goog.asserts', 'sector8.net']);
 goog.addDependency('../../../sector8/ui/board.js', ['sector8.ui.board'], ['goog.array', 'goog.dom', 'goog.dom.classes', 'sector8.order']);
