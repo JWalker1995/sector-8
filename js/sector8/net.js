@@ -1,10 +1,6 @@
-goog.provide('sector8.net');
-
-goog.require('goog.asserts');
-
-sector8.net = function(core, spark)
+sector8.nets = function(core, spark)
 {
-    goog.asserts.assertInstanceof(this, sector8.net);
+    assert(this instanceof sector8.net);
     
     var trace_reporter = core.logger.get_reporter(core.logger.trace, 'sector8.net');
     var notice_reporter = core.logger.get_reporter(core.logger.notice, 'sector8.net');

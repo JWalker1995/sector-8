@@ -1,10 +1,10 @@
-goog.provide('sector8.config.server');
-
-goog.require('util.deepcopy');
-goog.require('sector8.config.common');
+require('../../util/deepcopy');
+require('../../sector8/config/common');
 
 sector8.config.server = function()
 {
+    assert(this instanceof sector8.config.server);
+    
     util.deepcopy(this, new sector8.config.common());
     
     util.deepcopy(this, {

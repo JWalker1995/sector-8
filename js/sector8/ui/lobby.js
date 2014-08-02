@@ -1,11 +1,9 @@
-goog.provide('sector8.ui.lobby');
-
 goog.require('goog.dom');
 goog.require('goog.functions');
 
 sector8.ui.lobby = function(core)
 {
-    goog.asserts.assertInstanceof(this, sector8.ui.lobby);
+    assert(this instanceof sector8.ui.lobby);
     
     var challenge_list = new sector8.ui.challenge_list(core);
     var user_list = new sector8.ui.user_list(core);

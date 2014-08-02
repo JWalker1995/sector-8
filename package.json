@@ -24,6 +24,7 @@
     "keywords": [],
     "dependencies": {
         "browserify": "*",
+        "ractive": "*",
         "bcrypt": "*",
         "primus": "*",
         "ws": "*",

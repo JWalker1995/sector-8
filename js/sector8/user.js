@@ -1,10 +1,8 @@
-goog.provide('sector8.user');
-
-goog.require('util.make_class');
+require('../util/make_class');
 
 sector8.user = function()
 {
-    goog.asserts.assertInstanceof(this, sector8.user);
+    assert(this instanceof sector8.user);
     
     var props = {
         'user_id': 0,

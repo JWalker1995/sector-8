@@ -1,18 +1,16 @@
-goog.provide('sector8.ui.ui');
-
 goog.require('goog.functions');
-goog.require('sector8.ui.login');
+require('../../sector8/ui/login');
 
 // Test
-goog.require('sector8.board');
-goog.require('sector8.cell');   
-goog.require('sector8.map');
-goog.require('sector8.match');
-goog.require('sector8.ui.match');
+require('../../sector8/board');
+require('../../sector8/cell');   
+require('../../sector8/map');
+require('../../sector8/match');
+require('../../sector8/ui/match');
 
 sector8.ui.ui = function(core)
 {
-    goog.asserts.assertInstanceof(this, sector8.ui.ui);
+    assert(this instanceof sector8.ui.ui);
 
     var el;
 

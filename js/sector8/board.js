@@ -1,12 +1,9 @@
-goog.provide('sector8.board');
-
-goog.require('goog.asserts');
-goog.require('util.make_class');
-goog.require('util.crc32');
+require('../util/make_class');
+require('../util/crc32');
 
 sector8.board = function()
 {
-    goog.asserts.assertInstanceof(this, sector8.board);
+    assert(this instanceof sector8.board);
 
     var props = {
         'rows': 0,

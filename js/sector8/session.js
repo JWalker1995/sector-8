@@ -1,7 +1,4 @@
-goog.provide('sector8.session');
-
-goog.require('goog.asserts');
-goog.require('sector8.net');
+require('../sector8/net');
 
 //var mailer = require('nodemailer');
 var bcrypt = require('bcrypt');
@@ -9,7 +6,7 @@ var bcrypt = require('bcrypt');
 // Really should inherit from sector8.net
 sector8.session = function(server, spark)
 {
-    goog.asserts.assertInstanceof(this, sector8.session);
+    assert(this instanceof sector8.session);
     
     var net = new sector8.net(server, spark);
     var user;

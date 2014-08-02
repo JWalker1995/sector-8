@@ -1,7 +1,3 @@
-goog.provide('sector8.parser');
-
-goog.require('goog.asserts');
-
 var lzstring = require('lz-string');
 
 sector8.parser = function(core)

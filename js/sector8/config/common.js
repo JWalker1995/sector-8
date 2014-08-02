@@ -1,7 +1,7 @@
-goog.provide('sector8.config.common');
-
 sector8.config.common = function()
 {
+    assert(this instanceof sector8.config.common);
+    
     util.deepcopy(this, {
         'sector8': {
             'host': 'localhost',

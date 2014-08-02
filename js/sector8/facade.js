@@ -1,7 +1,4 @@
-goog.provide('sector8.facade');
-
-goog.require('goog.asserts');
-goog.require('util.gate');
+require('../util/gate');
 
 var mysql = require('mysql');
 
@@ -9,7 +6,7 @@ sector8.facade = function(server, conn)
 {
     var _this = this;
     
-    goog.asserts.assertInstanceof(this, sector8.facade);
+    assert(this instanceof sector8.facade);
 
     var report_registration = server.logger.get_reporter(server.logger.fatal, 'sector8.facade.show_columns');
     var report_load = server.logger.get_reporter(server.logger.error, 'sector8.facade.load');
@@ -303,7 +300,7 @@ sector8.facade = function(server, conn)
 
 sector8.facade.expr = function(str)
 {
-    goog.asserts.assertInstanceof(this, sector8.facade.expr);
+    assert(this instanceof sector8.facade.expr);
     
     this.get_str = function() {return str;}
 };

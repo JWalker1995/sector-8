@@ -1,7 +1,3 @@
-require('../js/closure-library/closure/goog/bootstrap/nodejs.js');
-require('../public/deps.js');
-
-var assert = require('assert');
 /*
   fail: [Function: fail],
   ok: [Circular],
@@ -23,7 +19,7 @@ var rand_unbounded = function(decay)
     return i;
 };
 
-goog.require('util.gate');
+require('../js/util/gate');
 suite('util.gate', function()
 {
     var opens = 2 + rand_unbounded(.5);
@@ -91,7 +87,7 @@ suite('util.gate', function()
     });
 });
 
-goog.require('sector8.order');
+require('../js/sector8/order');
 suite('sector8.order', function()
 {
     var inst;
@@ -146,7 +142,7 @@ suite('sector8.order', function()
     }
 });
 
-goog.require('sector8.board');
+require('../js/sector8/board');
 suite('sector8.board', function()
 {
     var inst;
@@ -208,7 +204,7 @@ suite('sector8.board', function()
     test_invalid(row);
 });
 
-goog.require('sector8.match');
+require('../js/sector8/match');
 suite('sector8.match', function()
 {
     var inst;

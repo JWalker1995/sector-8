@@ -1,12 +1,8 @@
-goog.provide('sector8.server.match');
-
-goog.require('goog.asserts');
-
 sector8.server.match = function(core, match)
 {
     var _this = this;
     
-    goog.asserts.assertInstanceof(this, sector8.server.match);
+    assert(this instanceof sector8.server.match);
     
     this.order = function(str)
     {

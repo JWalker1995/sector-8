@@ -1,10 +1,6 @@
-goog.provide('sector8.registry');
-
-goog.require('goog.asserts');
-
 sector8.registry = function()
 {
-    goog.asserts.assertInstanceof(this, sector8.registry);
+    assert(this instanceof sector8.registry);
     
     var types = {};
     

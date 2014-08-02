@@ -1,6 +1,3 @@
-goog.provide('util.make_class');
-
-goog.require('goog.asserts');
 goog.require('goog.object');
 
 util.make_class = function(obj, props)

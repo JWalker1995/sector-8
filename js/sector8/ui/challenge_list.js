@@ -1,10 +1,8 @@
-goog.provide('sector8.ui.challenge_list');
-
-goog.require('sector8.match');
+require('../../sector8/match');
 
 sector8.ui.challenge_list = function(core)
 {
-    goog.asserts.assertInstanceof(this, sector8.ui.challenge_list);
+    assert(this instanceof sector8.ui.challenge_list);
 
     var no_challenges;
     var challenges = [];

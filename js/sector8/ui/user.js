@@ -1,8 +1,6 @@
-goog.provide('sector8.ui.user');
-
 goog.require('goog.dom');
 goog.require('goog.functions');
-goog.require('util.make_children_obj');
+require('../../util/make_children_obj');
 
 sector8.ui.user = function(core)
 {

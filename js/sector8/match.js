@@ -1,11 +1,8 @@
-goog.provide('sector8.match');
-
-goog.require('goog.asserts');
-goog.require('util.make_class');
+require('../util/make_class');
 
 sector8.match = function()
 {
-    goog.asserts.assertInstanceof(this, sector8.match);
+    assert(this instanceof sector8.match);
     
     var props = {
         'match_id': 0,
@@ -284,7 +281,7 @@ sector8.match = function()
 /*
 sector8.sectoid = function()
 {
-    goog.asserts.assertInstanceof(this, sector8.sectoid);
+    assert(this instanceof sector8.sectoid);
 
     var props = {
         'row': 0,
@@ -298,7 +295,7 @@ sector8.sectoid = function()
     
 sector8.player = function()
 {
-    goog.asserts.assertInstanceof(this, sector8.player);
+    assert(this instanceof sector8.player);
 
     var props = {
         'id': 0,

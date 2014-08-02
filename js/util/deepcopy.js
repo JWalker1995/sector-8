@@ -1,5 +1,3 @@
-goog.provide('util.deepcopy');
-
 util.deepcopy = function(to, from, weak)
 {
     for (var i in from)

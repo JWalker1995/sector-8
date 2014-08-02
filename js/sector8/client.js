@@ -1,25 +1,23 @@
-goog.provide('sector8.client');
-
 goog.require('goog.functions');
-goog.require('sector8.config.client');
-goog.require('sector8.registry');
-goog.require('sector8.user');
-goog.require('sector8.match');
-goog.require('sector8.player');
-goog.require('sector8.map');
-goog.require('sector8.board');
-goog.require('sector8.cell');
-goog.require('sector8.parser');
-goog.require('sector8.net');
-goog.require('sector8.ui.ui');
-goog.require('util.logger');
-goog.require('primus');
+require('../sector8/config/client');
+require('../sector8/registry');
+require('../sector8/user');
+require('../sector8/match');
+require('../sector8/player');
+require('../sector8/map');
+require('../sector8/board');
+require('../sector8/cell');
+require('../sector8/parser');
+require('../sector8/net');
+require('../sector8/ui/ui');
+require('../sector8/primus');
+require('../util/logger');
 
 sector8.client = function()
 {
     var _this = this;
     
-    goog.asserts.assertInstanceof(this, sector8.client);
+    assert(this instanceof sector8.client);
     
     _this.is_master = false;
     

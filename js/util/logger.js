@@ -1,7 +1,3 @@
-goog.provide('util.logger');
-
-goog.require('goog.asserts');
-
 util.logger = function()
 {
     var throttle_ms = 1000;

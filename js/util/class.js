@@ -1,7 +1,3 @@
-goog.provide('util.class');
-
-goog.require('goog.asserts');
-
 util.class = function(arg1, arg2)
 {
     goog.asserts.assert(typeof arg1 === 'function');
@@ -21,7 +17,7 @@ util.class = function(arg1, arg2)
     
     var c = function()
     {
-        goog.asserts.assertInstanceof(this, c);
+        assert(this instanceof c);
         
         var called_super = false;
         this.super = function()

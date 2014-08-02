@@ -1,11 +1,8 @@
-goog.provide('sector8.player');
-
-goog.require('goog.asserts');
-goog.require('util.make_class');
+require('../util/make_class');
 
 sector8.player = function()
 {
-    goog.asserts.assertInstanceof(this, sector8.player);
+    assert(this instanceof sector8.player);
     
     var props = {
         'player_id': 0,

@@ -1,12 +1,9 @@
-goog.provide('sector8.cell');
-
-goog.require('goog.asserts');
-goog.require('sector8.sectoid');
-goog.require('util.make_class');
+require('../sector8/sectoid');
+require('../util/make_class');
 
 sector8.cell = function()
 {
-    goog.asserts.assertInstanceof(this, sector8.cell);
+    assert(this instanceof sector8.cell);
 
     var props = {
         'void': false,

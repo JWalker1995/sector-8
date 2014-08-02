@@ -1,14 +1,12 @@
-goog.provide('sector8.ui.login');
-
 goog.require('goog.dom');
 goog.require('goog.functions');
 goog.require('goog.async.Throttle');
-goog.require('util.make_children_obj');
-goog.require('sector8.user');
+require('../../util/make_children_obj');
+require('../../sector8/user');
 
 sector8.ui.login = function(core)
 {
-    goog.asserts.assertInstanceof(this, sector8.ui.login);
+    assert(this instanceof sector8.ui.login);
 
     var els;
 

@@ -1,11 +1,8 @@
-goog.provide('sector8.adapter');
-
-goog.require('goog.asserts');
-goog.require('util.make_class');
+require('../util/make_class');
 
 sector8.adapter = function()
 {
-    goog.asserts.assertInstanceof(this, sector8.adapter);
+    assert(this instanceof sector8.adapter);
     
     //var spark_i = 1;
     var types = [];

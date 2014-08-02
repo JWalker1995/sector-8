@@ -1,5 +1,3 @@
-goog.provide('util.make_children_obj');
-
 util.make_children_obj = function(el)
 {
     var obj = {};

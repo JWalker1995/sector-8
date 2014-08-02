@@ -1,5 +1,3 @@
-goog.provide('util.gate');
-
 util.gate = function(opens)
 {
     if (typeof opens !== 'number') {opens = 1;}

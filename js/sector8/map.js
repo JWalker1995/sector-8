@@ -1,11 +1,8 @@
-goog.provide('sector8.map');
-
-goog.require('goog.asserts');
-goog.require('util.make_class');
+require('../util/make_class');
 
 sector8.map = function()
 {
-    goog.asserts.assertInstanceof(this, sector8.map);
+    assert(this instanceof sector8.map);
     
     var props = {
         'map_id': 0,

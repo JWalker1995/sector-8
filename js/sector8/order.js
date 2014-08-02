@@ -1,11 +1,8 @@
-goog.provide('sector8.order');
-
-goog.require('goog.asserts');
-goog.require('util.make_class');
+require('../util/make_class');
 
 sector8.order = function()
 {
-    goog.asserts.assertInstanceof(this, sector8.order);
+    assert(this instanceof sector8.order);
 
     var props = {
         'player': 0,

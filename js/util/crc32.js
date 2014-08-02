@@ -1,5 +1,3 @@
-goog.provide('util.crc32');
-
 util.crc32 = (function()
 {
     var table;
