@@ -23,10 +23,12 @@
     },
     "keywords": [],
     "dependencies": {
+        "browserify": "*",
         "bcrypt": "*",
         "primus": "*",
         "ws": "*",
-        "mysql": "*"
+        "mysql": "*",
+        "lz-string": "*"
     },
     "devDependencies": {
         "mocha": "*"

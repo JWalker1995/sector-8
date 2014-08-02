@@ -2,6 +2,8 @@ goog.provide('sector8.parser');
 
 goog.require('goog.asserts');
 
+var lzstring = require('lz-string');
+
 sector8.parser = function(core)
 {
     this.encoder = function(data, fn)
@@ -9,7 +11,7 @@ sector8.parser = function(core)
         data = JSON.stringify(data);
         if (core.config.net.enable_compression)
         {
-            // TODO: compress data
+            data = lzstring.compressToUTF16(data);
         }
         fn(undefined, data);
     };
@@ -19,7 +21,7 @@ sector8.parser = function(core)
         data = JSON.parse(data);
         if (core.config.net.enable_compression)
         {
-            // TODO: decompress data
+            data = lzstring.decompressFromUTF16(data);
         }
         fn(undefined, data);
     };
