@@ -15,6 +15,8 @@
     <script src="bundle.js"></script>
 </head>
 <body>
+    <div id="client"></div>
+    
     <!--
     <div class="left_menu">
         <h2>Sector 8</h2>
@@ -36,6 +38,84 @@
         </div>
     </div>
     -->
+    
+    <script id="template" type="text/ractive">
+    {{#if logged_in}}
+        {{#with login}}
+        <div class="login">
+            <div class="username">
+                <label for="username_input">Username:</label><br />
+                <input id="username_input" class="username_input" type="text" />
+                <span class="username_msg">{{username_msg}}</span>
+            </div>
+
+            <div class="password">
+                <label for="password_input">Password:</label><br />
+                <input id="password_input" class="password_input" type="password" />
+                <span class="password_msg">{{password_msg}}</span>
+            </div>
+
+            <button class="button" disabled="disabled">Login</button>
+            <span class="button_msg">{{button_msg}}</span>
+        </div>
+        {{/with}
+    {{else}}
+        {{#with match}}
+        <div class="match">
+            <div class="board">
+                {{#each cells:row}}
+                {{#each this:col}}
+                <div class="
+                    cell
+                    {{get_void() ? 'void' : ''}}
+                    player_{{get_territory()}}
+                    {{get_permanent() ? 'permanent' : ''}}
+                " style="
+                    left: {{col * cell_spacing}}px;
+                    top : {{row * cell_spacing}}px;
+                "></div>
+                {{#if get_sectoid()}}
+                <div class="sectoid {{get_sectoid() & (1 << 8) ? 'prime': ''}}" style="
+                    left: {{col * cell_spacing}}px;
+                    top : {{row * cell_spacing}}px;
+                ">
+                    {{#each range(0, 8):i}}
+                    {{#if get_sectoid() & (1 << i)}}
+                    <span class="sector sector_{{i}}"></span>
+                    {{/if}}
+                    {{/each}}
+                    <span class="center"></span>
+                    <img class="overlay" on-mouseover="over_sectoid" on-mouseout="out_sectoid" usemap="#sectoid" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAN1wAADdcBQiibeAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAD/SURBVHic7dFBDQAgEMAwwL/n440C9mgVLNmemUXH+R3Ay5AYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2IMiTEkxpAYQ2Iu+80DxR66mxIAAAAASUVORK5CYII=" />
+                </div>
+                {{/if}}
+                {{/each}}
+                {{/each}}
+            </div>
+            
+            <map name="sectoid">
+                <area on-click="click_center" shape="circle" coords="
+                    {{overlay_center}},{{overlay_center}},
+                    {{center_rad}}
+                " />
+                {{#each range(0, Math.PI * 2.0 - 1e-6, Math.PI / 4.0):ang}}
+                <area on-click="click_sector" shape="poly" coords="
+                    {{overlay_center}},{{overlay_center}},
+                    {{overlay_center + Math.sin(ang - Math.PI / 8.0)}},{{overlay_center - Math.cos(ang - Math.PI / 8.0)}},
+                    {{overlay_center + Math.sin(ang                )}},{{overlay_center - Math.cos(ang                )}},
+                    {{overlay_center + Math.sin(ang + Math.PI / 8.0)}},{{overlay_center - Math.cos(ang + Math.PI / 8.0)}},
+                " />
+                {{/each}
+            </map>
+            
+            <div style="padding-left: 600px;">
+                <input type="text" class="order_input" />
+                <button class="order_button">Order</button>
+                <button class="move_button">Move</button>
+            </div>
+        </div>
+        {{/with}}
+    {{/if}}
+    </script>
 
     <script type="text/javascript">
     //goog.require('sector8.client');

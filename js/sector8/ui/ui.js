@@ -1,6 +1,8 @@
 goog.require('goog.functions');
 require('../../sector8/ui/login');
 
+var ractive = require('ractive');
+
 // Test
 require('../../sector8/board');
 require('../../sector8/cell');   
@@ -14,10 +16,37 @@ sector8.ui.ui = function(core)
 
     var el;
 
-    var login = new sector8.ui.login(core);
+    //var login = new sector8.ui.login(core);
 
     var render = function()
     {
+        var ractive = new ractive({
+            el: '#container',
+            template: '#template',
+            data: {
+                'login': {
+                    'username_msg': 'Test username msg',
+                    'password_msg': 'Test password msg',
+                    'button_msg': 'Test button msg'
+                },
+                'match': {
+                },
+                'cell_spacing': 100,
+                'overlay_center': 50,
+                'center_rad': 40,
+                'range': function(start, end, inc)
+                {
+                    var res = [];
+                    while (start < end)
+                    {
+                        res.push(start);
+                        start += inc;
+                    }
+                    return res;
+                }
+            }
+        });
+        /*
         el = goog.dom.createDom('div', {'class': 'game'});
         goog.dom.append(el, login.render());
 
@@ -85,6 +114,7 @@ sector8.ui.ui = function(core)
         // End test
 
         return el;
+        */
 
         /*
         Right column:
