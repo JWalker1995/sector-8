@@ -1,5 +1,11 @@
+require('../util');
+
+require('../util/assert');
+
 util.logger = function()
 {
+    util.assert(this instanceof util.logger);
+    
     var throttle_ms = 1000;
     var levels = ['all', 'trace', 'event', 'alert', 'info', 'notice', 'warning', 'fatal'];
     var num_levels = levels.length;

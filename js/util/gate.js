@@ -1,5 +1,11 @@
+require('../util');
+
+require('../util/assert');
+
 util.gate = function(opens)
 {
+    util.assert(this instanceof util.gate);
+    
     if (typeof opens !== 'number') {opens = 1;}
     
     var funcs = [];

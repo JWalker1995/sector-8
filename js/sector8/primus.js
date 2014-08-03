@@ -2,7 +2,7 @@
 
 
 
-(function (name, context, definition) {  context[name] = definition.call(context);  if (typeof module !== "undefined" && sector8.primus) {    sector8.primus = context[name];  } else if (typeof define == "function" && define.amd) {    define(function reference() { return context[name]; });  }})("Primus", this, function PRIMUS() {/*globals require, define */
+(function (name, context, definition) {  context[name] = definition.call(context);  if (typeof module !== "undefined" && module.exports) {    module.exports = context[name];  } else if (typeof define == "function" && define.amd) {    define(function reference() { return context[name]; });  }})("Primus", this, function PRIMUS() {/*globals require, define */
 'use strict';
 
 /**

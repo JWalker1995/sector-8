@@ -1,12 +1,15 @@
+require('../../sector8/ui');
+
 goog.require('goog.dom');
 goog.require('goog.functions');
 goog.require('goog.async.Throttle');
+require('../../util/assert');
 require('../../util/make_children_obj');
 require('../../sector8/user');
 
 sector8.ui.login = function(core)
 {
-    assert(this instanceof sector8.ui.login);
+    util.assert(this instanceof sector8.ui.login);
 
     var els;
 

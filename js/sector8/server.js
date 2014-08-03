@@ -1,4 +1,4 @@
-goog.require('goog.functions');
+require('../sector8');
 
 require('../sector8/config/client');
 require('../sector8/config/server');
@@ -12,6 +12,7 @@ require('../sector8/board');
 require('../sector8/cell');
 require('../sector8/parser');
 require('../sector8/session');
+require('../util/assert');
 require('../util/make_class');
 require('../util/logger');
 require('../util/gate');
@@ -25,13 +26,13 @@ sector8.server = function(cd)
 {
     var _this = this;
     
-    assert(this instanceof sector8.server);
+    util.assert(this instanceof sector8.server);
     
     _this.is_master = true;
     
     var ready_gate;
 
-    var run = function()
+    _this.run = function()
     {
         ready_gate = new util.gate(1);
 
@@ -58,7 +59,6 @@ sector8.server = function(cd)
             _this.logger.log(_this.logger.info, 'Server is ready!!!');
         });
     };
-    this.run = goog.functions.cacheReturnValue(run);
 
     var setup_logger = function()
     {
@@ -85,7 +85,7 @@ sector8.server = function(cd)
             
             if (add > 0)
             {
-                goog.asserts.assert(add < spaces.length);
+                util.assert(add < spaces.length);
                 
                 var pend = spaces.slice(0, add);
                 if (prepend)
@@ -455,7 +455,7 @@ sector8.server = function(cd)
             'end_date': new sector8.facade.expr(' IS NULL')
         }, function(arr)
         {
-            goog.asserts.assert(challenges.length === 0);
+            util.assert(challenges.length === 0);
 
             var i = 0;
             while (i < arr.length)

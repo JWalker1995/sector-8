@@ -1,8 +1,11 @@
+require('../sector8');
+
+require('../util/assert');
 require('../util/make_class');
 
 sector8.adapter = function()
 {
-    assert(this instanceof sector8.adapter);
+    util.assert(this instanceof sector8.adapter);
     
     //var spark_i = 1;
     var types = [];
@@ -36,7 +39,7 @@ sector8.adapter = function()
                 // val is a registered type
 
                 var type = val.constructor._s8_adapter_type;
-                goog.asserts.assert(types.hasOwnProperty(type));
+                util.assert(types.hasOwnProperty(type));
 
                 if (typeof val._s8_adapter_inst !== 'number' || typeof val._s8_adapter_sent !== 'object')
                 {

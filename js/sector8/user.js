@@ -1,8 +1,11 @@
+require('../sector8');
+
+require('../util/assert');
 require('../util/make_class');
 
 sector8.user = function()
 {
-    assert(this instanceof sector8.user);
+    util.assert(this instanceof sector8.user);
     
     var props = {
         'user_id': 0,

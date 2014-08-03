@@ -1,9 +1,12 @@
+require('../../sector8/config');
+
+require('../../util/assert');
 require('../../util/deepcopy');
 require('../../sector8/config/common');
 
 sector8.config.server = function()
 {
-    assert(this instanceof sector8.config.server);
+    util.assert(this instanceof sector8.config.server);
     
     util.deepcopy(this, new sector8.config.common());
     

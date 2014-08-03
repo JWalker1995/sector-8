@@ -1,8 +1,11 @@
+require('../../sector8/ui');
+
+require('../../util/assert');
 require('../../sector8/match');
 
 sector8.ui.challenge_list = function(core)
 {
-    assert(this instanceof sector8.ui.challenge_list);
+    util.assert(this instanceof sector8.ui.challenge_list);
 
     var no_challenges;
     var challenges = [];

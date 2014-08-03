@@ -1,9 +1,14 @@
+require('../../sector8/ui');
+
 goog.require('goog.dom');
 goog.require('goog.functions');
+require('../../util/assert');
 require('../../util/make_children_obj');
 
 sector8.ui.user = function(core)
 {
+    util.assert(this instanceof sector8.ui.user);
+    
     var els;
 
     var render = function()

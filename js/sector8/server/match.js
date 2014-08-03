@@ -1,8 +1,12 @@
+require('../../sector8/server');
+
+require('../../util/assert');
+
 sector8.server.match = function(core, match)
 {
     var _this = this;
     
-    assert(this instanceof sector8.server.match);
+    util.assert(this instanceof sector8.server.match);
     
     this.order = function(str)
     {

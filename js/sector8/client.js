@@ -1,4 +1,5 @@
-goog.require('goog.functions');
+require('../sector8');
+
 require('../sector8/config/client');
 require('../sector8/registry');
 require('../sector8/user');
@@ -10,20 +11,22 @@ require('../sector8/cell');
 require('../sector8/parser');
 require('../sector8/net');
 require('../sector8/ui/ui');
-require('../sector8/primus');
+require('../util/assert');
 require('../util/logger');
+
+var primus = require('../sector8/primus');
 
 sector8.client = function()
 {
     var _this = this;
     
-    assert(this instanceof sector8.client);
+    util.assert(this instanceof sector8.client);
     
     _this.is_master = false;
     
     var ui = new sector8.ui.ui(this);
     
-    var run = function()
+    _this.run = function()
     {
         setup_logger();
         setup_config();
@@ -38,9 +41,8 @@ sector8.client = function()
         window.primus_client = primus_client;
         window.net = _this.net;
         
-        return ui.render();
+        ui.render();
     };
-    this.run = goog.functions.cacheReturnValue(run);
     
     var setup_logger = function()
     {
@@ -129,7 +131,7 @@ sector8.client = function()
         var config = {};
         config.parser = parser;
         
-        primus_client = new Primus('http://' + host + ':' + port, config);
+        primus_client = new primus('http://' + host + ':' + port, config);
         
         _this.logger.log(_this.logger.trace, 'Created primus client');
     };

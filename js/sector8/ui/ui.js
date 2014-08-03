@@ -1,27 +1,31 @@
-goog.require('goog.functions');
-require('../../sector8/ui/login');
+require('../../sector8/ui');
+
+require('../../util/assert');
+//require('../../sector8/ui/login');
 
 var ractive = require('ractive');
 
 // Test
+/*
 require('../../sector8/board');
 require('../../sector8/cell');   
 require('../../sector8/map');
 require('../../sector8/match');
 require('../../sector8/ui/match');
+*/
 
 sector8.ui.ui = function(core)
 {
-    assert(this instanceof sector8.ui.ui);
+    util.assert(this instanceof sector8.ui.ui);
 
     var el;
 
     //var login = new sector8.ui.login(core);
 
-    var render = function()
+    this.render = function()
     {
-        var ractive = new ractive({
-            el: '#container',
+        var dom = new ractive({
+            el: document.getElementById('client'),
             template: '#template',
             data: {
                 'login': {
@@ -132,6 +136,4 @@ sector8.ui.ui = function(core)
 
         */
     };
-
-    this.render = goog.functions.cacheReturnValue(render);
 };

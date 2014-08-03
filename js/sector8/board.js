@@ -1,9 +1,12 @@
+require('../sector8');
+
+require('../util/assert');
 require('../util/make_class');
 require('../util/crc32');
 
 sector8.board = function()
 {
-    assert(this instanceof sector8.board);
+    util.assert(this instanceof sector8.board);
 
     var props = {
         'rows': 0,
@@ -143,7 +146,7 @@ sector8.board = function()
                 i |= cell.get_sectoid().get_sectors() << 8;
             }
             */
-            goog.asserts.assert(i <= 0xFFFF);
+            util.assert(i <= 0xFFFF);
             str += String.fromCharCode(i);
         });
 

@@ -1,3 +1,5 @@
+require('../util');
+
 util.crc32 = (function()
 {
     var table;

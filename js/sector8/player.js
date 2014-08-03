@@ -1,8 +1,11 @@
+require('../sector8');
+
+require('../util/assert');
 require('../util/make_class');
 
 sector8.player = function()
 {
-    assert(this instanceof sector8.player);
+    util.assert(this instanceof sector8.player);
     
     var props = {
         'player_id': 0,

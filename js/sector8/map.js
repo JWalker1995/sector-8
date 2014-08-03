@@ -1,8 +1,11 @@
+require('../sector8');
+
+require('../util/assert');
 require('../util/make_class');
 
 sector8.map = function()
 {
-    assert(this instanceof sector8.map);
+    util.assert(this instanceof sector8.map);
     
     var props = {
         'map_id': 0,

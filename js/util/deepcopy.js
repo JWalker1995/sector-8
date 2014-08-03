@@ -1,3 +1,5 @@
+require('../util');
+
 util.deepcopy = function(to, from, weak)
 {
     for (var i in from)

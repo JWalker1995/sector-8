@@ -1,3 +1,7 @@
+require('../sector8');
+
+require('../util/assert');
+
 var lzstring = require('lz-string');
 
 sector8.parser = function(core)

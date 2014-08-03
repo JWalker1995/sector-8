@@ -1,12 +1,15 @@
+require('../../sector8/ui');
+
 goog.require('goog.dom');
 goog.require('goog.dom.classes');
+require('../../util/assert');
 require('../../sector8/order');
 
 //var randomcolor = require('randomcolor');
 
 sector8.ui.board = function(core, match)
 {
-    assert(this instanceof sector8.ui.board);
+    util.assert(this instanceof sector8.ui.board);
     
     var cell_spacing = core.config.geometry.cell_size;
     var overlay_center = core.config.geometry.overlay_img_size / 2.0;

@@ -1,8 +1,11 @@
+require('../sector8');
+
+require('../util/assert');
 require('../util/make_class');
 
 sector8.order = function()
 {
-    assert(this instanceof sector8.order);
+    util.assert(this instanceof sector8.order);
 
     var props = {
         'player': 0,

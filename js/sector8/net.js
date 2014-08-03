@@ -1,6 +1,10 @@
-sector8.nets = function(core, spark)
+require('../sector8');
+
+require('../util/assert');
+
+sector8.net = function(core, spark)
 {
-    assert(this instanceof sector8.net);
+    util.assert(this instanceof sector8.net);
     
     var trace_reporter = core.logger.get_reporter(core.logger.trace, 'sector8.net');
     var notice_reporter = core.logger.get_reporter(core.logger.notice, 'sector8.net');
@@ -122,7 +126,7 @@ sector8.nets = function(core, spark)
                 // val is a registered type
 
                 var type = val.constructor._s8_adapter_type;
-                goog.asserts.assert(types.hasOwnProperty(type));
+                util.assert(types.hasOwnProperty(type));
 
                 if (typeof val._s8_adapter_inst !== 'number' || typeof val._s8_adapter_sent !== 'object')
                 {

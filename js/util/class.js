@@ -1,6 +1,10 @@
+require('../util');
+
+require('../util/assert');
+
 util.class = function(arg1, arg2)
 {
-    goog.asserts.assert(typeof arg1 === 'function');
+    util.assert(typeof arg1 === 'function');
     
     var base;
     var derived;
@@ -22,7 +26,7 @@ util.class = function(arg1, arg2)
         var called_super = false;
         this.super = function()
         {
-            goog.asserts.assert(!called_super);
+            util.assert(!called_super);
             called_super = true;
             base.apply(c, arguments);
         };

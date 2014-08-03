@@ -1,3 +1,5 @@
+require('../util');
+
 util.make_children_obj = function(el)
 {
     var obj = {};

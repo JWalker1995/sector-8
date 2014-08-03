@@ -1,10 +1,13 @@
+require('../../sector8/ui');
+
 goog.require('goog.dom');
 goog.require('goog.functions');
+require('../../util/assert');
 require('../../sector8/ui/board');
 
 sector8.ui.match = function(core, match)
 {
-    assert(this instanceof sector8.ui.match);
+    util.assert(this instanceof sector8.ui.match);
     
     var board = new sector8.ui.board(core, match);
     

@@ -1,3 +1,6 @@
+require('../sector8');
+
+require('../util/assert');
 require('../util/gate');
 
 var mysql = require('mysql');
@@ -6,7 +9,7 @@ sector8.facade = function(server, conn)
 {
     var _this = this;
     
-    assert(this instanceof sector8.facade);
+    util.assert(this instanceof sector8.facade);
 
     var report_registration = server.logger.get_reporter(server.logger.fatal, 'sector8.facade.show_columns');
     var report_load = server.logger.get_reporter(server.logger.error, 'sector8.facade.load');
@@ -19,7 +22,7 @@ sector8.facade = function(server, conn)
     
     this.register_type = function(type, table)
     {
-        goog.asserts.assert(typeof type._s8_facade === 'undefined');
+        util.assert(typeof type._s8_facade === 'undefined');
         
         showing++;
         
@@ -95,7 +98,7 @@ sector8.facade = function(server, conn)
             }
             
             var model = models[inst.constructor._s8_facade];
-            goog.asserts.assert(model);
+            util.assert(model);
             
             var where = {};
             where[prop] = value;
@@ -105,7 +108,7 @@ sector8.facade = function(server, conn)
                 report_load(err);
                 if (result && result.length)
                 {
-                    goog.asserts.assert(result.length === 1);
+                    util.assert(result.length === 1);
                     
                     populate(model, inst, result[0]);
                 }
@@ -128,7 +131,7 @@ sector8.facade = function(server, conn)
             }
             
             var model = models[constructor._s8_facade];
-            goog.asserts.assert(model);
+            util.assert(model);
             
             var query = 'SELECT * FROM ' + model.table + ' WHERE ' + create_where(where);
             conn.query(query, function(err, result)
@@ -168,7 +171,7 @@ sector8.facade = function(server, conn)
             }
             
             var model = models[inst.constructor._s8_facade];
-            goog.asserts.assert(model);
+            util.assert(model);
             
             var gate = new util.gate(0);
             

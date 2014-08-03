@@ -1,3 +1,6 @@
+require('../sector8');
+
+require('../util/assert');
 require('../sector8/net');
 
 //var mailer = require('nodemailer');
@@ -6,7 +9,7 @@ var bcrypt = require('bcrypt');
 // Really should inherit from sector8.net
 sector8.session = function(server, spark)
 {
-    assert(this instanceof sector8.session);
+    util.assert(this instanceof sector8.session);
     
     var net = new sector8.net(server, spark);
     var user;

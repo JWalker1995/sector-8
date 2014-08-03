@@ -1,4 +1,6 @@
-goog.require('goog.object');
+require('../util');
+
+require('../util/assert');
 
 util.make_class = function(obj, props)
 {
@@ -46,7 +48,7 @@ util.make_class = function(obj, props)
         updated[prop] = val;
     };
     
-    goog.asserts.assert(typeof props === 'object');
+    util.assert(typeof props === 'object');
     
     obj.defaults = goog.object.clone(props);
     
@@ -174,7 +176,7 @@ util.make_class = function(obj, props)
     
     obj.watch = function(arg)
     {
-        goog.asserts.assert(typeof arg === 'function' || arg instanceof Array);
+        util.assert(typeof arg === 'function' || arg instanceof Array);
         
         watchers.push(arg);
     };

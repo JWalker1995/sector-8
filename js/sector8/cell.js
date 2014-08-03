@@ -1,9 +1,11 @@
-require('../sector8/sectoid');
+require('../sector8');
+
+require('../util/assert');
 require('../util/make_class');
 
 sector8.cell = function()
 {
-    assert(this instanceof sector8.cell);
+    util.assert(this instanceof sector8.cell);
 
     var props = {
         'void': false,

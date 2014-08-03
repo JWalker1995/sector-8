@@ -1,6 +1,10 @@
+require('../sector8');
+
+require('../util/assert');
+
 sector8.registry = function()
 {
-    assert(this instanceof sector8.registry);
+    util.assert(this instanceof sector8.registry);
     
     var types = {};
     
@@ -20,13 +24,13 @@ sector8.registry = function()
                     break;
                 
                 default:
-                    goog.asserts.fail();
+                    util.fail();
             }
         }
         
-        goog.asserts.assert(typeof name === 'string');
-        goog.asserts.assert(typeof type === 'function');
-        goog.asserts.assert(typeof props === 'object');
+        util.assert(typeof name === 'string');
+        util.assert(typeof type === 'function');
+        util.assert(typeof props === 'object');
         
         if (types.hasOwnProperty(name) && types[name] !== type)
         {

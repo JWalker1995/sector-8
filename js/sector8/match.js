@@ -1,8 +1,11 @@
+require('../sector8');
+
+require('../util/assert');
 require('../util/make_class');
 
 sector8.match = function()
 {
-    assert(this instanceof sector8.match);
+    util.assert(this instanceof sector8.match);
     
     var props = {
         'match_id': 0,
@@ -281,7 +284,7 @@ sector8.match = function()
 /*
 sector8.sectoid = function()
 {
-    assert(this instanceof sector8.sectoid);
+    util.assert(this instanceof sector8.sectoid);
 
     var props = {
         'row': 0,
@@ -295,7 +298,7 @@ sector8.sectoid = function()
     
 sector8.player = function()
 {
-    assert(this instanceof sector8.player);
+    util.assert(this instanceof sector8.player);
 
     var props = {
         'id': 0,
