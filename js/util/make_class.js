@@ -50,12 +50,12 @@ util.make_class = function(obj, props)
     
     util.assert(typeof props === 'object');
     
-    obj.defaults = goog.object.clone(props);
-    
     if (props instanceof Array)
     {
         var first = props.shift();
         var type = typeof first;
+
+        obj.defaults = props.concat();
 
         obj.get = function(i)
         {
@@ -101,10 +101,14 @@ util.make_class = function(obj, props)
     }
     else
     {
+        obj.defaults = {};
+
         for (var prop in props)
         {
             if (props.hasOwnProperty(prop))
             {
+                obj.defaults[prop] = props[prop];
+                
                 (function(prop)
                 {
                     var type = typeof props[prop];

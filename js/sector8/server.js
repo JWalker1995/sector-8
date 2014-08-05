@@ -311,48 +311,48 @@ sector8.server = function(cd)
         _this.logger.log(_this.logger.trace, 'Wrote client css');
     };
 
-    var get_compile_config = function()
-    {
-        return {
-            'public/bundle.js': [
-                'python',
-                'js/closure-library/closure/bin/build/closurebuilder.py',
-                '--root=js/closure-library/',
-                '--root=js/util/',
-                '--root=js/sector8/',
-                '--namespace=goog.dom',
-                '--namespace=sector8.client',
-                '--output_mode=script',
-                '--compiler_jar="' + _this.config.google_closure_compiler_path + '"',
-                '--compiler_flags="--compilation_level=ADVANCED_OPTIMIZATIONS"',
-                '--output_file={tmp_path}'
-            ],
-            'public/bundle.css': [
-                'sass',
-                '--scss',
-                '--update',
-                'css/main.scss:{tmp_path}'
-            ]
-        };
-    }
 
     var compile = function()
     {
         _this.logger.log(_this.logger.trace, 'Compiling...');
 
-        var compile_config = get_compile_config();
-
-        for (var dest in compile_config)
+        compile_item('browserify', [
+            'node_modules/.bin/browserify',
+            'client.js',
+            '--outfile',
+            '{tmp_path}'
+        ], function(browserified_path)
         {
-            compile_item(dest, compile_config[dest]);
-        }
+            compile_item('closure-compiler', [
+                _this.config.java_path,
+                '-jar', _this.config.google_closure_compiler_path,
+                '--js', browserified_path,
+                '--language_in', 'ECMASCRIPT5_STRICT',
+                '--compilation_level', 'ADVANCED_OPTIMIZATIONS',
+                '--js_output_file', '{tmp_path}'
+            ], function(closured_path)
+            {
+                remove_compiled('browserify', browserified_path);
+                publish_compiled('closure-compiler', closured_path, 'public/bundle.js');
+            });
+        });
+
+        compile_item('sass', [
+            'sass',
+            '--scss',
+            '--update',
+            'css/main.scss:{tmp_path}'
+        ], function(sassed_path)
+        {
+            publish_compiled('sass', sassed_path, 'public/bundle.css');
+        });
     };
 
-    var compile_item = function(dest, args)
+    var compile_item = function(name, args, callback)
     {
         ready_gate.close();
 
-        var tmp_path = _this.config.tmp_dir_path + '/sector8_' + dest.replace(/[^a-zA-Z0-9_]/g, '_');
+        var tmp_path = _this.config.tmp_dir_path + '/sector8_' + name.replace(/[^a-zA-Z0-9_]/g, '_');
 
         var i = 0;
         while (i < args.length)
@@ -361,36 +361,37 @@ sector8.server = function(cd)
             i++;
         }
 
-        _this.logger.log(_this.logger.trace, 'Spawning ' + dest + ' compiler...');
+        _this.logger.log(_this.logger.trace, 'Spawning ' + name + '...');
+        var start_time = (new Date()).getTime() / 1000;
 
         var command = args.shift();
         shell.execFile(command, args, {}, function(error, stdout, stderr)
         {
             if (error)
             {
-                _this.logger.log(_this.logger.fatal, 'Could not compile ' + dest + ': ' + error.toString());
+                _this.logger.log(_this.logger.fatal, 'Could not complete ' + name + ': ' + error.toString());
             }
             else
             {
-                _this.logger.log(_this.logger.trace, 'Compiled ' + dest);
-                check_compiled(dest, tmp_path);
-                publish_compiled(dest, tmp_path);
+                var end_time = (new Date()).getTime() / 1000;
+                _this.logger.log(_this.logger.trace, 'Completed ' + name + ' in ' + (end_time - start_time).toFixed(4) + ' seconds');
+                
+                check_compiled(name, tmp_path);
+                callback(tmp_path);
                 ready_gate.open();
             }
         });
 
-        _this.logger.log(_this.logger.trace, 'Spawned ' + dest + ' compiler');
+        _this.logger.log(_this.logger.trace, 'Spawned ' + name + '');
     };
 
-    var check_compiled = function(dest, path)
+    var check_compiled = function(name, path)
     {
-        _this.logger.log(_this.logger.trace, 'Reading compiled ' + dest + ' from ' + path + ' ...');
+        _this.logger.log(_this.logger.trace, 'Reading ' + name + ' output from ' + path + ' ...');
         var contents = fs.readFileSync(path).toString();
-        _this.logger.log(_this.logger.trace, 'Read compiled ' + dest);
+        _this.logger.log(_this.logger.trace, 'Read ' + name + ' output');
 
-        _this.logger.log(_this.logger.trace, 'Checking compiled ' + dest + '...');
-
-        var bad = false;
+        _this.logger.log(_this.logger.trace, 'Checking ' + name + ' output...');
 
         var blacklist = _this.config.check_compiled_blacklist;
         var i = 0;
@@ -398,30 +399,49 @@ sector8.server = function(cd)
         {
             if (contents.indexOf(blacklist[i]) !== -1)
             {
-                _this.logger.log(_this.logger.fatal, 'Compiled ' + dest + ' contains blacklisted string "' + blacklist[i] + '"');
-                bad = true;
+                _this.logger.log(_this.logger.fatal, 'Blacklisted string "' + blacklist[i] + '" present in ' + name + ' output!');
             }
             i++;
         }
 
-        _this.logger.log(_this.logger.trace, 'Checked compiled ' + dest);
+        _this.logger.log(_this.logger.trace, 'Checked ' + name + ' output');
     };
 
-    var publish_compiled = function(dest, path)
+    var publish_compiled = function(name, src, dst)
     {
-        _this.logger.log(_this.logger.trace, 'Publishing compiled ' + dest + ' from ' + path + ' ...');
+        _this.logger.log(_this.logger.trace, 'Publishing ' + name + ' output file from ' + src + ' ...');
 
         ready_gate.close();
 
-        fs.rename(path, dest, function (err)
+        fs.rename(src, dst, function (err)
         {
             if (err)
             {
-                _this.logger.log(_this.logger.fatal, 'Could not publish ' + dest + ' from ' + path + ' : ' + error.toString());
+                _this.logger.log(_this.logger.fatal, 'Could not publish ' + name + ' output file from ' + src + ' : ' + error.toString());
             }
             else
             {
-                _this.logger.log(_this.logger.trace, 'Published ' + dest);
+                _this.logger.log(_this.logger.trace, 'Published ' + name + ' output file');
+                ready_gate.open();
+            }
+        });
+    };
+
+    var remove_compiled = function(name, path)
+    {
+        _this.logger.log(_this.logger.trace, 'Deleting ' + name + ' output file from ' + path + ' ...');
+
+        ready_gate.close();
+
+        fs.unlink(path, function (err)
+        {
+            if (err)
+            {
+                _this.logger.log(_this.logger.fatal, 'Could not delete ' + name + ' output file from ' + path + ' : ' + error.toString());
+            }
+            else
+            {
+                _this.logger.log(_this.logger.trace, 'Deleted ' + name + ' output file');
                 ready_gate.open();
             }
         });

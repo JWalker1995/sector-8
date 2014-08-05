@@ -303,7 +303,7 @@ sector8.facade = function(server, conn)
 
 sector8.facade.expr = function(str)
 {
-    assert(this instanceof sector8.facade.expr);
+    util.assert(this instanceof sector8.facade.expr);
     
     this.get_str = function() {return str;}
 };

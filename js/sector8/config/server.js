@@ -22,6 +22,7 @@ sector8.config.server = function()
         'registration_email': 'no-reply@localhost',
         'sql_init_path': 'init.sql',
         'tmp_dir_path': '/tmp',
+        'java_path': 'java7',
         'google_closure_compiler_path': '/Users/joel.walker/source/closure-compiler/compiler.jar',
         'check_compiled_blacklist': [
             'my-password'

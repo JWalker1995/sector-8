@@ -1590,7 +1590,7 @@ Primus.prototype.authorization = false;
 Primus.prototype.pathname = "/sector8/socket";
 Primus.prototype.encoder = function() {this.options.parser.encoder.apply(this, arguments);};
 Primus.prototype.decoder = function() {this.options.parser.decoder.apply(this, arguments);};
-Primus.prototype.version = "2.4.0";
+Primus.prototype.version = "2.4.1";
 
 //
 // Hack 1: \u2028 and \u2029 are allowed inside string in JSON. But JavaScript
