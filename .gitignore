@@ -2,7 +2,7 @@
 
 /local/
 /log/
-
 /node_modules/
+/public/bundle.*
 
 /.todo
