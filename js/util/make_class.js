@@ -20,9 +20,13 @@ util.make_class = function(obj, props)
             {
                 watcher(updated);
             }
-            else
+            else if (watcher instanceof Array)
             {
                 call_watchers(watcher);
+            }
+            else
+            {
+                util.assert.fail();
             }
             i++;
         }

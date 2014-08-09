@@ -316,24 +316,32 @@ sector8.server = function(cd)
     {
         _this.logger.log(_this.logger.trace, 'Compiling...');
 
+        var js_joined_path = 'public/bundle.joined.js';
+        var js_compiled_path = 'public/bundle.compiled.js';
+        var js_compiled_map_path = 'public/bundle.compiled.js.map';
+        var css_compiled_path = 'public/bundle.compiled.css';
+
         compile_item('browserify', [
             'node_modules/.bin/browserify',
             'client.js',
-            '--outfile',
-            '{tmp_path}'
+            '--debug',
+            '--outfile', '{tmp_path}'
         ], function(browserified_path)
         {
+            publish_compiled('browserify', browserified_path, js_joined_path);
+
             compile_item('closure-compiler', [
                 _this.config.java_path,
                 '-jar', _this.config.google_closure_compiler_path,
-                '--js', browserified_path,
+                '--js', js_joined_path,
                 '--language_in', 'ECMASCRIPT5_STRICT',
                 '--compilation_level', 'ADVANCED_OPTIMIZATIONS',
+                '--create_source_map', js_compiled_map_path,
+                '--source_map_format', 'V3',
                 '--js_output_file', '{tmp_path}'
             ], function(closured_path)
             {
-                remove_compiled('browserify', browserified_path);
-                publish_compiled('closure-compiler', closured_path, 'public/bundle.js');
+                publish_compiled('closure-compiler', closured_path, js_compiled_path);
             });
         });
 
@@ -344,7 +352,7 @@ sector8.server = function(cd)
             'css/main.scss:{tmp_path}'
         ], function(sassed_path)
         {
-            publish_compiled('sass', sassed_path, 'public/bundle.css');
+            publish_compiled('sass', sassed_path, css_compiled_path);
         });
     };
 

@@ -76,7 +76,8 @@ Each user has:
 
 Inherit pieces between games? No
 
-When sectors from all 8 directions implode into one full sectoid on a single turn, it becomes prime. Having multiple primes allows a player to send more than one order each turn.
+When sectors from all 8 directions implode into one full sectoid on a single turn, it becomes prime.
+Having multiple primes DOES NOT allow a player to send more than one order each turn.
 
 When a multiple sectoids combine, the territory is claimed by the player with more sectoids, or unclaimed if equal.
 

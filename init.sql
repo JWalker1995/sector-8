@@ -12,6 +12,18 @@ CREATE TABLE IF NOT EXISTS sector8.users (
 	CONSTRAINT `PRIMARY` PRIMARY KEY (user_id)
 );
 
+CREATE TABLE IF NOT EXISTS sector8.user_stats (
+	user_id INT UNSIGNED NOT NULL,
+	count_total INT UNSIGNED NOT NULL,
+	count_legendary_wins INT UNSIGNED NOT NULL,
+	count_wins INT UNSIGNED NOT NULL,
+	count_draws INT UNSIGNED NOT NULL,
+	count_losses INT UNSIGNED NOT NULL,
+	count_dishonorable_losses INT UNSIGNED NOT NULL,
+	rating FLOAT NOT NULL,
+	CONSTRAINT `PRIMARY` PRIMARY KEY (user_id)
+);
+
 CREATE TABLE IF NOT EXISTS sector8.matches (
 	match_id INT UNSIGNED NOT NULL,
 	name VARCHAR(255),

@@ -50,6 +50,13 @@ sector8.ui.ui = function(core)
                 }
             }
         });
+        
+        dom.data.something = my_inst.get_obj();
+        my_inst.watch(function(changed)
+        {
+            dom.update('something', changed.keys());
+        });
+        
         /*
         el = goog.dom.createDom('div', {'class': 'game'});
         goog.dom.append(el, login.render());
