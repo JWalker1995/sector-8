@@ -310,49 +310,70 @@ sector8.server = function(cd)
         
         _this.logger.log(_this.logger.trace, 'Wrote client css');
     };
-
-
+    
+    // Compilation working directory. Should be the public root.
+    var working_dir = cd + '/public/';
+    var s8_root = '../';
+    
     var compile = function()
     {
         _this.logger.log(_this.logger.trace, 'Compiling...');
-
-        var js_joined_path = 'public/bundle.joined.js';
-        var js_compiled_path = 'public/bundle.compiled.js';
-        var js_compiled_map_path = 'public/bundle.compiled.js.map';
-        var css_compiled_path = 'public/bundle.compiled.css';
+        
+        var js_joined_path = 'bundle.joined.js';
+        var js_compiled_path = 'bundle.compiled.js';
+        var js_compiled_map_path = 'bundle.compiled.js.map';
+        var css_compiled_path = 'bundle.compiled.css';
 
         compile_item('browserify', [
-            'node_modules/.bin/browserify',
-            'client.js',
+            s8_root + 'node_modules/.bin/browserify',
+            s8_root + 'client.js',
             '--debug',
             '--outfile', '{tmp_path}'
         ], function(browserified_path)
         {
-            publish_compiled('browserify', browserified_path, js_joined_path);
-
-            compile_item('closure-compiler', [
-                _this.config.java_path,
-                '-jar', _this.config.google_closure_compiler_path,
-                '--js', js_joined_path,
-                '--language_in', 'ECMASCRIPT5_STRICT',
-                '--compilation_level', 'ADVANCED_OPTIMIZATIONS',
-                '--create_source_map', js_compiled_map_path,
-                '--source_map_format', 'V3',
-                '--js_output_file', '{tmp_path}'
-            ], function(closured_path)
+            if (false)
             {
-                publish_compiled('closure-compiler', closured_path, js_compiled_path);
-            });
+                publish_compiled('browserify', browserified_path, working_dir + js_joined_path);
+                
+                compile_item('closure-compiler', [
+                    _this.config.java_path,
+                    '-jar', _this.config.google_closure_compiler_path,
+                    '--js', js_joined_path,
+                    '--language_in', 'ECMASCRIPT5',
+                    //'--compilation_level', 'ADVANCED_OPTIMIZATIONS',
+                    '--compilation_level', 'WHITESPACE_ONLY',
+                    '--create_source_map', js_compiled_map_path,
+                    '--source_map_format', 'V3',
+                    '--js_output_file', '{tmp_path}'
+                ], function(closured_path)
+                {
+                    ready_gate.close();
+
+                    var append = '';
+                    append += "\n";
+                    append += '//# sourceMappingURL=' + js_compiled_map_path;
+
+                    fs.appendFile(closured_path, append, {'encoding': 'utf8'}, function()
+                    {
+                        publish_compiled('closure-compiler', closured_path, working_dir + js_compiled_path);
+                        ready_gate.open();
+                    });
+                });
+            }
+            else
+            {
+                publish_compiled('browserify', browserified_path, working_dir + js_compiled_path);
+            }
         });
 
         compile_item('sass', [
             'sass',
             '--scss',
             '--update',
-            'css/main.scss:{tmp_path}'
+            s8_root + 'css/main.scss:{tmp_path}'
         ], function(sassed_path)
         {
-            publish_compiled('sass', sassed_path, css_compiled_path);
+            publish_compiled('sass', sassed_path, working_dir + css_compiled_path);
         });
     };
 
@@ -373,7 +394,10 @@ sector8.server = function(cd)
         var start_time = (new Date()).getTime() / 1000;
 
         var command = args.shift();
-        shell.execFile(command, args, {}, function(error, stdout, stderr)
+        shell.execFile(command, args, {
+            'cwd': working_dir,
+            'encoding': 'utf8'
+        }, function(error, stdout, stderr)
         {
             if (error)
             {

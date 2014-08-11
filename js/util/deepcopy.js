@@ -16,7 +16,7 @@ util.deepcopy = function(to, from, weak)
             }
             else
             {
-                copy(to[i], from[i]);
+                util.deepcopy(to[i], from[i], weak);
             }
         }
     }

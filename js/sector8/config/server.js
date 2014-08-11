@@ -4,6 +4,8 @@ require('../../util/assert');
 require('../../util/deepcopy');
 require('../../sector8/config/common');
 
+var fs = require('fs');
+
 sector8.config.server = function()
 {
     util.assert(this instanceof sector8.config.server);
@@ -22,10 +24,10 @@ sector8.config.server = function()
         'registration_email': 'no-reply@localhost',
         'sql_init_path': 'init.sql',
         'tmp_dir_path': '/tmp',
-        'java_path': 'java7',
-        'google_closure_compiler_path': '/Users/joel.walker/source/closure-compiler/compiler.jar',
         'check_compiled_blacklist': [
-            'my-password'
         ]
     });
+    
+    var local = fs.readFileSync('server_config.json', {'encoding': 'utf8'});
+    util.deepcopy(this, JSON.parse(local));
 };

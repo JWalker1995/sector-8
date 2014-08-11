@@ -31,7 +31,16 @@ sector8.ui.ui = function(core)
                 'login': {
                     'username_msg': 'Test username msg',
                     'password_msg': 'Test password msg',
-                    'button_msg': 'Test button msg'
+                    'button_msg': 'Test button msg',
+                    
+                    'user_status': 0,
+                    'login_status': 0,
+                    
+                    'STATUS_INVALID': 0, // Empty username/password, invalid username characters
+                    'STATUS_USER': 1, // Waiting on user
+                    'STATUS_WAITING': 2, // Waiting for a response from the server
+                    'STATUS_GOOD': 3, // Username exists or login correct
+                    'STATUS_BAD': 4 // Username doesn't exist or login incorrect
                 },
                 'match': {
                 },
@@ -55,6 +64,12 @@ sector8.ui.ui = function(core)
         my_inst.watch(function(changed)
         {
             dom.update('something', changed.keys());
+        });
+        dom.observe('username', function(new_val, old_val)
+        {
+        });
+        dom.observe('password', function(new_val, old_val)
+        {
         });
         
         /*

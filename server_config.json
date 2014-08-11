@@ -1,0 +1,17 @@
+{
+    "mysql": {
+        "host": "localhost",
+        "port": 3306,
+        "user": "sector8",
+        "password": "",
+        "database": "sector8"
+    },
+    "registration_email": "no-reply@localhost",
+    "sql_init_path": "init.sql",
+    "tmp_dir_path": "/tmp",
+    "java_path": "java",
+    "google_closure_compiler_path": "/home/joel/source/closure-compiler/build/compiler.jar",
+    "check_compiled_blacklist": [
+        "my-password"
+    ]
+}

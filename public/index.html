@@ -40,22 +40,32 @@
     -->
     
     <script id="template" type="text/ractive">
-    {{#if logged_in}}
+    {{#if !logged_in}}
         {{#with login}}
         <div class="login">
             <div class="username">
                 <label for="username_input">Username:</label><br />
-                <input id="username_input" class="username_input" type="text" />
+                <input id="username_input" class="username_input" type="text" value="{{username}}" />
                 <span class="username_msg">{{username_msg}}</span>
             </div>
-
+            
+            {{#if user_status === STATUS_GOOD}}
             <div class="password">
                 <label for="password_input">Password:</label><br />
-                <input id="password_input" class="password_input" type="password" />
+                <input id="password_input" class="password_input" type="password" value="{{password}}" />
                 <span class="password_msg">{{password_msg}}</span>
             </div>
+            {{/if}}
 
-            <button class="button" disabled="disabled">Login</button>
+            <button class="button" disabled="{{
+                (user_status === STATUS_GOOD || user_status === STATUS_BAD) && (login_status === STATUS_USER) ? '' : 'disabled'
+            }}">
+                {{
+                    user_status === STATUS_INVALID || user_status === STATUS_BAD ? 'Login as Guest' : (
+                    user_status === STATUS_WAITING ? '...' : (
+                    user_status === STATUS_GOOD ? 'Login' : ''))
+                }}
+            </button>
             <span class="button_msg">{{button_msg}}</span>
         </div>
         {{/with}}
